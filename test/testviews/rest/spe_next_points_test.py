@@ -4,7 +4,6 @@
 import numpy
 import pytest
 from flaky import flaky
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from libsigopt.aux.adapter_info_containers import MetricsInfo
 from libsigopt.compute.domain import BetaPrior, CategoricalDomain, DomainComponent, DomainConstraint, NormalPrior
@@ -17,6 +16,7 @@ from libsigopt.views.rest.spe_next_points import (
   SPENextPoints,
   get_experiment_phase,
 )
+from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 

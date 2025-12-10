@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy
 import pytest
-from testviews.zigopt_input_utils import ZigoptSimulator, form_points_sampled
 
 from libsigopt.aux.adapter_info_containers import MetricsInfo
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
@@ -18,6 +17,7 @@ from libsigopt.views.view import (
   form_one_hot_points_with_tasks,
   identify_scaled_values_exceeding_scaled_upper_thresholds,
 )
+from testviews.zigopt_input_utils import ZigoptSimulator, form_points_sampled
 
 from testaux.numerical_test_case import NumericalTestCase
 

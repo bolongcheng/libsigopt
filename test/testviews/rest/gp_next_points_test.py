@@ -5,7 +5,6 @@ import numpy
 import pytest
 from flaky import flaky
 from mock import Mock
-from testviews.zigopt_input_utils import ZigoptSimulator, form_random_unconstrained_categorical_domain
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.domain import (
@@ -27,6 +26,7 @@ from libsigopt.views.rest.gp_next_points_categorical import (
   generate_neighboring_integer_points,
   get_discrete_conversion_option,
 )
+from testviews.zigopt_input_utils import ZigoptSimulator, form_random_unconstrained_categorical_domain
 
 from testaux.numerical_test_case import NumericalTestCase
 from testcompute.domain_test import domains_approximately_equal

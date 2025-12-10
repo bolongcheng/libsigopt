@@ -6,7 +6,6 @@ from copy import deepcopy
 import numpy
 import pytest
 from mock import Mock
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from libsigopt.compute.domain import CategoricalDomain
 from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE, QUANTIZED_LENGTH_SCALE_LOWER_FACTOR
@@ -15,6 +14,7 @@ from libsigopt.views.rest.gp_hyper_opt_multimetric import (
   GpHyperOptMultimetricView,
   form_one_hot_hyperparameter_domain,
 )
+from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testaux.numerical_test_case import NumericalTestCase
 

@@ -4,10 +4,10 @@
 import numpy
 import pytest
 from flaky import flaky
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from libsigopt.compute.domain import AnyPrior, CategoricalDomain, DomainComponent, DomainConstraint
 from libsigopt.views.rest.random_search_next_points import RandomSearchNextPoints
+from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 
