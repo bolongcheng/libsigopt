@@ -151,7 +151,7 @@ def generate_latin_hypercube_points(num_points, dimension, skip, seed):
 
 @unit_cube_sampler_transform_decorator
 def generate_halton_points(num_points, dimension, skip, seed):
-  halton = qmcpy.Halton(dimension=dimension, generalize=True, randomize=True, seed=seed)
+  halton = qmcpy.Halton(dimension=dimension, randomize=True, seed=seed)
   return halton.gen_samples(n_min=skip, n_max=skip + num_points)
 
 
