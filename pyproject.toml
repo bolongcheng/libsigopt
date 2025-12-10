@@ -32,8 +32,8 @@ dev = [
   "flaky==3.7.0",
   "mock==2.0.0",
   "pre-commit==3.2.1",
-  "pylint==2.17.3",
   "pytest==7.2.2",
+  "ruff>=0.9",
 ]
 
 [tool.setuptools.packages.find]
@@ -47,25 +47,27 @@ libsigopt = ["py.typed"]
 check_untyped_defs = true
 follow_imports = "silent"
 
-[tool.black]
+[tool.ruff]
 line-length = 120
+target-version = "py313"
 
-[tool.isort]
-combine_star = true
-force_grid_wrap = 0
-include_trailing_comma = true
-indent = '  '
-known_test = "testaux,testcompute"
-known_first_party = "libsigopt"
-known_third_party = "numpy"
-line_length = 120
-lines_after_imports = 2
-sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER,TEST"
-use_parentheses = true
-# Prefer Vertical Hanging Indent style (3)
-# from package import (
-#   item1,
-#   item2,
-# )
-# https://github.com/timothycrosley/isort#multi-line-output-modes
-multi_line_output = 3
+[tool.ruff.lint]
+# E: pycodestyle
+# F: Pyflakes
+# I: isort
+# W: pycodestyle warnings
+select = ["E", "F", "I", "W"]
+ignore = [
+  "E402", "E501", "E731", "E741",
+  "F401", "F403", "F405",
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-first-party = ["libsigopt"]
+known-third-party = ["numpy"]
+lines-after-imports = 2
+section-order = ["future", "standard-library", "third-party", "first-party", "local-folder", "tests"]
+
+[tool.ruff.lint.isort.sections]
+tests = ["testaux", "testcompute"]
