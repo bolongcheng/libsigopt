@@ -1,27 +1,71 @@
 [build-system]
-requires = ["setuptools"]
+requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "libsigopt"
+version = "1.0.0"
+description = "SigOpt computation libraries"
+readme = "README.md"
+requires-python = ">=3.13"
+license = {text = "Apache-2.0"}
+authors = [
+  {name = "SigOpt", email = "support@sigopt.com"}
+]
+classifiers = [
+  "Development Status :: 5 - Production/Stable"
+]
+dependencies = [
+  "jsonschema>=3.0.1,<4",
+  "numpy>=2.1",
+  "qmcpy>=1.2",
+  "scipy>=1.14",
+  "typing-extensions>=4.5.0,<5",
+]
+
+[project.urls]
+Homepage = "https://sigopt.org"
+
+[dependency-groups]
+dev = [
+  "build==0.10.0",
+  "flaky==3.7.0",
+  "mock==2.0.0",
+  "pre-commit==3.2.1",
+  "pylint==2.17.3",
+  "pytest==7.2.2",
+]
+
+[tool.setuptools.packages.find]
+include = ["libsigopt*"]
+exclude = ["test*"]
+
+[tool.setuptools.package-data]
+libsigopt = ["py.typed"]
+
+[tool.mypy]
+check_untyped_defs = true
+follow_imports = "silent"
 
 [tool.black]
 line-length = 120
 
 [tool.isort]
-combine_star=true
-force_grid_wrap=0
-include_trailing_comma=true
-indent='  '
-known_test="testaux,testcompute"
-known_first_party="libsigopt"
-known_third_party="numpy"
-line_length=120
-lines_after_imports=2
-sections="FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER,TEST"
-use_parentheses=true
-
+combine_star = true
+force_grid_wrap = 0
+include_trailing_comma = true
+indent = '  '
+known_test = "testaux,testcompute"
+known_first_party = "libsigopt"
+known_third_party = "numpy"
+line_length = 120
+lines_after_imports = 2
+sections = "FUTURE,STDLIB,THIRDPARTY,FIRSTPARTY,LOCALFOLDER,TEST"
+use_parentheses = true
 # Prefer Vertical Hanging Indent style (3)
 # from package import (
 #   item1,
 #   item2,
 # )
 # https://github.com/timothycrosley/isort#multi-line-output-modes
-multi_line_output=3
+multi_line_output = 3
