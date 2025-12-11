@@ -6,10 +6,10 @@ SPDX-License-Identifier: Apache License 2.0
 
 ## Build
 
-1. Update version in `setup.cfg`
+1. Update version in `pyproject.toml`
 2. Create new branch and push to Github
 3. Ensure nothing is left from old builds: `rm -rf dist; rm -rf libsigopt.egg-info/`
-4. Build package: `python -m build`
+4. Build package: `uv build`
 
 ## Upload
 
