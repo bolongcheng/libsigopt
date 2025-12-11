@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import random
+import secrets
 from dataclasses import dataclass
 
 import numpy
@@ -155,7 +155,7 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
   if phase == NOT_MULTIMETRIC:
     multimetric_info = MULTIMETRIC_INFO_NOT_MULTIMETRIC
   elif phase == INITIALIZATION:
-    initialization_phase = random.choice((OPTIMIZING_ONE_METRIC_OPTIMIZE_0, OPTIMIZING_ONE_METRIC_OPTIMIZE_1))
+    initialization_phase = secrets.choice((OPTIMIZING_ONE_METRIC_OPTIMIZE_0, OPTIMIZING_ONE_METRIC_OPTIMIZE_1))
     multimetric_info = form_multimetric_info_from_phase(initialization_phase, {})
   elif phase in (OPTIMIZING_ONE_METRIC_OPTIMIZE_0, OPTIMIZING_ONE_METRIC_OPTIMIZE_1):
     if phase == OPTIMIZING_ONE_METRIC_OPTIMIZE_0:
@@ -177,7 +177,7 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
     multimetric_info = MultimetricInfo(method=EPSILON_CONSTRAINT, params=params)
   else:
     assert phase == COMPLETION
-    completion_phase = random.choice((EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1))
+    completion_phase = secrets.choice((EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1))
     phase_kwargs = {"fraction_of_phase_completed": numpy.random.random()}
     multimetric_info = form_multimetric_info_from_phase(completion_phase, phase_kwargs)
 
@@ -329,6 +329,7 @@ def force_minimum_successful_points(optimizing_metric, points_sampled_values, po
   return modified_points_sampled_failures
 
 
+# pylint: disable=too-many-positional-arguments
 def filter_convex_combination(
   multimetric_info,
   points_sampled_points,
@@ -567,3 +568,6 @@ def filter_multimetric_points_sampled_spe(
   if multimetric_info.method != EPSILON_CONSTRAINT:
     modified_points_sampled_values[points_sampled_failures] = modified_lie_value
   return modified_points_sampled_points, modified_points_sampled_values
+
+
+# pylint: enable=too-many-positional-arguments
