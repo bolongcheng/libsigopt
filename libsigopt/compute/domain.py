@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
-from typing import Literal, Sequence, NotRequired, TypedDict
+from typing import Literal, NotRequired, Sequence, TypedDict
 
 import numpy
 from scipy.spatial.distance import cdist
