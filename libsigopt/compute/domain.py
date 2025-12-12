@@ -5,12 +5,11 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
-from typing import Literal, Sequence
+from typing import Literal, NotRequired, Sequence, TypedDict
 
 import numpy
 from scipy.spatial.distance import cdist
 from scipy.stats import beta, truncnorm
-from typing_extensions import NotRequired, TypedDict
 
 from libsigopt.aux.constant import (
   CATEGORICAL_EXPERIMENT_PARAMETER_NAME,

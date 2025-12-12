@@ -210,7 +210,7 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
 
   def _compute_probability_of_success(self, failure_components):
     assert isinstance(failure_components, FailureListProductComponents)
-    return numpy.product(failure_components.poss, axis=0)
+    return numpy.prod(failure_components.poss, axis=0)
 
   def _compute_grad_probability_of_success(self, failure_components):
     assert isinstance(failure_components, FailureListProductComponents)
@@ -221,5 +221,5 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
     for i in range(self.num_pfs):
       mask_array = numpy.ones(self.num_pfs, dtype=bool)
       mask_array[i] = False
-      grad += grad_poss[i] * numpy.product(poss[mask_array], axis=0)[:, None]
+      grad += grad_poss[i] * numpy.prod(poss[mask_array], axis=0)[:, None]
     return grad

@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy
-import qmcpy
+import scipy.stats.qmc as qmc
 
 from libsigopt.aux.geometry_utils import find_interior_point
 
@@ -151,14 +151,18 @@ def generate_latin_hypercube_points(num_points, dimension, skip, seed):
 
 @unit_cube_sampler_transform_decorator
 def generate_halton_points(num_points, dimension, skip, seed):
-  halton = qmcpy.Halton(dimension=dimension, generalize=True, randomize=True, seed=seed)
-  return halton.gen_samples(n_min=skip, n_max=skip + num_points)
+  halton = qmc.Halton(d=dimension, scramble=True, seed=seed)
+  if skip > 0:
+    halton.fast_forward(skip)
+  return halton.random(n=num_points)
 
 
 @unit_cube_sampler_transform_decorator
 def generate_sobol_points(num_points, dimension, skip, seed):
-  sobol = qmcpy.Sobol(dimension=dimension, randomize="LMS", graycode=True, seed=seed)
-  return sobol.gen_samples(n_min=skip, n_max=skip + num_points)
+  sobol = qmc.Sobol(d=dimension, scramble=True, seed=seed)
+  if skip > 0:
+    sobol.fast_forward(skip)
+  return sobol.random(n=num_points)
 
 
 def generate_grid_points(points_per_dimension, domain_bounds):

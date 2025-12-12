@@ -26,18 +26,12 @@ repos:
       - id: copyright-license-disclaimer
         args: ["--license=Apache License 2.0", "--owner=Intel Corporation"]
       - id: sigoptlint-python
-  - repo: https://github.com/PyCQA/isort.git
-    rev: "6.0.1"
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.9.0
     hooks:
-      - id: isort
-  - repo: https://github.com/sigopt/black.git
-    rev: sigopt-22.10.0
-    hooks:
-      - id: black
-  - repo: https://github.com/pycqa/flake8
-    rev: 7.3.0
-    hooks:
-      - id: flake8
+      - id: ruff
+        args: [ --fix ]
+      - id: ruff-format
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: "v1.16.1"
     hooks:
@@ -45,11 +39,3 @@ repos:
         entry: mypy
         additional_dependencies:
           - types-mock
-  - repo: local
-    hooks:
-      - id: pylint
-        name: pylint
-        entry: env PYTHONPATH=./test pylint
-        language: system
-        types: [python]
-        args: ["-rn", "-sn"]

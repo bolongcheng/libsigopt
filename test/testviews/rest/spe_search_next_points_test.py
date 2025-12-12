@@ -4,9 +4,9 @@
 # pylint: disable=too-many-positional-arguments
 import numpy
 import pytest
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from libsigopt.views.rest.spe_search_next_points import SPESearchNextPoints
+from testviews.zigopt_input_utils import ZigoptSimulator
 
 
 class TestSearchNextPoints(object):

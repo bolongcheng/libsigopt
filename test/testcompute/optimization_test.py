@@ -184,7 +184,10 @@ class TestOptimizer(NumericalTestCase):
     domain.set_constraint_list([{"weights": numpy.array([-1, -1, -1]), "rhs": -1}])
     slsqp_optimizer = SLSQPOptimizer(domain, self.polynomial, DEFAULT_SLSQP_PARAMETERS)
 
-    constrained_optimum_point = numpy.full_like(self.polynomial.optimum_point, 1 / 3)
+    constrained_optimum_point = numpy.full_like(
+      self.polynomial.optimum_point,
+      (1 - DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS) / 3,
+    )
 
     tolerance = 5.0e-9
     initial_guess = numpy.full(self.polynomial.dim, 0.2)
