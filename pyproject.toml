@@ -62,7 +62,6 @@ ignore = [
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-first-party = ["libsigopt"]
-known-third-party = ["numpy"]
 lines-after-imports = 2
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder", "tests"]
 
