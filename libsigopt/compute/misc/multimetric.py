@@ -4,7 +4,7 @@
 import secrets
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 
 from libsigopt.aux.multimetric import find_pareto_frontier_observations_for_maximization
 from libsigopt.aux.samplers import generate_grid_points, generate_halton_points
@@ -21,7 +21,7 @@ MULTIMETRIC_INITIALIZATION = "initialization"
 
 @dataclass(frozen=True, slots=True)
 class ConvexCombinationParams:
-    weights: numpy.ndarray
+    weights: np.ndarray
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -125,10 +125,10 @@ def identify_multimetric_phase(
 # We consider only 100 possible weights and choose from among them, rather than something budget-dependent
 def form_convex_combination_weights(phase, fraction_of_phase_completed):
     if not (0 <= fraction_of_phase_completed <= 1):  # Shouldn't be an issue, but just in case
-        fraction_of_phase_completed = numpy.random.random()
+        fraction_of_phase_completed = np.random.random()
 
     assert phase in (CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL)
-    interval = numpy.array([[BORDER_BUFFER, 1 - BORDER_BUFFER]])
+    interval = np.array([[BORDER_BUFFER, 1 - BORDER_BUFFER]])
     weight_index = int(100 * fraction_of_phase_completed)
 
     if phase == CONVEX_COMBINATION_RANDOM_SPREAD:
@@ -137,14 +137,14 @@ def form_convex_combination_weights(phase, fraction_of_phase_completed):
         all_weights = generate_grid_points(101, interval)[:, 0]
 
     weight = all_weights[weight_index]
-    return numpy.array([weight, 1 - weight])
+    return np.array([weight, 1 - weight])
 
 
 def form_epsilon_constraint_epsilon(fraction_of_phase_completed):
     if not (0 <= fraction_of_phase_completed <= 1):  # Shouldn't be an issue, but just in case
-        fraction_of_phase_completed = numpy.random.random()
+        fraction_of_phase_completed = np.random.random()
 
-    interval = numpy.array([[BORDER_BUFFER, 1 - BORDER_BUFFER]])
+    interval = np.array([[BORDER_BUFFER, 1 - BORDER_BUFFER]])
     epsilon_index = int(100 * fraction_of_phase_completed)
     all_epsilons = generate_grid_points(101, interval)[:, 0]
     return all_epsilons[epsilon_index]
@@ -178,7 +178,7 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
     else:
         assert phase == COMPLETION
         completion_phase = secrets.choice((EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1))
-        phase_kwargs = {"fraction_of_phase_completed": numpy.random.random()}
+        phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
         multimetric_info = form_multimetric_info_from_phase(completion_phase, phase_kwargs)
 
     return multimetric_info
@@ -186,9 +186,9 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
 
 # Requires that values already be clean of nan/inf
 def _find_sorted_pareto_frontier_values_minimization(values):
-    pareto_ind, _ = find_pareto_frontier_observations_for_maximization(-values, numpy.arange(len(values)))
+    pareto_ind, _ = find_pareto_frontier_observations_for_maximization(-values, np.arange(len(values)))
     pareto_values = values[pareto_ind, :]
-    sort_ind = numpy.argsort(pareto_values[:, 0])
+    sort_ind = np.argsort(pareto_values[:, 0])
     return pareto_values[sort_ind, :]
 
 
@@ -232,9 +232,9 @@ def find_epsilon_constraint_value(
 
 
 def _find_epsilon_constraint_value_no_bounds(epsilon_fraction, constraint_metric, points_sampled_values):
-    best_points = numpy.nanargmin(points_sampled_values, 0)
-    min_bound = numpy.nanmin(points_sampled_values[best_points, constraint_metric])
-    max_bound = numpy.nanmax(points_sampled_values[best_points, constraint_metric])
+    best_points = np.nanargmin(points_sampled_values, 0)
+    min_bound = np.nanmin(points_sampled_values[best_points, constraint_metric])
+    max_bound = np.nanmax(points_sampled_values[best_points, constraint_metric])
     return (1 - epsilon_fraction) * min_bound + epsilon_fraction * max_bound
 
 
@@ -245,14 +245,14 @@ def _find_epsilon_constraint_value_with_bounds(
     points_sampled_values,
     metric_thresholds,
 ):
-    clean_values = points_sampled_values[numpy.all(numpy.isfinite(points_sampled_values), axis=1), :]
-    in_bounds = numpy.full(len(clean_values), True, dtype=bool)
+    clean_values = points_sampled_values[np.all(np.isfinite(points_sampled_values), axis=1), :]
+    in_bounds = np.full(len(clean_values), True, dtype=bool)
     if metric_thresholds[0] is not None:
         in_bounds *= clean_values[:, 0] < metric_thresholds[0]
     if metric_thresholds[1] is not None:
         in_bounds *= clean_values[:, 1] < metric_thresholds[1]
 
-    if numpy.sum(in_bounds) < MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS:
+    if np.sum(in_bounds) < MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS:
         return _find_epsilon_constraint_value_no_bounds(epsilon_fraction, constraint_metric, points_sampled_values)
 
     sorted_pareto = _find_sorted_pareto_frontier_values_minimization(clean_values)
@@ -294,7 +294,7 @@ def _create_epsilon_constraint_failures(
     assert len(points_sampled_values.shape) == 2, f"{points_sampled_values.shape} is not a 2D array"
     assert constraint_metric in (0, 1)
 
-    successful_points = points_sampled_values[numpy.logical_not(points_sampled_failures), :]
+    successful_points = points_sampled_values[np.logical_not(points_sampled_failures), :]
 
     epsilon_constraint_value = find_epsilon_constraint_value(epsilon, constraint_metric, successful_points)
     epsilon_constraint_failures = points_sampled_values[:, constraint_metric] >= epsilon_constraint_value
@@ -315,13 +315,13 @@ def force_minimum_successful_points(optimizing_metric, points_sampled_values, po
     assert points_sampled_values.shape[0] == len(points_sampled_failures)
     assert optimizing_metric in (0, 1)
 
-    modified_points_sampled_failures = numpy.copy(points_sampled_failures)
+    modified_points_sampled_failures = np.copy(points_sampled_failures)
     num_successful = sum(~points_sampled_failures)
     if num_successful < MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS:
         diff = MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS - num_successful
 
-        failures_index = numpy.nonzero(points_sampled_failures)[0]
-        order_index = numpy.argsort(points_sampled_values[failures_index, optimizing_metric])[:diff]
+        failures_index = np.nonzero(points_sampled_failures)[0]
+        order_index = np.argsort(points_sampled_values[failures_index, optimizing_metric])[:diff]
 
         index = failures_index[order_index]
         modified_points_sampled_failures[index] = False
@@ -338,12 +338,12 @@ def filter_convex_combination(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
+    modified_points_sampled_points = np.copy(points_sampled_points)
 
     weights = multimetric_info.params.weights
-    modified_points_sampled_values = numpy.dot(points_sampled_values, weights)
-    modified_points_sampled_value_vars = numpy.dot(points_sampled_value_vars, weights**2)
-    modified_lie_value = numpy.dot(lie_values, weights)
+    modified_points_sampled_values = np.dot(points_sampled_values, weights)
+    modified_points_sampled_value_vars = np.dot(points_sampled_value_vars, weights**2)
+    modified_lie_value = np.dot(lie_values, weights)
     return (
         modified_points_sampled_points,
         modified_points_sampled_values,
@@ -360,10 +360,10 @@ def filter_convex_combination_sum_of_gps(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
-    modified_points_sampled_values = numpy.copy(points_sampled_values)
-    modified_points_sampled_value_vars = numpy.copy(points_sampled_value_vars)
-    modified_lie_value = numpy.copy(lie_values)
+    modified_points_sampled_points = np.copy(points_sampled_points)
+    modified_points_sampled_values = np.copy(points_sampled_values)
+    modified_points_sampled_value_vars = np.copy(points_sampled_value_vars)
+    modified_lie_value = np.copy(lie_values)
     return (
         modified_points_sampled_points,
         modified_points_sampled_values,
@@ -380,7 +380,7 @@ def filter_epsilon_contraint(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
+    modified_points_sampled_points = np.copy(points_sampled_points)
 
     epsilon = multimetric_info.params.epsilon
     optimizing_metric = multimetric_info.params.optimizing_metric
@@ -398,8 +398,8 @@ def filter_epsilon_contraint(
         points_sampled_values,
         modified_points_sampled_failures,
     )
-    modified_points_sampled_values = numpy.copy(points_sampled_values[:, optimizing_metric])
-    modified_points_sampled_value_vars = numpy.copy(points_sampled_value_vars[:, optimizing_metric])
+    modified_points_sampled_values = np.copy(points_sampled_values[:, optimizing_metric])
+    modified_points_sampled_value_vars = np.copy(points_sampled_value_vars[:, optimizing_metric])
 
     modified_points_sampled_values[modified_points_sampled_failures] = lie_values[optimizing_metric]
     modified_lie_value = lie_values[optimizing_metric]
@@ -420,7 +420,7 @@ def filter_probabilistic_failure(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
+    modified_points_sampled_points = np.copy(points_sampled_points)
     epsilon = multimetric_info.params.epsilon
     optimizing_metric = multimetric_info.params.optimizing_metric
     constraint_metric = multimetric_info.params.constraint_metric
@@ -435,11 +435,11 @@ def filter_probabilistic_failure(
         points_sampled_values,
         modified_points_sampled_failures,
     )
-    modified_points_sampled_points = numpy.copy(points_sampled_points[~modified_points_sampled_failures, :])
-    modified_points_sampled_values = numpy.copy(
+    modified_points_sampled_points = np.copy(points_sampled_points[~modified_points_sampled_failures, :])
+    modified_points_sampled_values = np.copy(
         points_sampled_values[~modified_points_sampled_failures, optimizing_metric]
     )
-    modified_points_sampled_value_vars = numpy.copy(
+    modified_points_sampled_value_vars = np.copy(
         points_sampled_value_vars[~modified_points_sampled_failures, optimizing_metric]
     )
     modified_lie_value = lie_values[optimizing_metric]
@@ -460,10 +460,10 @@ def filter_optimizing_one_metric(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
+    modified_points_sampled_points = np.copy(points_sampled_points)
     optimizing_metric = multimetric_info.params.optimizing_metric
-    modified_points_sampled_values = numpy.copy(points_sampled_values[:, optimizing_metric])
-    modified_points_sampled_value_vars = numpy.copy(points_sampled_value_vars[:, optimizing_metric])
+    modified_points_sampled_values = np.copy(points_sampled_values[:, optimizing_metric])
+    modified_points_sampled_value_vars = np.copy(points_sampled_value_vars[:, optimizing_metric])
     modified_lie_value = lie_values[optimizing_metric]
     return (
         modified_points_sampled_points,
@@ -481,9 +481,9 @@ def filter_not_multimetric(
     points_sampled_failures,
     lie_values,
 ):
-    modified_points_sampled_points = numpy.copy(points_sampled_points)
-    modified_points_sampled_values = numpy.copy(points_sampled_values[:, 0])
-    modified_points_sampled_value_vars = numpy.copy(points_sampled_value_vars[:, 0])
+    modified_points_sampled_points = np.copy(points_sampled_points)
+    modified_points_sampled_values = np.copy(points_sampled_values[:, 0])
+    modified_points_sampled_value_vars = np.copy(points_sampled_value_vars[:, 0])
     modified_lie_value = lie_values[0]
     return (
         modified_points_sampled_points,
@@ -499,7 +499,7 @@ arrays according to different multimetric optimization methods. The method is de
 of single metric optimization.
 
 NOTE: The input is being referenced not copied to create all "modified_" output.
-Due to fear of input being reused after calling this function, I have just numpy.copy() everything.
+Due to fear of input being reused after calling this function, I have just np.copy() everything.
 TODO(RTL-133): Consider if historical_data creation can be absorbed into the view object.
 The encapsulation will prevent the input from being reused.
 """
@@ -566,7 +566,7 @@ def filter_multimetric_points_sampled_spe(
         multimetric_info,
         points_sampled_points,
         points_sampled_values,
-        numpy.empty_like(points_sampled_values),
+        np.empty_like(points_sampled_values),
         points_sampled_failures,
         lie_values,
     )

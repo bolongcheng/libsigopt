@@ -4,7 +4,7 @@
 """Tests for the Python optimization module (null, gradient descent, and multistarting) using a simple polynomial
 objective."""
 
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.compute.domain import DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS, ContinuousDomain
@@ -31,8 +31,8 @@ class QuadraticFunction(ScipyOptimizable):
 
     def __init__(self, maxima_point, current_point):
         """Create an instance of QuadraticFunction with the specified maxima."""
-        self._maxima_point = numpy.copy(maxima_point)
-        self._current_point = numpy.copy(current_point)
+        self._maxima_point = np.copy(maxima_point)
+        self._current_point = np.copy(current_point)
 
     @property
     def dim(self):
@@ -47,17 +47,17 @@ class QuadraticFunction(ScipyOptimizable):
     @property
     def optimum_point(self):
         """Return the argmax_x (f(x)), the point at which the global maximum occurs."""
-        return numpy.copy(self._maxima_point)
+        return np.copy(self._maxima_point)
 
     @property
     def differentiable(self):
         return True
 
     def get_current_point(self):
-        return numpy.copy(self._current_point)
+        return np.copy(self._current_point)
 
     def set_current_point(self, current_point):
-        self._current_point = numpy.copy(current_point)
+        self._current_point = np.copy(current_point)
 
     current_point = property(get_current_point, set_current_point)
 
@@ -91,8 +91,8 @@ class TestOptimizer(NumericalTestCase):
         large_domain_bounds = [[-1.0, 1.0]] * cls.dim
         cls.large_domain = ContinuousDomain(large_domain_bounds)
 
-        maxima_point = numpy.full(cls.dim, 0.5)
-        current_point = numpy.zeros(cls.dim)
+        maxima_point = np.full(cls.dim, 0.5)
+        current_point = np.zeros(cls.dim)
         cls.polynomial = QuadraticFunction(maxima_point, current_point)
 
     def test_lbfgsb_default_parameters(self):
@@ -131,7 +131,7 @@ class TestOptimizer(NumericalTestCase):
                 bounded_optimum_point[i] = bounds[0]
 
         tolerance = 5.0e-9
-        initial_guess = numpy.full(self.polynomial.dim, 0.2)
+        initial_guess = np.full(self.polynomial.dim, 0.2)
         slsqp_optimizer.objective_function.current_point = initial_guess
         initial_value = slsqp_optimizer.objective_function.compute_objective_function()
         slsqp_optimizer.optimize()
@@ -152,13 +152,13 @@ class TestOptimizer(NumericalTestCase):
     def test_slsqp_optimizer_constrained(self):
         domain_bounds = [[0, 1], [0, 1], [0, 1]]
         domain = ContinuousDomain(domain_bounds)
-        domain.set_constraint_list([{"weights": numpy.array([-1, -1, -1]), "rhs": -1.6}])
+        domain.set_constraint_list([{"weights": np.array([-1, -1, -1]), "rhs": -1.6}])
         slsqp_optimizer = SLSQPOptimizer(domain, self.polynomial, DEFAULT_SLSQP_PARAMETERS)
 
         constrained_optimum_point = self.polynomial.optimum_point
 
         tolerance = 5.0e-9
-        initial_guess = numpy.full(self.polynomial.dim, 0.2)
+        initial_guess = np.full(self.polynomial.dim, 0.2)
         slsqp_optimizer.objective_function.current_point = initial_guess
         initial_value = slsqp_optimizer.objective_function.compute_objective_function()
         slsqp_optimizer.optimize()
@@ -181,16 +181,16 @@ class TestOptimizer(NumericalTestCase):
             self.assert_scalar_within_relative(gradient[i], 0.0, tolerance)
 
         # set global optimal to be outside of feasible region
-        domain.set_constraint_list([{"weights": numpy.array([-1, -1, -1]), "rhs": -1}])
+        domain.set_constraint_list([{"weights": np.array([-1, -1, -1]), "rhs": -1}])
         slsqp_optimizer = SLSQPOptimizer(domain, self.polynomial, DEFAULT_SLSQP_PARAMETERS)
 
-        constrained_optimum_point = numpy.full_like(
+        constrained_optimum_point = np.full_like(
             self.polynomial.optimum_point,
             (1 - DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS) / 3,
         )
 
         tolerance = 5.0e-9
-        initial_guess = numpy.full(self.polynomial.dim, 0.2)
+        initial_guess = np.full(self.polynomial.dim, 0.2)
         slsqp_optimizer.objective_function.current_point = initial_guess
         initial_value = slsqp_optimizer.objective_function.compute_objective_function()
         slsqp_optimizer.optimize()
@@ -218,7 +218,7 @@ class TestOptimizer(NumericalTestCase):
             multistart_optimizer.optimize(selected_starts=points)
             raise RuntimeError  # Just while we have deactivated the optimization monitoring
 
-        points_with_opt = numpy.append(points, self.polynomial.optimum_point.reshape((1, self.polynomial.dim)), axis=0)
+        points_with_opt = np.append(points, self.polynomial.optimum_point.reshape((1, self.polynomial.dim)), axis=0)
         slsqp_optimizer_okay = SLSQPOptimizer(self.domain, self.polynomial, DEFAULT_SLSQP_PARAMETERS)
         multistart_optimizer = MultistartOptimizer(slsqp_optimizer_okay, 0)
         test_best_point, _ = multistart_optimizer.optimize(selected_starts=points_with_opt)
@@ -239,16 +239,16 @@ class TestOptimizer(NumericalTestCase):
         optimum_point = self.polynomial.optimum_point
         self.polynomial.current_point = optimum_point
         gradient = self.polynomial.compute_grad_objective_function()
-        self.assert_vector_within_relative(gradient, numpy.zeros(self.polynomial.dim), 0.0)
+        self.assert_vector_within_relative(gradient, np.zeros(self.polynomial.dim), 0.0)
 
         # Verify that the optimizer does not move from the optima if we start it there.
         optimizer = optimizer_class(self.domain, self.polynomial, optimizer_parameters)
         optimizer.optimize()
         output = optimizer.objective_function.current_point
-        self.assert_vector_within_relative(output, optimum_point, 2.0 * numpy.finfo(numpy.float64).eps)
+        self.assert_vector_within_relative(output, optimum_point, 2.0 * np.finfo(np.float64).eps)
 
         # Start at a wrong point and check optimization
-        initial_guess = numpy.full(self.polynomial.dim, 0.2)
+        initial_guess = np.full(self.polynomial.dim, 0.2)
         optimizer.objective_function.current_point = initial_guess
         optimizer.optimize()
         output = optimizer.objective_function.current_point
@@ -261,7 +261,7 @@ class TestOptimizer(NumericalTestCase):
 
         # Verify derivative
         gradient = self.polynomial.compute_grad_objective_function()
-        self.assert_vector_within_relative(gradient, numpy.zeros(self.polynomial.dim), tolerance)
+        self.assert_vector_within_relative(gradient, np.zeros(self.polynomial.dim), tolerance)
 
     @pytest.mark.parametrize(
         "optimizer_class, optimizer_parameters",
@@ -288,7 +288,7 @@ class TestOptimizer(NumericalTestCase):
 
         # Verify derivative
         gradient = self.polynomial.compute_grad_objective_function()
-        self.assert_vector_within_relative(gradient, numpy.zeros(self.polynomial.dim), tolerance)
+        self.assert_vector_within_relative(gradient, np.zeros(self.polynomial.dim), tolerance)
 
         # Verify all the results have been recorded for each category
         assert len(all_results.starting_points) == len(all_results.ending_points) == len(all_results.function_values)

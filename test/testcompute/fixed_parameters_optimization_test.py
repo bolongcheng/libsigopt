@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.compute.covariance import C2RadialMatern, SquareExponential
@@ -24,12 +24,12 @@ class TestVectorizedOptimizersWithFixedParameters(NumericalTestCase):
         fixed_indices = {0: 1, 3: -1}
         domain = FixedIndicesOnContinuousDomain(cat_domain.one_hot_domain, fixed_indices)
 
-        true_sol = numpy.zeros(5)
+        true_sol = np.zeros(5)
         af = QuadraticFunction(domain, true_sol)
         optimizer = DEOptimizer(acquisition_function=af, domain=domain, num_multistarts=30, maxiter=100)
-        best_solution, _ = optimizer.optimize(numpy.atleast_2d(true_sol))
+        best_solution, _ = optimizer.optimize(np.atleast_2d(true_sol))
 
-        fixed_sol_full = numpy.array([1, 0, 0, -1, 0])
+        fixed_sol_full = np.array([1, 0, 0, -1, 0])
         self.assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
 
     def test_constrained_optimization(self):
@@ -47,12 +47,12 @@ class TestVectorizedOptimizersWithFixedParameters(NumericalTestCase):
         fixed_indices = {0: 1, 3: -1}
         domain = FixedIndicesOnContinuousDomain(cat_domain.one_hot_domain, fixed_indices)
 
-        true_sol = numpy.ones(5) * 0.5
+        true_sol = np.ones(5) * 0.5
         af = QuadraticFunction(domain, true_sol)
         optimizer = DEOptimizer(acquisition_function=af, domain=domain, num_multistarts=30, maxiter=100)
-        best_solution, _ = optimizer.optimize(numpy.atleast_2d(true_sol))
+        best_solution, _ = optimizer.optimize(np.atleast_2d(true_sol))
 
-        fixed_sol_full = numpy.array([1, 0.5, 0.5, -1, 0.5])
+        fixed_sol_full = np.array([1, 0.5, 0.5, -1, 0.5])
         self.assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
 
 
@@ -84,8 +84,8 @@ class TestAcquisitionFunctionWithFixedParameters(NumericalTestCase):
         cls.mtcov = MultitaskTensorCovariance(list_hyps, C2RadialMatern, SquareExponential)
 
         x = cls.domain.generate_quasi_random_points_in_domain(14)
-        y = numpy.sum(x**2, axis=1)
-        v = numpy.full_like(y, 1e-3)
+        y = np.sum(x**2, axis=1)
+        v = np.full_like(y, 1e-3)
         cls.data = HistoricalData(cls.domain.dim)
         cls.data.append_historical_data(x, y, v)
 

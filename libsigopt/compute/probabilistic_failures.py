@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 
 from libsigopt.compute.predictor import HasPredictor, PredictorCoreComponents
 
@@ -14,15 +14,15 @@ DEFAULT_KAPPA = 1
 
 @dataclass(frozen=True, slots=True)
 class FailureComponents:
-    exponential: numpy.ndarray
-    denominator: numpy.ndarray
+    exponential: np.ndarray
+    denominator: np.ndarray
     core_components: PredictorCoreComponents
 
 
 @dataclass(frozen=True, slots=True)
 class FailureListProductComponents:
-    poss: numpy.ndarray
-    grad_poss: numpy.ndarray | None
+    poss: np.ndarray
+    grad_poss: np.ndarray | None
 
 
 class ProbabilisticFailuresBase(object):
@@ -79,13 +79,13 @@ class ProbabilisticFailures(HasPredictor, ProbabilisticFailuresBase):
     def __init__(self, predictor, threshold):
         super().__init__(predictor)
         assert threshold is not None
-        assert not numpy.isnan(threshold)
+        assert not np.isnan(threshold)
         self.threshold = threshold
-        points_sampled_values_range = numpy.ptp(self.predictor.points_sampled_value)
+        points_sampled_values_range = np.ptp(self.predictor.points_sampled_value)
         if points_sampled_values_range == 0:
             self.kappa = DEFAULT_KAPPA
         else:
-            self.kappa = numpy.log(9) / (0.1 * points_sampled_values_range)
+            self.kappa = np.log(9) / (0.1 * points_sampled_values_range)
 
     def __repr__(self):
         return f"Logistic function: (1.0 + exp({self.kappa} * (mu(x) - {self.threshold})))^-1"
@@ -105,7 +105,7 @@ class ProbabilisticFailures(HasPredictor, ProbabilisticFailuresBase):
     def compute_failure_components(self, points_to_evaluate, option):
         self.verify_points_to_evaluate(points_to_evaluate)
         core_components = self.compute_core_components(points_to_evaluate, option)
-        exponential = numpy.exp(numpy.fmin(self.kappa * (core_components.mean - self.threshold), POSITIVE_EXPONENT_CAP))
+        exponential = np.exp(np.fmin(self.kappa * (core_components.mean - self.threshold), POSITIVE_EXPONENT_CAP))
         denominator = 1 + exponential
         return FailureComponents(exponential, denominator, core_components)
 
@@ -126,7 +126,7 @@ class ProbabilisticFailuresCDF(HasPredictor, ProbabilisticFailuresBase):
     def __init__(self, predictor, threshold):
         super().__init__(predictor)
         assert threshold is not None
-        assert not numpy.isnan(threshold)
+        assert not np.isnan(threshold)
         self.threshold = threshold
         # NOTE: setting self.best_value to the threshold allows to leverage the computation
         # of core_compoments in HasPredictor
@@ -149,7 +149,7 @@ class ProbabilisticFailuresCDF(HasPredictor, ProbabilisticFailuresBase):
     def compute_failure_components(self, points_to_evaluate, option):
         self.verify_points_to_evaluate(points_to_evaluate)
         core_components = self.compute_core_components(points_to_evaluate, option)
-        return FailureComponents(numpy.array(0), numpy.array(0), core_components)
+        return FailureComponents(np.array(0), np.array(0), core_components)
 
     def _compute_probability_of_success(self, failure_components):
         assert isinstance(failure_components, FailureComponents)
@@ -196,13 +196,13 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
     def compute_failure_components(self, points_to_evaluate, option):
         poss = grad_poss = None
         if option in ("func",):
-            poss = numpy.zeros((self.num_pfs, len(points_to_evaluate)))
+            poss = np.zeros((self.num_pfs, len(points_to_evaluate)))
             for i, pf in enumerate(self.list_of_probabilistic_failures):
                 poss[i] = pf.compute_probability_of_success(points_to_evaluate)
             return FailureListProductComponents(poss, None)
         if option in ("grad", "both"):
-            poss = numpy.zeros((self.num_pfs, len(points_to_evaluate)))
-            grad_poss = numpy.zeros((self.num_pfs, len(points_to_evaluate), self.dim))
+            poss = np.zeros((self.num_pfs, len(points_to_evaluate)))
+            grad_poss = np.zeros((self.num_pfs, len(points_to_evaluate), self.dim))
             for i, pf in enumerate(self.list_of_probabilistic_failures):
                 poss[i], grad_poss[i] = pf.joint_function_gradient_eval(points_to_evaluate)
             return FailureListProductComponents(poss, grad_poss)
@@ -210,16 +210,16 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
 
     def _compute_probability_of_success(self, failure_components):
         assert isinstance(failure_components, FailureListProductComponents)
-        return numpy.prod(failure_components.poss, axis=0)
+        return np.prod(failure_components.poss, axis=0)
 
     def _compute_grad_probability_of_success(self, failure_components):
         assert isinstance(failure_components, FailureListProductComponents)
         poss = failure_components.poss
         assert failure_components.grad_poss is not None
         grad_poss = failure_components.grad_poss
-        grad = numpy.zeros(grad_poss[0].shape)
+        grad = np.zeros(grad_poss[0].shape)
         for i in range(self.num_pfs):
-            mask_array = numpy.ones(self.num_pfs, dtype=bool)
+            mask_array = np.ones(self.num_pfs, dtype=bool)
             mask_array[i] = False
-            grad += grad_poss[i] * numpy.prod(poss[mask_array], axis=0)[:, None]
+            grad += grad_poss[i] * np.prod(poss[mask_array], axis=0)[:, None]
         return grad

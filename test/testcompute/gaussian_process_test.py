@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 from flaky import flaky
 
 from libsigopt.compute.misc.constant import CONSTANT_LIAR_MAX, CONSTANT_LIAR_MEAN
@@ -34,14 +34,14 @@ class TestGaussianProcess(GaussianProcessTestCase):
                 gp.compute_mean_of_points,
                 gp.compute_grad_mean_of_points,
                 tol=1e-4,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )
             self.check_gradient_with_finite_difference(
                 xt,
                 gp.compute_variance_of_points,
                 gp.compute_grad_variance_of_points,
                 tol=1e-4,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )
 
     def test_posterior_sampling(self, gaussian_process_list):
@@ -56,12 +56,12 @@ class TestGaussianProcess(GaussianProcessTestCase):
             num_posterior_samples = 1000
             num_points = 50
 
-            lower = numpy.min(gp.points_sampled, axis=0)
-            upper = numpy.max(gp.points_sampled, axis=0)
-            points_to_check = numpy.random.uniform(lower, upper, size=(num_points, len(upper)))
+            lower = np.min(gp.points_sampled, axis=0)
+            upper = np.max(gp.points_sampled, axis=0)
+            points_to_check = np.random.uniform(lower, upper, size=(num_points, len(upper)))
 
             mean = gp.compute_mean_of_points(points_to_check)
-            stddev = numpy.sqrt(gp.compute_variance_of_points(points_to_check))
+            stddev = np.sqrt(gp.compute_variance_of_points(points_to_check))
             samples = gp.draw_posterior_samples_of_points(num_posterior_samples, points_to_check)
 
             # NOTE: The confidence intervals are calculated per point, so this comparison is made per point for each
@@ -71,7 +71,7 @@ class TestGaussianProcess(GaussianProcessTestCase):
             count_in_interval = 0
             for s in samples:
                 count_in_interval += sum(
-                    numpy.logical_and(s < mean + stddev * conf_times, s > mean - stddev * conf_times)
+                    np.logical_and(s < mean + stddev * conf_times, s > mean - stddev * conf_times)
                 )
             estimated = count_in_interval / float(num_posterior_samples * num_points)
 
@@ -83,15 +83,15 @@ class TestGaussianProcess(GaussianProcessTestCase):
             x_append = domain.generate_quasi_random_points_in_domain(7)
             gp.append_lie_data(x_append)
             assert gp.num_sampled == num_sampled + 7
-            assert numpy.all(gp.points_sampled_value[-7:] == max(gp.points_sampled_value))
+            assert np.all(gp.points_sampled_value[-7:] == max(gp.points_sampled_value))
 
             x_append = domain.generate_quasi_random_points_in_domain(5)
             gp.append_lie_data(x_append, CONSTANT_LIAR_MAX)
             assert gp.num_sampled == num_sampled + 7 + 5
-            assert numpy.all(gp.points_sampled_value[-5:] == min(gp.points_sampled_value))
+            assert np.all(gp.points_sampled_value[-5:] == min(gp.points_sampled_value))
 
-            mean_value = numpy.mean(gp.points_sampled_value)
+            mean_value = np.mean(gp.points_sampled_value)
             x_append = domain.generate_quasi_random_points_in_domain(3)
             gp.append_lie_data(x_append, CONSTANT_LIAR_MEAN)
             assert gp.num_sampled == num_sampled + 7 + 5 + 3
-            assert numpy.all(gp.points_sampled_value[-3:] == mean_value)
+            assert np.all(gp.points_sampled_value[-3:] == mean_value)

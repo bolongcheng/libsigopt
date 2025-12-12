@@ -10,7 +10,7 @@ assumed behavior of the Gaussian Process.  We use some optimization strategies (
 choices based on the data.
 """
 
-import numpy
+import numpy as np
 from scipy.spatial.distance import pdist, squareform
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
@@ -132,7 +132,7 @@ class DifferentiableCovariance(CovarianceBase):
         assert n == z.shape[0]
         assert self.dim == d == z.shape[1]
 
-        hyperparameter_grad_covariance = numpy.empty((n, self.num_hyperparameters))
+        hyperparameter_grad_covariance = np.empty((n, self.num_hyperparameters))
         hyperparameter_grad_covariance[:, 0] = self._covariance(x, z)
         hyperparameter_grad_covariance[:, 1:] = (
             self.process_variance * self._hyperparameter_grad_covariance_without_process_variance(x, z)
@@ -164,7 +164,7 @@ class DifferentiableCovariance(CovarianceBase):
         n_cols, _ = points_sampled.shape
         n_rows = n_cols if points_to_sample is None else len(points_to_sample)
 
-        kg_tensor = numpy.empty((n_rows, n_cols, self.num_hyperparameters))
+        kg_tensor = np.empty((n_rows, n_cols, self.num_hyperparameters))
         kg_tensor[:, :, 0] = self._build_kernel_matrix(points_sampled, points_to_sample)
         kg_tensor[:, :, 1:] = self.process_variance * self._build_kernel_hparam_grad_tensor_without_process_variance(
             points_sampled, points_to_sample
@@ -181,10 +181,10 @@ class RadialCovariance(CovarianceBase):
 
     """
 
-    _hyperparameters: numpy.ndarray
-    _length_scales: numpy.ndarray
-    _length_scales_squared: numpy.ndarray
-    _length_scales_cubed: numpy.ndarray
+    _hyperparameters: np.ndarray
+    _length_scales: np.ndarray
+    _length_scales_squared: np.ndarray
+    _length_scales_cubed: np.ndarray
 
     def __init__(self, hyperparameters):
         self.set_hyperparameters(hyperparameters)
@@ -193,12 +193,12 @@ class RadialCovariance(CovarianceBase):
         return f"{self.__class__.__name__}_{self.dim}({self.hyperparameters})"
 
     def check_hyperparameters_are_valid(self, new_hyperparameters):
-        new_hyperparameters = numpy.asarray(new_hyperparameters, dtype=float)
+        new_hyperparameters = np.asarray(new_hyperparameters, dtype=float)
         assert len(new_hyperparameters.shape) == 1, f"Hyperparameters should be in 1D array, not {new_hyperparameters}"
         if (
-            numpy.any(numpy.isnan(new_hyperparameters))
-            or numpy.any(numpy.isinf(new_hyperparameters))
-            or numpy.any(new_hyperparameters <= 0)
+            np.any(np.isnan(new_hyperparameters))
+            or np.any(np.isinf(new_hyperparameters))
+            or np.any(new_hyperparameters <= 0)
         ):
             raise HyperparameterInvalidError()
         return new_hyperparameters
@@ -219,12 +219,12 @@ class RadialCovariance(CovarianceBase):
         return f"{self.covariance_type}({self._hyperparameters.tolist()})"
 
     def get_hyperparameters(self):
-        return numpy.copy(self._hyperparameters)
+        return np.copy(self._hyperparameters)
 
     def set_hyperparameters(self, hyperparameters):
         self._hyperparameters = self.check_hyperparameters_are_valid(hyperparameters)
         self.process_variance = self._hyperparameters[0]
-        self._length_scales = numpy.copy(self._hyperparameters[1:])
+        self._length_scales = np.copy(self._hyperparameters[1:])
         self._length_scales_squared = self._length_scales**2
         self._length_scales_cubed = self._length_scales**3
 
@@ -258,7 +258,7 @@ class RadialCovariance(CovarianceBase):
             raise ValueError(f"Points dimension {data_shape[1]}, Covariance dimension {self.dim}")
 
         diff_vecs = eval_points - data
-        r = numpy.sqrt(numpy.sum(numpy.power(diff_vecs / self._length_scales, 2), axis=1))
+        r = np.sqrt(np.sum(np.power(diff_vecs / self._length_scales, 2), axis=1))
         return r, diff_vecs
 
     # customlint: disable=AccidentalFormatStringRule

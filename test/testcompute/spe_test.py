@@ -4,7 +4,7 @@
 # pylint: disable=too-many-positional-arguments
 import random
 
-import numpy
+import numpy as np
 import pytest
 from testviews.zigopt_input_utils import form_points_sampled, form_random_unconstrained_categorical_domain
 
@@ -19,8 +19,8 @@ from libsigopt.compute.sigopt_parzen_estimator import (
 from testaux.numerical_test_case import NumericalTestCase
 
 
-domain = form_random_unconstrained_categorical_domain(numpy.random.randint(4, 12)).one_hot_domain
-hparams = [1.0] + (0.2 * numpy.diff(domain.get_lower_upper_bounds(), axis=0)[0]).tolist()
+domain = form_random_unconstrained_categorical_domain(np.random.randint(4, 12)).one_hot_domain
+hparams = [1.0] + (0.2 * np.diff(domain.get_lower_upper_bounds(), axis=0)[0]).tolist()
 greater_covariance = C4RadialMatern(hparams)
 gamma = 0.5
 
@@ -31,7 +31,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         def _form_multimetric_info(method_name):
             if method_name == CONVEX_COMBINATION:
                 phase = random.choice([CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL])
-                phase_kwargs = {"fraction_of_phase_completed": numpy.random.random()}
+                phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
             elif method_name == EPSILON_CONSTRAINT:
                 phase = random.choice(
                     [
@@ -39,7 +39,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
                         EPSILON_CONSTRAINT_OPTIMIZE_1,
                     ]
                 )
-                phase_kwargs = {"fraction_of_phase_completed": numpy.random.random()}
+                phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
             elif method_name == OPTIMIZING_ONE_METRIC:
                 phase = random.choice(
                     [
@@ -74,15 +74,15 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
         points_sampled = form_points_sampled(
             domain=domain,
-            num_sampled=numpy.random.randint(100, 200),
+            num_sampled=np.random.randint(100, 200),
             noise_per_point=0,
             num_metrics=num_metrics,
-            task_options=numpy.array([]),
+            task_options=np.array([]),
             failure_prob=0.1,
         )
         multimetric_info = form_multimetric_info(phase)
-        lie_values = numpy.empty(num_metrics)
-        points_to_sample = domain.generate_quasi_random_points_in_domain(numpy.random.randint(100, 200))
+        lie_values = np.empty(num_metrics)
+        points_to_sample = domain.generate_quasi_random_points_in_domain(np.random.randint(100, 200))
         (
             points_sampled.points,
             points_sampled.values,
@@ -135,14 +135,14 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
         points_sampled = form_points_sampled(
             domain=domain,
-            num_sampled=numpy.random.randint(100, 200),
+            num_sampled=np.random.randint(100, 200),
             noise_per_point=0,
             num_metrics=num_metrics,
-            task_options=numpy.array([]),
+            task_options=np.array([]),
             failure_prob=0.1,
         )
         multimetric_info = form_multimetric_info(phase)
-        lie_values = numpy.empty(num_metrics)
+        lie_values = np.empty(num_metrics)
         points = points_sampled.points
         values = points_sampled.values
         failures = points_sampled.failures
@@ -154,7 +154,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
             lie_values,
         )
         # NOTE: max is used here since we don't apply MMI to values when creating SigOptParzenEstimator
-        numpy.place(values, failures, numpy.max(values))
+        np.place(values, failures, np.max(values))
         spe = SigOptParzenEstimator(
             lower_covariance=C0RadialMatern(hparams),
             greater_covariance=greater_covariance,
@@ -162,7 +162,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
             points_sampled_values=values,
             gamma=gamma,
         )
-        sorted_indexed = numpy.argsort(values)
+        sorted_indexed = np.argsort(values)
         points_sorted = points[sorted_indexed, :]
         lower, greater = (
             points_sorted[: len(points_sorted) // 2],
@@ -184,10 +184,10 @@ class TestSigoptParzenEstimator(NumericalTestCase):
             num_sampled=SPE_MINIMUM_UNFORGOTTEN_POINT_TOTAL - 1,
             noise_per_point=0,
             num_metrics=num_metrics,
-            task_options=numpy.array([]),
+            task_options=np.array([]),
         )
         multimetric_info = form_multimetric_info(phase)
-        lie_values = numpy.empty(num_metrics)
+        lie_values = np.empty(num_metrics)
         (
             points_sampled.points,
             points_sampled.values,
@@ -218,10 +218,10 @@ class TestSigoptParzenEstimator(NumericalTestCase):
             num_sampled=SPE_MINIMUM_UNFORGOTTEN_POINT_TOTAL + 1,
             noise_per_point=0,
             num_metrics=num_metrics,
-            task_options=numpy.array([]),
+            task_options=np.array([]),
         )
         multimetric_info = form_multimetric_info(phase)
-        lie_values = numpy.empty(num_metrics)
+        lie_values = np.empty(num_metrics)
         (
             points_sampled.points,
             points_sampled.values,
@@ -243,9 +243,9 @@ class TestSigoptParzenEstimator(NumericalTestCase):
             )
 
     def test_append_and_clear_lies(self):
-        num_sampled = numpy.random.randint(100, 200)
+        num_sampled = np.random.randint(100, 200)
         points_sampled_points = domain.generate_quasi_random_points_in_domain(num_sampled)
-        points_sampled_values = numpy.random.rand(num_sampled)
+        points_sampled_values = np.random.rand(num_sampled)
         spe = SigOptParzenEstimator(
             lower_covariance=C0RadialMatern(hparams),
             greater_covariance=greater_covariance,
@@ -261,15 +261,15 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         spe.append_lies(list(points_being_sampled_points))
         assert len(spe.lower_points) == old_num_lower_points
         assert len(spe.greater_points) == old_num_greater_points + 15
-        assert numpy.all(spe.greater_lies == points_being_sampled_points)
-        assert numpy.all(spe.greater_points[-15:] == points_being_sampled_points)
+        assert np.all(spe.greater_lies == points_being_sampled_points)
+        assert np.all(spe.greater_points[-15:] == points_being_sampled_points)
         assert not spe.lower_lies
 
         spe.append_lies(list(points_being_sampled_points), lower=True)
         assert len(spe.lower_points) == old_num_lower_points + 15
         assert len(spe.greater_points) == old_num_greater_points + 15
-        assert numpy.all(spe.lower_lies == points_being_sampled_points)
-        assert numpy.all(spe.lower_points[-15:] == spe.greater_points[-15:])
+        assert np.all(spe.lower_lies == points_being_sampled_points)
+        assert np.all(spe.lower_points[-15:] == spe.greater_points[-15:])
 
         spe.clear_lies()
         assert len(spe.lower_points) == old_num_lower_points
@@ -277,7 +277,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         assert not spe.lower_lies
         assert not spe.greater_lies
 
-        sorted_indexed = numpy.argsort(points_sampled_values)
+        sorted_indexed = np.argsort(points_sampled_values)
         points_sorted = points_sampled_points[sorted_indexed, :]
         lower, greater = (
             points_sorted[: int(len(points_sorted) * gamma)],

@@ -7,7 +7,7 @@ import copy
 from collections import OrderedDict
 from typing import Literal, NotRequired, Sequence, TypedDict
 
-import numpy
+import numpy as np
 from scipy.spatial.distance import cdist
 from scipy.stats import beta, truncnorm
 
@@ -41,8 +41,8 @@ MAX_GRID_DIM = 13
 def form_constraint_fun_and_jac(one_hot_weights, rhs):
     def fun(one_hot_x):
         return (
-            numpy.dot(one_hot_weights, one_hot_x.T)
-            - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * numpy.sign(rhs)) * rhs
+            np.dot(one_hot_weights, one_hot_x.T)
+            - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * np.sign(rhs)) * rhs
         )
 
     def jac(one_hot_x):
@@ -60,11 +60,11 @@ def find_indexes_of_unique_points(points, compare_points, scaling_vector, tolera
     n_dim = points.shape[1]
     if compare_points is None:
         # NOTE: tril excludes indexes later in points, preferring points found earlier in CL
-        distance_matrix = cdist(points, points, "seuclidean", V=numpy.array(scaling_vector, dtype=float))
-        distance_matrix += numpy.tril(numpy.full_like(distance_matrix, tolerance + 1))
+        distance_matrix = cdist(points, points, "seuclidean", V=np.array(scaling_vector, dtype=float))
+        distance_matrix += np.tril(np.full_like(distance_matrix, tolerance + 1))
     else:
-        distance_matrix = cdist(compare_points, points, "seuclidean", V=numpy.array(scaling_vector, dtype=float))
-    unique_indexes = numpy.all(distance_matrix > tolerance * numpy.sqrt(n_dim), axis=0)
+        distance_matrix = cdist(compare_points, points, "seuclidean", V=np.array(scaling_vector, dtype=float))
+    unique_indexes = np.all(distance_matrix > tolerance * np.sqrt(n_dim), axis=0)
     return unique_indexes
 
 
@@ -75,11 +75,11 @@ class SamplerOpts(TypedDict):
 class ContinuousDomain(object):
     def __init__(self, domain_bounds):
         """Construct a ContinuousDomain with the specified bounds."""
-        bounds_shape = numpy.asarray(domain_bounds).shape
+        bounds_shape = np.asarray(domain_bounds).shape
         assert len(bounds_shape) == 2
         assert bounds_shape[1] == 2
-        assert numpy.all(numpy.diff(domain_bounds, axis=1) >= 0)
-        self.domain_bounds = numpy.copy(domain_bounds)
+        assert np.all(np.diff(domain_bounds, axis=1) >= 0)
+        self.domain_bounds = np.copy(domain_bounds)
         self._quasi_random_sampler_opts = SamplerOpts(sampler="latin_hypercube")
         self._constraint_list = []
         self._one_hot_unconstrained_indices = list(range(self.dim))
@@ -99,7 +99,7 @@ class ContinuousDomain(object):
 
     @property
     def midpoint(self):
-        return numpy.mean(self.get_lower_upper_bounds(), axis=0)
+        return np.mean(self.get_lower_upper_bounds(), axis=0)
 
     @property
     def one_hot_halfspaces(self):
@@ -130,14 +130,14 @@ class ContinuousDomain(object):
     quasi_random_sampler_opts = property(get_quasi_random_sampler_opts, set_quasi_random_sampler_opts)
 
     def check_point_inside(self, point):
-        return numpy.all((point >= self.domain_bounds[:, 0]) & (point <= self.domain_bounds[:, 1]))
+        return np.all((point >= self.domain_bounds[:, 0]) & (point <= self.domain_bounds[:, 1]))
 
     def check_point_on_boundary(self, point, tol=0):
         if not self.is_constrained:
-            return numpy.any(numpy.abs(point - self.domain_bounds.T) <= tol)
+            return np.any(np.abs(point - self.domain_bounds.T) <= tol)
 
         assert self._halfspaces is not None
-        return any(numpy.abs(numpy.dot(self._halfspaces[:, :-1], point) + self._halfspaces[:, -1]) <= tol)
+        return any(np.abs(np.dot(self._halfspaces[:, :-1], point) + self._halfspaces[:, -1]) <= tol)
 
     def check_point_satisfies_constraints(self, point):
         if not self.is_constrained:
@@ -145,7 +145,7 @@ class ContinuousDomain(object):
         assert self._halfspaces is not None
         A = self._halfspaces[:, :-1]
         b = -self._halfspaces[:, -1]
-        return all(list(numpy.dot(A, point) <= b))
+        return all(list(np.dot(A, point) <= b))
 
     def check_point_acceptable(self, point):
         assert len(point) == self.dim
@@ -183,21 +183,21 @@ class ContinuousDomain(object):
 
     def convert_func_list_to_halfspaces(self):
         n_halfspaces = len(self._constraint_list)
-        halfspaces = numpy.zeros((n_halfspaces, self.dim + 1))
+        halfspaces = np.zeros((n_halfspaces, self.dim + 1))
 
         for ic, constraint in enumerate(self._constraint_list):
             halfspaces[ic, -1] = constraint["rhs"]
             halfspaces[ic, :-1] = -constraint["weights"]
 
-        lower_bound_halfspaces = -numpy.eye(self.dim, M=self.dim + 1)
+        lower_bound_halfspaces = -np.eye(self.dim, M=self.dim + 1)
         lower_bound_halfspaces[:, -1] = self.domain_bounds[:, 0]
-        upper_bound_halfspaces = numpy.eye(self.dim, M=self.dim + 1)
+        upper_bound_halfspaces = np.eye(self.dim, M=self.dim + 1)
         upper_bound_halfspaces[:, -1] = -self.domain_bounds[:, 1]
 
-        return numpy.vstack((halfspaces, lower_bound_halfspaces, upper_bound_halfspaces))
+        return np.vstack((halfspaces, lower_bound_halfspaces, upper_bound_halfspaces))
 
     def _infer_unconstrained_indices_from_halfspace(self):
-        return [i for i in range(self.dim) if numpy.count_nonzero(self.one_hot_halfspaces[:, i]) == 2]
+        return [i for i in range(self.dim) if np.count_nonzero(self.one_hot_halfspaces[:, i]) == 2]
 
     def get_lower_upper_bounds(self):
         return self.domain_bounds.T
@@ -205,7 +205,7 @@ class ContinuousDomain(object):
     def generate_quasi_random_points_in_domain(self, num_points, log_sample=False):
         """Generate quasi-random points in the domain."""
         if log_sample:
-            domain_bounds = numpy.log(self.domain_bounds)
+            domain_bounds = np.log(self.domain_bounds)
         else:
             domain_bounds = self.domain_bounds
 
@@ -258,7 +258,7 @@ class ContinuousDomain(object):
             )
         else:
             raise ValueError("Somehow the quasi random points you are asking for do not exist")
-        return numpy.exp(points) if log_sample else points
+        return np.exp(points) if log_sample else points
 
     def generate_grid_points_in_domain(self, points_per_dimension):
         return generate_grid_points(points_per_dimension, self.domain_bounds)
@@ -277,38 +277,38 @@ class ContinuousDomain(object):
         A, b = self._halfspaces[:, :-1], -self._halfspaces[:, -1]
 
         # remove the constraints that are the domain_bounds
-        no_bound_idxs = numpy.where(numpy.sum(A != 0, axis=1) > 1)[0]
+        no_bound_idxs = np.where(np.sum(A != 0, axis=1) > 1)[0]
         A, b = A[no_bound_idxs], b[no_bound_idxs]
 
-        A_normal = numpy.dot(A, points.T)
+        A_normal = np.dot(A, points.T)
         slack = b[:, None] - A_normal
-        viable_point_minus_A_normal = numpy.dot(A, viable_point)[:, None] - A_normal
-        multipliers = numpy.divide(
+        viable_point_minus_A_normal = np.dot(A, viable_point)[:, None] - A_normal
+        multipliers = np.divide(
             slack,
             viable_point_minus_A_normal,
-            out=numpy.zeros_like(slack),
+            out=np.zeros_like(slack),
             where=viable_point_minus_A_normal != 0,
         )
 
-        valid_multipliers = numpy.logical_and(multipliers > 0, multipliers < 1)
-        indices_need_corrected = numpy.any(valid_multipliers, axis=0)
+        valid_multipliers = np.logical_and(multipliers > 0, multipliers < 1)
+        indices_need_corrected = np.any(valid_multipliers, axis=0)
 
         if not any(indices_need_corrected):
             return
 
         multipliers[~valid_multipliers] = 0
-        max_correction = numpy.max(multipliers[:, indices_need_corrected], axis=0)
+        max_correction = np.max(multipliers[:, indices_need_corrected], axis=0)
 
         epsilon_shift = 1.0 - max_correction
         if not on_constraint:
-            epsilon_shift *= numpy.random.random(len(epsilon_shift))
+            epsilon_shift *= np.random.random(len(epsilon_shift))
 
         points[indices_need_corrected] *= epsilon_shift[:, None]
         points[indices_need_corrected] += (1.0 - epsilon_shift[:, None]) * viable_point[None, :]
 
     def restrict_points_to_domain(self, points, on_constraint=False, viable_point=None):
         lb, ub = self.get_lower_upper_bounds()
-        restricted_points = numpy.clip(points, lb, ub)
+        restricted_points = np.clip(points, lb, ub)
         self.restrict_points_using_constraints(
             restricted_points,
             viable_point=viable_point,
@@ -321,9 +321,9 @@ class ContinuousDomain(object):
         if not self.check_point_acceptable(point):
             return self.generate_quasi_random_points_in_domain(num_points)
 
-        normal_draws = numpy.random.normal(0, std_dev, (num_points, self.dim))
+        normal_draws = np.random.normal(0, std_dev, (num_points, self.dim))
         normal_draws = self.restrict_points_to_domain(
-            point[None, :] + normal_draws * numpy.diff(self.get_lower_upper_bounds(), axis=0),
+            point[None, :] + normal_draws * np.diff(self.get_lower_upper_bounds(), axis=0),
             viable_point=point,
             on_constraint=on_constraint,
         )
@@ -443,7 +443,7 @@ class CategoricalDomain(object):
                         "Only allow enum index like elements."
                     )
                 if component["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
-                    assert numpy.all(numpy.isfinite(component["elements"]))
+                    assert np.all(np.isfinite(component["elements"]))
             else:
                 assert len(component["elements"]) == 2
                 assert component["elements"][0] < component["elements"][1]
@@ -460,7 +460,7 @@ class CategoricalDomain(object):
                 assert len(constraint["weights"]) == len(domain_components)
 
                 # Check that typing between constraint and domain_components is consistent
-                non_zero_indices = numpy.flatnonzero(constraint["weights"])
+                non_zero_indices = np.flatnonzero(constraint["weights"])
                 for idx in non_zero_indices:
                     assert domain_components[idx]["var_type"] == constraint["var_type"]
 
@@ -534,17 +534,17 @@ class CategoricalDomain(object):
         if self.constraint_list:
             for constraint in self.constraint_list:
                 if constraint["var_type"] == DOUBLE_EXPERIMENT_PARAMETER_NAME:
-                    constraint_indices = numpy.flatnonzero(constraint["weights"])
+                    constraint_indices = np.flatnonzero(constraint["weights"])
                     constrained_double_indices.extend(constraint_indices)
                 elif constraint["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
-                    constraint_indices = numpy.flatnonzero(constraint["weights"])
+                    constraint_indices = np.flatnonzero(constraint["weights"])
                     constrained_integer_indices.extend(constraint_indices)
         return list(set(constrained_double_indices)), list(set(constrained_integer_indices))
 
     def _form_one_hot_constraint_list(self):
         one_hot_constraint_list = []
         for constraint in self.constraint_list:
-            one_hot_weights = numpy.zeros(self.one_hot_dim)
+            one_hot_weights = np.zeros(self.one_hot_dim)
             for weight, reference in zip(constraint["weights"], self.one_hot_to_categorical_mapping):
                 if reference["var_type"] in [
                     DOUBLE_EXPERIMENT_PARAMETER_NAME,
@@ -575,19 +575,19 @@ class CategoricalDomain(object):
             self.one_hot_to_categorical_mapping[i]["input_ind"] for i in self.constrained_integer_indices
         ]
         n_constrained_integers = len(one_hot_constrained_integer_indices)
-        ub = numpy.ceil(one_hot_point[one_hot_constrained_integer_indices])
-        lb = numpy.floor(one_hot_point[one_hot_constrained_integer_indices])
+        ub = np.ceil(one_hot_point[one_hot_constrained_integer_indices])
+        lb = np.floor(one_hot_point[one_hot_constrained_integer_indices])
 
         # Generate neighbor points
         if n_constrained_integers <= MAX_GRID_DIM:  # Grid if dim <= MAX_GRID_DIM
             num_neighbors = 2**n_constrained_integers
-            grids = numpy.meshgrid(*list(zip(lb, ub)))
-            neighbors_int_variables = numpy.array([grid.flatten() for grid in grids]).T
+            grids = np.meshgrid(*list(zip(lb, ub)))
+            neighbors_int_variables = np.array([grid.flatten() for grid in grids]).T
         else:  # Random otherwise
             num_neighbors = DEFAULT_NUM_RANDOM_NEIGHBORS
-            subdomain_bounds = numpy.array(list(zip(lb, ub)))
-            neighbors_int_variables = numpy.round(generate_uniform_random_points(num_neighbors, subdomain_bounds))
-        integer_neighbors = numpy.tile(one_hot_point, (num_neighbors, 1))
+            subdomain_bounds = np.array(list(zip(lb, ub)))
+            neighbors_int_variables = np.round(generate_uniform_random_points(num_neighbors, subdomain_bounds))
+        integer_neighbors = np.tile(one_hot_point, (num_neighbors, 1))
         integer_neighbors[:, one_hot_constrained_integer_indices] = neighbors_int_variables
 
         return integer_neighbors
@@ -597,7 +597,7 @@ class CategoricalDomain(object):
             return points
 
         # Copy data so as to not overwrite original info
-        points = numpy.atleast_2d(numpy.array(points, dtype=float))
+        points = np.atleast_2d(np.array(points, dtype=float))
         for dim_index, (points_1d, component) in enumerate(zip(points.T, self.domain_components)):
             if component["var_type"] == CATEGORICAL_EXPERIMENT_PARAMETER_NAME:
                 map_to_enumeration = dict(zip(component["elements"], range(len(component["elements"]))))
@@ -618,7 +618,7 @@ class CategoricalDomain(object):
 
     @staticmethod
     def _check_enumerated_point_satisfies_constraint(enumerated_point, constraint):
-        return numpy.dot(enumerated_point, constraint["weights"]) >= constraint["rhs"]
+        return np.dot(enumerated_point, constraint["weights"]) >= constraint["rhs"]
 
     # NOTE: This assumes that test_points is a numpy array
     # This function cuts points which are less than some normalized tolerance from each other
@@ -665,20 +665,20 @@ class CategoricalDomain(object):
     @property
     def product_of_categories(self):
         cat_shape = [len(m["input_ind_value_map"]) for m in self.get_categorical_component_mappings()]
-        return numpy.prod(cat_shape, dtype=int)
+        return np.prod(cat_shape, dtype=int)
 
     def _generate_quasi_random_1d_points_in_domain(self, num_points, domain_component):
         if domain_component["var_type"] in (
             CATEGORICAL_EXPERIMENT_PARAMETER_NAME,
             QUANTIZED_EXPERIMENT_PARAMETER_NAME,
         ):
-            return numpy.random.choice(domain_component["elements"], replace=True, size=num_points)
+            return np.random.choice(domain_component["elements"], replace=True, size=num_points)
         elif domain_component["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
-            return numpy.random.randint(
+            return np.random.randint(
                 domain_component["elements"][0], domain_component["elements"][1] + 1, num_points
             )
         else:
-            return numpy.random.uniform(domain_component["elements"][0], domain_component["elements"][1], num_points)
+            return np.random.uniform(domain_component["elements"][0], domain_component["elements"][1], num_points)
 
     def _generate_random_1d_points_according_to_prior(self, num_points, component, prior):
         if not is_valid_prior(prior):
@@ -708,7 +708,7 @@ class CategoricalDomain(object):
 
     def generate_random_points_according_to_priors(self, num_points):
         assert self.priors, "There are no priors; must have priors to call this function"
-        result = numpy.empty((num_points, self.dim))
+        result = np.empty((num_points, self.dim))
         for d, (prior, component) in enumerate(zip(self.priors, self.domain_components)):
             result[:, d] = self._generate_random_1d_points_according_to_prior(num_points, component, prior)
         return result
@@ -719,7 +719,7 @@ class CategoricalDomain(object):
             one_hot_constrained_points = self.one_hot_domain.generate_quasi_random_points_in_domain(num_points)
             result = self.map_one_hot_points_to_categorical(one_hot_constrained_points)
         else:
-            result = numpy.empty((num_points, self.dim))
+            result = np.empty((num_points, self.dim))
             for d, component in enumerate(self.domain_components):
                 result[:, d] = self._generate_quasi_random_1d_points_in_domain(num_points, component)
         return result
@@ -763,14 +763,14 @@ class CategoricalDomain(object):
         if not num_points:
             return points
 
-        still_in = numpy.full(len(points), True, dtype=bool)
+        still_in = np.full(len(points), True, dtype=bool)
         for this_dim_points, this_component in zip(points.T, self):
             if this_component["var_type"] == CATEGORICAL_EXPERIMENT_PARAMETER_NAME:
-                still_in[still_in] = numpy.isin(this_dim_points[still_in], this_component["elements"])
+                still_in[still_in] = np.isin(this_dim_points[still_in], this_component["elements"])
             elif this_component["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
-                still_in[still_in] = numpy.isin(this_dim_points[still_in].astype(float), this_component["elements"])
+                still_in[still_in] = np.isin(this_dim_points[still_in].astype(float), this_component["elements"])
             else:
-                still_in[still_in] = numpy.logical_and(
+                still_in[still_in] = np.logical_and(
                     this_dim_points[still_in].astype(float) >= this_component["elements"][0],
                     this_dim_points[still_in].astype(float) <= this_component["elements"][1],
                 )
@@ -781,10 +781,10 @@ class CategoricalDomain(object):
     # TODO(RTL-100): We should consider enlarging the functionality here to deal with duplicate points
     def generate_distinct_random_points(self, num_points, excluded_points=None, duplicate_prob=1e-3):
         if num_points == 0:
-            return numpy.empty((0, self.dim))
+            return np.empty((0, self.dim))
         if not self.is_discrete or self.is_constrained:
             return self.generate_quasi_random_points_in_domain(num_points)
-        excluded_points = numpy.empty((0, self.dim)) if excluded_points is None else excluded_points
+        excluded_points = np.empty((0, self.dim)) if excluded_points is None else excluded_points
         excluded_points = self.remove_points_outside_domain(excluded_points)
 
         discrete_elements = []
@@ -812,7 +812,7 @@ class CategoricalDomain(object):
             num_total_discrete_values, _ = self._analyze_discrete_elements(discrete_elements, 0, 0, 0)
             num_points = num_total_discrete_values - len(excluded_points)
             if num_points <= 0:
-                return numpy.empty((0, self.dim))
+                return np.empty((0, self.dim))
 
         if should_generate_randomly or num_total_discrete_values is None:
             return self.generate_quasi_random_points_in_domain(num_points)
@@ -828,21 +828,21 @@ class CategoricalDomain(object):
             index = 0
             base_factor = 1
             for p, element in zip(point, discrete_elements):
-                index += numpy.nonzero([p == e for e in element])[0][0] * base_factor
+                index += np.nonzero([p == e for e in element])[0][0] * base_factor
                 base_factor *= len(element)
             return index
 
         excluded_indexes = {map_discrete_point_to_index(p) for p in excluded_points}
         available_indexes = set(range(num_total_discrete_values)) - excluded_indexes
         if len(available_indexes) > num_points:
-            unique_indexes = numpy.random.choice(tuple(available_indexes), num_points, replace=False)
+            unique_indexes = np.random.choice(tuple(available_indexes), num_points, replace=False)
         else:
-            unique_indexes = numpy.append(
-                numpy.array(tuple(available_indexes)),
-                numpy.random.randint(0, num_total_discrete_values + 1, num_points - len(available_indexes)),
+            unique_indexes = np.append(
+                np.array(tuple(available_indexes)),
+                np.random.randint(0, num_total_discrete_values + 1, num_points - len(available_indexes)),
             )
 
-        return numpy.array([map_index_to_discrete_point(i) for i in unique_indexes])
+        return np.array([map_index_to_discrete_point(i) for i in unique_indexes])
 
     def replace_duplicate_points(self, points, points_sampled, tolerance=0.0):
         # NOTE: identify_unique_points checks duplicates between points and compare_points
@@ -854,7 +854,7 @@ class CategoricalDomain(object):
             tolerance=tolerance,
         )
 
-        return numpy.append(
+        return np.append(
             unique_points,
             self.generate_distinct_random_points(len(points) - len(unique_points), points_sampled),
             axis=0,
@@ -938,7 +938,7 @@ class CategoricalDomain(object):
         )
 
         def rel_prob_func(z):
-            temp = numpy.power(z, 1 / temperature) + 1e-300  # A number near the smallest nonzero number on a computer
+            temp = np.power(z, 1 / temperature) + 1e-300  # A number near the smallest nonzero number on a computer
             return temp / sum(temp)
 
         categorical_points = []
@@ -951,30 +951,30 @@ class CategoricalDomain(object):
                 elif this_cat_dim_map["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
                     this_cat_point[this_cat_dim_map["output_ind"]] = round(one_hot_point[this_cat_dim_map["input_ind"]])
                 elif this_cat_dim_map["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
-                    quantized_values = numpy.array(self.domain_components[this_cat_dim_map["output_ind"]]["elements"])
-                    nearest_idx = numpy.argmin(
-                        numpy.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values)
+                    quantized_values = np.array(self.domain_components[this_cat_dim_map["output_ind"]]["elements"])
+                    nearest_idx = np.argmin(
+                        np.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values)
                     )
                     this_cat_point[this_cat_dim_map["output_ind"]] = quantized_values[nearest_idx]
                 else:
                     one_hot_indexes, categories = zip(*this_cat_dim_map["input_ind_value_map"].items())
-                    values = one_hot_point[numpy.array(one_hot_indexes, dtype=int)]
-                    this_cat_point[this_cat_dim_map["output_ind"]] = numpy.random.choice(
+                    values = one_hot_point[np.array(one_hot_indexes, dtype=int)]
+                    this_cat_point[this_cat_dim_map["output_ind"]] = np.random.choice(
                         categories, p=rel_prob_func(values)
                     )
             categorical_point = [p for p in this_cat_point if p is not None]
             assert len(categorical_point) == self.dim
             categorical_points.append(categorical_point)
-        return numpy.array(categorical_points, dtype=float)
+        return np.array(categorical_points, dtype=float)
 
     def round_one_hot_points_integer_values(self, one_hot_points):
         integer_component_mappings = self.get_integer_component_mappings()
         if len(integer_component_mappings) == 0:
             return one_hot_points
 
-        snapped_points = numpy.copy(one_hot_points)
+        snapped_points = np.copy(one_hot_points)
         for icm in integer_component_mappings:
-            snapped_points[:, icm["input_ind"]] = numpy.round(snapped_points[:, icm["input_ind"]])
+            snapped_points[:, icm["input_ind"]] = np.round(snapped_points[:, icm["input_ind"]])
         return snapped_points
 
     def round_one_hot_points_quantized_values(self, one_hot_points):
@@ -982,11 +982,11 @@ class CategoricalDomain(object):
         if len(quantized_component_mappings) == 0:
             return one_hot_points
 
-        snapped_points = numpy.copy(one_hot_points)
+        snapped_points = np.copy(one_hot_points)
         for qcm in quantized_component_mappings:
-            quantized_values = numpy.array(self.domain_components[qcm["output_ind"]]["elements"])
+            quantized_values = np.array(self.domain_components[qcm["output_ind"]]["elements"])
             unrounded_values = snapped_points[:, qcm["input_ind"]]
-            idxs = numpy.argmin(numpy.abs(unrounded_values[:, None] - quantized_values), axis=1)
+            idxs = np.argmin(np.abs(unrounded_values[:, None] - quantized_values), axis=1)
             snapped_points[:, qcm["input_ind"]] = quantized_values[idxs]
         return snapped_points
 
@@ -996,10 +996,10 @@ class CategoricalDomain(object):
             return one_hot_points
 
         categorical_component_mappings = self.get_categorical_component_mappings()
-        snapped_points = numpy.copy(one_hot_points)
+        snapped_points = np.copy(one_hot_points)
         for categorical_component_mapping in categorical_component_mappings:
             cat_indices = list(categorical_component_mapping["input_ind_value_map"])
-            best_categories = numpy.argmax(one_hot_points[:, cat_indices], axis=1)
+            best_categories = np.argmax(one_hot_points[:, cat_indices], axis=1)
             snapped_points[:, cat_indices] = 0
             snapped_points[range(len(one_hot_points)), cat_indices[0] + best_categories] = 1
         return snapped_points
@@ -1009,7 +1009,7 @@ class CategoricalDomain(object):
         integer_neighbors = self.generate_integer_neighbors_for_integer_constraints(one_hot_point)
 
         # TODO(RTL-148): later, vectorize domain.check_point_satisfies_constraints to reuse it here
-        feasible_neighbor_indices = numpy.all(numpy.dot(A, integer_neighbors.T) <= b[:, None], axis=0)
+        feasible_neighbor_indices = np.all(np.dot(A, integer_neighbors.T) <= b[:, None], axis=0)
         return integer_neighbors[feasible_neighbor_indices]
 
     # TODO(RTL-149): Consider changing snapping behavior to be a little more consistent
@@ -1017,17 +1017,17 @@ class CategoricalDomain(object):
     def snap_one_hot_points_to_integer_feasible(self, one_hot_points):
         n_points = one_hot_points.shape[0]
         still_infeasible_indices = []
-        feasible_padding_points = numpy.empty((0, one_hot_points.shape[1]))
+        feasible_padding_points = np.empty((0, one_hot_points.shape[1]))
 
         # For each point do nearest neighbor search, save a backup of feasible padding points for later use if needed.
         for i, one_hot_point in enumerate(one_hot_points):
             feasible_neighbors = self.generate_feasible_integer_neighbors(one_hot_point)
-            numpy.random.shuffle(feasible_neighbors)
+            np.random.shuffle(feasible_neighbors)
             if len(feasible_neighbors) > 0:
                 one_hot_points[i] = feasible_neighbors[0]
                 if len(feasible_padding_points) < n_points:
                     num_padding_points = min(n_points - len(feasible_padding_points), len(feasible_neighbors) - 1)
-                    feasible_padding_points = numpy.vstack(
+                    feasible_padding_points = np.vstack(
                         [feasible_padding_points, feasible_neighbors[1 : num_padding_points + 1]]
                     )
             else:
@@ -1040,7 +1040,7 @@ class CategoricalDomain(object):
             del still_infeasible_indices[: len(feasible_padding_points)]
 
         # return list with infeasible points removed
-        one_hot_points_integer_feasible = numpy.delete(one_hot_points, still_infeasible_indices, axis=0)
+        one_hot_points_integer_feasible = np.delete(one_hot_points, still_infeasible_indices, axis=0)
         return one_hot_points_integer_feasible
 
 

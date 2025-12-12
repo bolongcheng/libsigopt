@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 
 from libsigopt.compute.predictor import HasPredictor
 
@@ -24,7 +24,7 @@ class AcquisitionFunction(HasPredictor):
         assert int(batch_size) == batch_size and batch_size > 0
 
         current_index = 0
-        eval_result = numpy.empty(eval_shape[0])
+        eval_result = np.empty(eval_shape[0])
         while current_index < len(eval_result):
             indices = range(current_index, min(current_index + batch_size, len(eval_result)))
             eval_result[indices] = self._evaluate_at_point_list(points_to_evaluate[indices])

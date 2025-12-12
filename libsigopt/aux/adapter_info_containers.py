@@ -3,16 +3,16 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 
 
 @dataclass(slots=True)
 class PointsContainer:
-    points: numpy.ndarray
-    values: numpy.ndarray | None = None
-    value_vars: numpy.ndarray | None = None
-    failures: numpy.ndarray | None = None
-    task_costs: numpy.ndarray | None = None
+    points: np.ndarray
+    values: np.ndarray | None = None
+    value_vars: np.ndarray | None = None
+    failures: np.ndarray | None = None
+    task_costs: np.ndarray | None = None
 
 
 @dataclass(slots=True)

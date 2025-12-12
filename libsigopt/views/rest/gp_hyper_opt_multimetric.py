@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 
-import numpy
+import numpy as np
 
 from libsigopt.aux.constant import (
     CATEGORICAL_EXPERIMENT_PARAMETER_NAME,
@@ -56,8 +56,8 @@ def form_one_hot_hyperparameter_domain(
     hyperparameter_domain_elements = []
 
     # NOTE: This nan should only occur if there is no data (maybe better to handle elsewhere or error?
-    sample_variance = numpy.var(historical_data.points_sampled_value)
-    sample_variance = MINIMUM_VALUE_VAR if numpy.isnan(sample_variance) else max(sample_variance, MINIMUM_VALUE_VAR)
+    sample_variance = np.var(historical_data.points_sampled_value)
+    sample_variance = MINIMUM_VALUE_VAR if np.isnan(sample_variance) else max(sample_variance, MINIMUM_VALUE_VAR)
     hyperparameter_domain_elements.append([ALPHA_LOWER_FACTOR * sample_variance, ALPHA_UPPER_FACTOR * sample_variance])
 
     for one_hot_mapping in categorical_domain.one_hot_to_categorical_mapping:
@@ -74,7 +74,7 @@ def form_one_hot_hyperparameter_domain(
             if one_hot_mapping["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
                 lower_bound = max(discrete_lower_limit, lower_bound)
             elif one_hot_mapping["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
-                lower_bound = max(QUANTIZED_LENGTH_SCALE_LOWER_FACTOR * min(numpy.diff(bounds)), lower_bound)
+                lower_bound = max(QUANTIZED_LENGTH_SCALE_LOWER_FACTOR * min(np.diff(bounds)), lower_bound)
 
             hyperparameter_domain_elements.append([lower_bound, upper_bound])
 
@@ -91,7 +91,7 @@ def form_one_hot_hyperparameter_domain(
 
     if select_hyper_opt_in_log_domain:
         for these_elements in hyperparameter_domain_elements:
-            these_elements[0], these_elements[1] = numpy.log(these_elements)
+            these_elements[0], these_elements[1] = np.log(these_elements)
 
     domain_components: list[DomainComponent] = [
         {"var_type": "double", "elements": e}
@@ -108,13 +108,13 @@ class GpHyperOptMultimetricView(GPView):
         return DEFAULT_HYPER_OPT_OPTIMIZER_INFO
 
     def should_skip_hyperopt(self, points_sampled_values):
-        return numpy.ptp(points_sampled_values) <= MINIMUM_VALUE_VAR
+        return np.ptp(points_sampled_values) <= MINIMUM_VALUE_VAR
 
     def view(self):
         model_info = deepcopy(self.params["model_info"])
         hyperparameters = deepcopy(model_info.hyperparameters)
 
-        successful_indexes = numpy.logical_not(self.points_sampled_failures)
+        successful_indexes = np.logical_not(self.points_sampled_failures)
         one_hot_points_sampled_points = self.one_hot_points_sampled_points[successful_indexes, :]
         if self.has_optimization_metrics:
             assert self.optimized_metrics_index is not None

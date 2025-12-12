@@ -7,7 +7,7 @@ It also tests the functions build_polynomial_matrix and build_grad_polynomial_te
 
 """
 
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 
@@ -51,8 +51,8 @@ class TestNonzeroMean(NumericalTestCase):
             polynomial_index_point_check([1, 1.3, 1], 3)
 
         for num_points, poly_length, dim in zip(self.num_points_list, self.num_poly_indices_list, self.num_dim_list):
-            indices_list = numpy.random.randint(0, num_points, (poly_length, dim))
-            assert numpy.array_equal(polynomial_index_point_check(indices_list, dim), indices_list)
+            indices_list = np.random.randint(0, num_points, (poly_length, dim))
+            assert np.array_equal(polynomial_index_point_check(indices_list, dim), indices_list)
 
     def polynomial_matrix_test(self, num_points, poly_length, dim):
         """Testing the accuracy of the polynomial matrix construction function.
@@ -62,18 +62,18 @@ class TestNonzeroMean(NumericalTestCase):
 
         We may eventually replace the loops in build_polynomial_matrix with this broadcast
         version depending on the relationship between speed and memory.  To do so we would
-        need the indices_list to be a numpy.array instead of a list of lists.
+        need the indices_list to be a np.array instead of a list of lists.
 
         """
 
         domain = ContinuousDomain([[-1, 1]] * dim)
         points = domain.generate_quasi_random_points_in_domain(num_points)
-        indices_list = numpy.random.randint(0, num_points, (poly_length, dim))
+        indices_list = np.random.randint(0, num_points, (poly_length, dim))
 
         p = build_polynomial_matrix(indices_list, points)
-        p_prod = numpy.prod([pow(points[:, d][:, None], indices_list[:, d]) for d in range(dim)], 0)
+        p_prod = np.prod([pow(points[:, d][:, None], indices_list[:, d]) for d in range(dim)], 0)
 
-        self.assert_vector_within_relative(p_prod, p, numpy.linalg.norm(p) * numpy.finfo(float).eps)
+        self.assert_vector_within_relative(p_prod, p, np.linalg.norm(p) * np.finfo(float).eps)
 
     def gradient_polynomial_tensor_test(self, num_points, poly_length, dim):
         """Testing the accuracy of the gradient polynomial tensor construction function.
@@ -98,11 +98,11 @@ class TestNonzeroMean(NumericalTestCase):
 
         domain = ContinuousDomain([[-1, 1]] * dim)
         points = domain.generate_quasi_random_points_in_domain(num_points)
-        indices_list = numpy.random.randint(0, num_points, (poly_length, dim))
+        indices_list = np.random.randint(0, num_points, (poly_length, dim))
 
         gpt = build_grad_polynomial_tensor(indices_list, points)
 
-        gpt_each_dim = numpy.empty((num_points, poly_length, dim, dim))
+        gpt_each_dim = np.empty((num_points, poly_length, dim, dim))
         for d in range(dim):
             for d_der in range(dim):
                 if d != d_der:
@@ -112,38 +112,38 @@ class TestNonzeroMean(NumericalTestCase):
                         pow(points[:, d][:, None], (indices_list[:, d] - 1) * (indices_list[:, d] > 0))
                         * indices_list[:, d]
                     )
-        gpt_prod = numpy.prod(gpt_each_dim, 3)
+        gpt_prod = np.prod(gpt_each_dim, 3)
 
-        self.assert_vector_within_relative(gpt_prod, gpt, numpy.linalg.norm(gpt) * numpy.finfo(float).eps)
+        self.assert_vector_within_relative(gpt_prod, gpt, np.linalg.norm(gpt) * np.finfo(float).eps)
 
     # Constant mean gets its own set of tests because it's our standard workflow for right now
     def constant_mean_components_test(self, num_points, dim):
-        constant_indices = numpy.zeros((1, dim))
+        constant_indices = np.zeros((1, dim))
         self.assert_vector_within_relative(constant_indices, polynomial_index_point_check(constant_indices, dim), 0)
         assert indices_represent_constant_mean(constant_indices, dim)
-        test_points = numpy.random.random((num_points, dim))
+        test_points = np.random.random((num_points, dim))
         self.assert_vector_within_relative(
-            numpy.ones((num_points, 1)),
+            np.ones((num_points, 1)),
             build_polynomial_matrix(constant_indices, test_points),
             0,
         )
         self.assert_vector_within_relative(
-            numpy.zeros((num_points, 1, dim)),
+            np.zeros((num_points, 1, dim)),
             build_grad_polynomial_tensor(constant_indices, test_points),
             0,
         )
         data = HistoricalData(dim)
-        const_val = numpy.random.normal(numpy.random.random(), numpy.random.random(), 1)
+        const_val = np.random.normal(np.random.random(), np.random.random(), 1)
         data.append_historical_data(
             points_sampled=test_points,
-            points_sampled_value=numpy.full(num_points, const_val),
-            points_sampled_noise_variance=numpy.full(num_points, 1e-10),
+            points_sampled_value=np.full(num_points, const_val),
+            points_sampled_noise_variance=np.full(num_points, 1e-10),
         )
-        cov = C4RadialMatern(numpy.random.gamma(1, 0.1, dim + 1))
+        cov = C4RadialMatern(np.random.gamma(1, 0.1, dim + 1))
         gp = GaussianProcess(cov, data, constant_indices)
-        new_points = numpy.random.random((2 * num_points, dim))
+        new_points = np.random.random((2 * num_points, dim))
         self.assert_vector_within_relative(
-            numpy.full(len(new_points), const_val),
+            np.full(len(new_points), const_val),
             gp.compute_mean_of_points(new_points),
             1e-13,
         )
@@ -156,14 +156,14 @@ class TestNonzeroMean(NumericalTestCase):
         process of sifting through the test framework will take an amount of time.
 
         """
-        tv = numpy.full(n, true_var)
-        domain = numpy.array([[0, 1]] * dim)
+        tv = np.full(n, true_var)
+        domain = np.array([[0, 1]] * dim)
 
         # Note that the latin hypercube points have some randomness in them
         x = generate_latin_hypercube_points(n, domain)
-        y = numpy.array([func(xval) for xval in x]) + tv * numpy.random.normal(size=n)
+        y = np.array([func(xval) for xval in x]) + tv * np.random.normal(size=n)
 
-        ov = numpy.full(n, obs_var)
+        ov = np.full(n, obs_var)
         historical_data = HistoricalData(dim=dim)
         historical_data.append_historical_data(
             points_sampled=x, points_sampled_value=y, points_sampled_noise_variance=ov
@@ -204,28 +204,28 @@ class TestNonzeroMean(NumericalTestCase):
             if n < dim + 1:
                 raise ValueError("At least dim+1 points must be passed to fit a linear mean")
 
-            test_const_coef = numpy.random.normal(size=1)
-            test_lin_coef = numpy.random.normal(size=dim)
-            func = lambda x: test_const_coef[0] + numpy.dot(test_lin_coef, x)
-            true_var = numpy.random.lognormal(mean=-10.0, sigma=3.0)
-            obs_var = numpy.random.lognormal(mean=-12.0, sigma=3.0)
+            test_const_coef = np.random.normal(size=1)
+            test_lin_coef = np.random.normal(size=dim)
+            func = lambda x: test_const_coef[0] + np.dot(test_lin_coef, x)
+            true_var = np.random.lognormal(mean=-10.0, sigma=3.0)
+            obs_var = np.random.lognormal(mean=-12.0, sigma=3.0)
             historical_data, _ = self.generate_random_data(dim, func, n, true_var, obs_var)
 
-            params = numpy.random.gamma(1, 0.1, dim + 1)
+            params = np.random.gamma(1, 0.1, dim + 1)
             kernel = SquareExponential(params)
 
             mean_indices = [[0] * dim]
             mean_indices.extend([[int(j == k) for j in range(dim)] for k in range(dim)])
 
             gp_linear_mean = GaussianProcess(kernel, historical_data, mean_indices)
-            test_coef = numpy.concatenate((test_const_coef, test_lin_coef), axis=0)
+            test_coef = np.concatenate((test_const_coef, test_lin_coef), axis=0)
             self.assert_vector_within_relative_norm(gp_linear_mean.poly_coef, test_coef, 10 * dim * n * true_var)
 
 
 class TestCholeskyFactorization(NumericalTestCase):
     def assert_cholesky_is_accurate(self, cholesky_factor, original_matrix):
         self.assert_vector_within_relative_norm(
-            numpy.dot(cholesky_factor, cholesky_factor.T),
+            np.dot(cholesky_factor, cholesky_factor.T),
             original_matrix,
             DEFAULT_ABS_TOL,
         )
@@ -233,17 +233,17 @@ class TestCholeskyFactorization(NumericalTestCase):
     @pytest.mark.parametrize("size", [10, 50, 200])
     def test_well_conditioned_matrices(self, size):
         # Random positive definite matrix
-        A = numpy.random.randn(size, size)
-        P = numpy.dot(A, A.T) + numpy.eye(size)
+        A = np.random.randn(size, size)
+        P = np.dot(A, A.T) + np.eye(size)
         L = compute_cholesky_for_gp_sampling(P)
         self.assert_cholesky_is_accurate(L, P)
 
         # Real covariance matrix
         dim = 4
-        X = numpy.random.rand(size, dim)
-        params = numpy.random.gamma(1, 0.1, dim + 1)
+        X = np.random.rand(size, dim)
+        params = np.random.gamma(1, 0.1, dim + 1)
         kernel = SquareExponential(params)
-        covariance_matrix = kernel.build_kernel_matrix(X) + 1e-4 * numpy.eye(size)
+        covariance_matrix = kernel.build_kernel_matrix(X) + 1e-4 * np.eye(size)
         L = compute_cholesky_for_gp_sampling(covariance_matrix)
         self.assert_cholesky_is_accurate(L, covariance_matrix)
 
@@ -251,19 +251,19 @@ class TestCholeskyFactorization(NumericalTestCase):
     def test_ill_conditioned_matrices(self, size):
         # Random ill conditioned matrix
         matrix_rank = 4
-        X = numpy.random.rand(size, matrix_rank)
-        P = numpy.dot(X, X.T)
-        assert numpy.linalg.matrix_rank(P) == matrix_rank
+        X = np.random.rand(size, matrix_rank)
+        P = np.dot(X, X.T)
+        assert np.linalg.matrix_rank(P) == matrix_rank
         L = compute_cholesky_for_gp_sampling(P)
         self.assert_cholesky_is_accurate(L, P)
 
         # Real ill conditioned covariance matrix
         dim = 3
-        X = 0.0001 * numpy.random.rand(size, dim)
+        X = 0.0001 * np.random.rand(size, dim)
         spatial_rank = 5
-        X[:spatial_rank] = numpy.random.rand(spatial_rank, dim)
-        kernel = SquareExponential(numpy.ones(dim + 1))
+        X[:spatial_rank] = np.random.rand(spatial_rank, dim)
+        kernel = SquareExponential(np.ones(dim + 1))
         covariance_matrix = kernel.build_kernel_matrix(X)
-        assert numpy.linalg.matrix_rank(covariance_matrix) < size
+        assert np.linalg.matrix_rank(covariance_matrix) < size
         L = compute_cholesky_for_gp_sampling(covariance_matrix)
         self.assert_cholesky_is_accurate(L, covariance_matrix)

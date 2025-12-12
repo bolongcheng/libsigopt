@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 # pylint: disable=too-many-positional-arguments
-import numpy
+import numpy as np
 
 from libsigopt.aux.adapter_info_containers import DomainInfo, GPModelInfo, MetricsInfo, PointsContainer
 from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME, TASK_SELECTION_STRATEGY_A_PRIORI
@@ -20,15 +20,15 @@ TEST_FAILURE_PROB = 0.1
 def form_random_hyperparameter_dict(domain, use_tikhonov=False, add_task_length=False, num_metrics=1):
     list_of_hyperparameter_dict = []
     for _ in range(num_metrics):
-        alpha = numpy.random.gamma(1, 0.1)
-        tikhonov = numpy.random.gamma(1, 0.1) if use_tikhonov else None
+        alpha = np.random.gamma(1, 0.1)
+        tikhonov = np.random.gamma(1, 0.1) if use_tikhonov else None
         task_length = 0.19 if add_task_length else None
         length_scales = []
         for dc in domain:
             if dc["var_type"] == CATEGORICAL_EXPERIMENT_PARAMETER_NAME:
-                length_scales.append(numpy.random.uniform(0.5, 2.0, len(dc["elements"])).tolist())
+                length_scales.append(np.random.uniform(0.5, 2.0, len(dc["elements"])).tolist())
             else:
-                length_scales.append([numpy.random.gamma(1, 0.1) * (dc["elements"][1] - dc["elements"][0])])
+                length_scales.append([np.random.gamma(1, 0.1) * (dc["elements"][1] - dc["elements"][0])])
         list_of_hyperparameter_dict.append(
             {
                 "alpha": alpha,
@@ -72,7 +72,7 @@ def form_model_info(
 def form_nonzero_mean_data(dim, mean_type):
     if mean_type == NONZERO_MEAN_CUSTOM_MEAN_TYPE:
         raise ValueError("This will need some work to make work with tasks")
-        # return {'mean_type': NONZERO_MEAN_CUSTOM_MEAN_TYPE, 'poly_indices': numpy.random.randint(0, 3, dim)}
+        # return {'mean_type': NONZERO_MEAN_CUSTOM_MEAN_TYPE, 'poly_indices': np.random.randint(0, 3, dim)}
     return {"mean_type": mean_type, "poly_indices": None}
 
 
@@ -89,24 +89,24 @@ def form_points_sampled(
     points = domain.generate_quasi_random_points_in_domain(num_sampled)
     if isinstance(domain, ContinuousDomain) and snap_cats:
         for k, this_closed_interval in enumerate(domain.domain_bounds):
-            if numpy.all(this_closed_interval == numpy.array([0, 1])):
-                points[:, k] = numpy.round(points[:, k])
-    values = numpy.random.uniform(-0.1, 0.1, (num_sampled, num_metrics))
-    failures = numpy.random.random(num_sampled) < failure_prob
+            if np.all(this_closed_interval == np.array([0, 1])):
+                points[:, k] = np.round(points[:, k])
+    values = np.random.uniform(-0.1, 0.1, (num_sampled, num_metrics))
+    failures = np.random.random(num_sampled) < failure_prob
 
     return PointsContainer(
         points=points,
         values=values,
-        value_vars=numpy.full_like(values, noise_per_point),
+        value_vars=np.full_like(values, noise_per_point),
         failures=failures,
-        task_costs=numpy.random.choice(task_options, size=failures.shape) if task_options.size else None,
+        task_costs=np.random.choice(task_options, size=failures.shape) if task_options.size else None,
     )
 
 
 def form_points_being_sampled(domain, num_points_being_sampled, task_options=None):
     return PointsContainer(
         points=domain.generate_quasi_random_points_in_domain(num_points_being_sampled),
-        task_costs=numpy.random.choice(task_options, size=num_points_being_sampled) if task_options.size else None,
+        task_costs=np.random.choice(task_options, size=num_points_being_sampled) if task_options.size else None,
     )
 
 
@@ -122,11 +122,11 @@ def form_metrics_info(
     constraint_metric_thresholds=None,
 ):
     num_metrics = num_optimized_metrics + num_constraint_metrics + num_stored_metrics
-    shuffled_index = numpy.random.permutation(numpy.arange(num_metrics, dtype=int))
+    shuffled_index = np.random.permutation(np.arange(num_metrics, dtype=int))
     optimized_metrics_index = shuffled_index[:num_optimized_metrics]
     constraint_metrics_index = shuffled_index[num_optimized_metrics : num_optimized_metrics + num_constraint_metrics]
 
-    user_specified_thresholds = numpy.full(num_metrics, numpy.nan)
+    user_specified_thresholds = np.full(num_metrics, np.nan)
     assert optimized_metric_thresholds is None or num_optimized_metrics == len(optimized_metric_thresholds)
     assert constraint_metric_thresholds is None or num_constraint_metrics == len(constraint_metric_thresholds)
     if optimized_metric_thresholds is not None:
@@ -142,7 +142,7 @@ def form_metrics_info(
         metric_objectives = ["maximize" for _ in range(num_metrics)]
     return MetricsInfo(
         requires_pareto_frontier_optimization=requires_pareto_frontier_optimization,
-        observation_budget=numpy.random.randint(50, 200),
+        observation_budget=np.random.randint(50, 200),
         user_specified_thresholds=user_specified_thresholds,
         objectives=metric_objectives,
         optimized_metrics_index=optimized_metrics_index,
@@ -187,7 +187,7 @@ class ZigoptSimulator(object):
         self.num_tasks = num_tasks
 
     def form_gp_ei_categorical_inputs(self, parallelism_method):
-        task_options = numpy.sort(numpy.random.random(self.num_tasks) if self.num_tasks else [])
+        task_options = np.sort(np.random.random(self.num_tasks) if self.num_tasks else [])
         domain = form_random_unconstrained_categorical_domain(self.dim)
         points_sampled = form_points_sampled(
             domain,
@@ -233,7 +233,7 @@ class ZigoptSimulator(object):
         return view_input
 
     def form_gp_next_points_view_input_from_domain(self, domain, parallelism_method):
-        task_options = numpy.sort(numpy.random.random(self.num_tasks) if self.num_tasks else [])
+        task_options = np.sort(np.random.random(self.num_tasks) if self.num_tasks else [])
         points_sampled = form_points_sampled(
             domain,
             self.num_sampled,
@@ -290,7 +290,7 @@ class ZigoptSimulator(object):
         return view_input, domain
 
     def form_spe_next_points_view_input_from_domain(self, domain):
-        task_options = numpy.sort(numpy.random.random(self.num_tasks) if self.num_tasks else [])
+        task_options = np.sort(np.random.random(self.num_tasks) if self.num_tasks else [])
         points_sampled = form_points_sampled(
             domain,
             self.num_sampled,
@@ -322,7 +322,7 @@ class ZigoptSimulator(object):
             ),
             "task_options": task_options,
         }
-        view_input["metrics_info"].observation_budget = numpy.random.randint(50, 200)
+        view_input["metrics_info"].observation_budget = np.random.randint(50, 200)
 
         return view_input
 
@@ -337,7 +337,7 @@ class ZigoptSimulator(object):
         return view_input, domain
 
     def form_gp_hyper_opt_categorical_inputs(self):
-        task_options = numpy.sort(numpy.random.random(self.num_tasks) if self.num_tasks else [])
+        task_options = np.sort(np.random.random(self.num_tasks) if self.num_tasks else [])
         domain = form_random_unconstrained_categorical_domain(self.dim)
         points_sampled = form_points_sampled(
             domain,
@@ -374,7 +374,7 @@ class ZigoptSimulator(object):
         return view_input, domain
 
     def form_random_search_view_input_from_domain(self, domain):
-        task_options = numpy.sort(numpy.random.random(self.num_tasks) if self.num_tasks else [])
+        task_options = np.sort(np.random.random(self.num_tasks) if self.num_tasks else [])
         view_input = {
             "domain_info": form_domain_info(domain),
             "num_to_sample": self.num_to_sample,

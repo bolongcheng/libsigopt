@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 import warnings
 
-import numpy
+import numpy as np
 import scipy.optimize
 
 from libsigopt.compute.misc.constant import L_BFGS_B_OPTIMIZER, SLSQP_OPTIMIZER
@@ -63,7 +63,7 @@ class MultistartOptimizer(Optimizer):
         if selected_starts is None:
             if self.num_multistarts < 1:
                 raise ValueError("You must either specify starting locations or how many to create randomly.")
-            selected_starts = numpy.empty((0, self.optimizer.dim))
+            selected_starts = np.empty((0, self.optimizer.dim))
         num_extra_starts = self.num_multistarts - len(selected_starts)
         if num_extra_starts <= 0:
             initial_starts = selected_starts
@@ -73,7 +73,7 @@ class MultistartOptimizer(Optimizer):
                 self.log_sample,
             )
             try:
-                initial_starts = numpy.concatenate((selected_starts, extra_starts), axis=0)
+                initial_starts = np.concatenate((selected_starts, extra_starts), axis=0)
             except ValueError as e:
                 raise ValueError(f"selected_starts {selected_starts}\n extra_starts {extra_starts}") from e
         backup_starts = self.optimizer.domain.generate_quasi_random_points_in_domain(
@@ -81,12 +81,12 @@ class MultistartOptimizer(Optimizer):
             self.log_sample,
         )
 
-        all_starts = numpy.concatenate((initial_starts, backup_starts), axis=0)
+        all_starts = np.concatenate((initial_starts, backup_starts), axis=0)
 
         # NOTE: best_point is set to None for initialization, but is updated on the first step of the loop
         # TODO(RTL-62): Debate if there is a better way to deal with scipy solvers that violate the constraints
         best_point = None
-        best_function_value = -numpy.inf
+        best_function_value = -np.inf
         start_list = []
         end_list = []
         function_value_list = []
@@ -95,7 +95,7 @@ class MultistartOptimizer(Optimizer):
             try:
                 self.optimizer.objective_function.current_point = point
                 self.optimizer.optimize(**kwargs)
-            except numpy.linalg.LinAlgError:
+            except np.linalg.LinAlgError:
                 function_value = float("nan")
                 success = False
             else:
@@ -118,7 +118,7 @@ class MultistartOptimizer(Optimizer):
                     best_point = point
                     continue
                 best_point = end_point
-                best_function_value = function_value if not numpy.isnan(function_value) else best_function_value
+                best_function_value = function_value if not np.isnan(function_value) else best_function_value
 
             if self.num_multistarts == 0:
                 if len(function_value_list) == len(selected_starts):
@@ -127,7 +127,7 @@ class MultistartOptimizer(Optimizer):
                 num_successes = sum(successes_list)
                 min_num_successes = max(
                     MINIMUM_SUCCESSFUL_MULTISTARTS_NUMBER,
-                    numpy.floor(MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION * self.num_multistarts),
+                    np.floor(MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION * self.num_multistarts),
                 )
                 if num_successes >= min_num_successes:
                     break
@@ -136,13 +136,13 @@ class MultistartOptimizer(Optimizer):
                 f"{len(all_starts)} multistarts attempted, {sum(successes_list)} succeeded, which was insufficient: "
                 f"num_multistarts={self.num_multistarts}, "
                 f"minimum required was max({MINIMUM_SUCCESSFUL_MULTISTARTS_NUMBER}, "
-                f"{numpy.floor(MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION * self.num_multistarts)})"
+                f"{np.floor(MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION * self.num_multistarts)})"
             )
 
         all_results = OptimizationResults(
-            starting_points=numpy.array(start_list),
-            ending_points=numpy.array(end_list),
-            function_values=numpy.array(function_value_list),
+            starting_points=np.array(start_list),
+            ending_points=np.array(end_list),
+            function_values=np.array(function_value_list),
         )
         return best_point, all_results
 
@@ -176,13 +176,13 @@ class _ScipyOptimizerWrapper(Optimizer):
     def joint_function_gradient_eval(self, **kwargs):
         def decorated(point):
             # Very rarely, SLSQP generates all NaN points.
-            if numpy.any(numpy.isnan(point)):
-                return numpy.inf, numpy.zeros((self.dim,))
+            if np.any(np.isnan(point)):
+                return np.inf, np.zeros((self.dim,))
 
             self.objective_function.current_point = point
             value = -self.objective_function.compute_objective_function(**kwargs)
             gradient = -self.objective_function.compute_grad_objective_function(**kwargs)
-            assert numpy.isfinite(value) and gradient.shape == (self.dim,)
+            assert np.isfinite(value) and gradient.shape == (self.dim,)
             return value, gradient
 
         return decorated

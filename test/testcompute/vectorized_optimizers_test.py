@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from collections import namedtuple
 
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.compute.acquisition_function import AcquisitionFunction
@@ -24,14 +24,14 @@ class QuadraticFunction(AcquisitionFunction):
         dim = domain.dim
         hd = HistoricalData(dim)
         hd.append_historical_data(
-            points_sampled=numpy.ones((num_points, dim)),
-            points_sampled_value=numpy.ones(num_points),
-            points_sampled_noise_variance=numpy.ones(num_points),
+            points_sampled=np.ones((num_points, dim)),
+            points_sampled_value=np.ones(num_points),
+            points_sampled_noise_variance=np.ones(num_points),
         )
         cov = SquareExponential([0.1] * (dim + 1))
         fake_gp = GaussianProcess(cov, hd)
         super().__init__(fake_gp)
-        self._maxima_point = numpy.copy(maxima_point)
+        self._maxima_point = np.copy(maxima_point)
 
     @property
     def optimum_point(self):
@@ -42,7 +42,7 @@ class QuadraticFunction(AcquisitionFunction):
         return 0.0
 
     def _evaluate_at_point_list(self, points_to_evaluate):
-        return -numpy.sum((points_to_evaluate - self._maxima_point) ** 2, axis=1)
+        return -np.sum((points_to_evaluate - self._maxima_point) ** 2, axis=1)
 
     def _evaluate_grad_at_point_list(self, points_to_evaluate):
         return -2.0 * (points_to_evaluate - self._maxima_point)
@@ -66,7 +66,7 @@ class TestOptimizer(NumericalTestCase):
         cat_domain = CategoricalDomain(domain_components * cls.dim)
         cls.domain = cat_domain.one_hot_domain
 
-        maxima_point = numpy.full(cls.dim, 0.0)
+        maxima_point = np.full(cls.dim, 0.0)
         cls.af = QuadraticFunction(cls.domain, maxima_point)
 
     @pytest.mark.parametrize("optimizer_class", [AdamOptimizer, DEOptimizer])
@@ -78,7 +78,7 @@ class TestOptimizer(NumericalTestCase):
             num_multistarts=5,
             maxiter=0,
         )
-        _, all_results = optimizer.optimize(numpy.atleast_2d([0] * self.dim))
+        _, all_results = optimizer.optimize(np.atleast_2d([0] * self.dim))
         assert len(all_results.ending_points) == len(all_results.starting_points) == 5
 
         # Check that optimizers automatically restrict points to within the domain
@@ -88,7 +88,7 @@ class TestOptimizer(NumericalTestCase):
             num_multistarts=5,
             maxiter=1,
         )
-        best_location, all_results = optimizer.optimize(numpy.atleast_2d([2] * self.dim))
+        best_location, all_results = optimizer.optimize(np.atleast_2d([2] * self.dim))
         for pt in all_results.ending_points:
             assert self.domain.check_point_acceptable(pt)
         assert self.domain.check_point_acceptable(best_location)
@@ -101,8 +101,8 @@ class TestOptimizer(NumericalTestCase):
             num_multistarts=10,
             maxiter=1,
         )
-        best_result, _ = optimizer.optimize(numpy.atleast_2d(optimum_point))
-        self.assert_vector_within_relative(best_result, optimum_point, 2.0 * numpy.finfo(numpy.float64).eps)
+        best_result, _ = optimizer.optimize(np.atleast_2d(optimum_point))
+        self.assert_vector_within_relative(best_result, optimum_point, 2.0 * np.finfo(np.float64).eps)
 
         # Start near the optimal, should get closer
         optimizer = optimizer_class(
@@ -111,14 +111,14 @@ class TestOptimizer(NumericalTestCase):
             num_multistarts=50,
         )
         epsilon = 0.01
-        best_result, _ = optimizer.optimize(numpy.atleast_2d(optimum_point + epsilon))
+        best_result, _ = optimizer.optimize(np.atleast_2d(optimum_point + epsilon))
 
         # Verify coordinates are closer to the optimum than starting location
         self.assert_vector_within_relative(best_result, optimum_point, epsilon)
 
         # Verify function value improved over starting values
-        starter_value = self.af.evaluate_at_point_list(numpy.atleast_2d(optimum_point + epsilon))
-        value = self.af.evaluate_at_point_list(numpy.atleast_2d(best_result))
+        starter_value = self.af.evaluate_at_point_list(np.atleast_2d(optimum_point + epsilon))
+        value = self.af.evaluate_at_point_list(np.atleast_2d(best_result))
         assert value >= starter_value
 
     @pytest.mark.parametrize("optimizer_class", [DEOptimizer, AdamOptimizer])
@@ -150,7 +150,7 @@ class TestOptimizer(NumericalTestCase):
             ],
         )
 
-        af = QuadraticFunction(domain.one_hot_domain, numpy.full(dim, 0.0))
+        af = QuadraticFunction(domain.one_hot_domain, np.full(dim, 0.0))
         optimizer = optimizer_class(
             acquisition_function=af,
             domain=domain.one_hot_domain,
@@ -170,9 +170,9 @@ class TestOptimizer(NumericalTestCase):
 
         domain = CategoricalDomain([{"var_type": "double", "elements": (-1, 1)}] * dim)
         x = domain.generate_quasi_random_points_in_domain(N)
-        y = 6 - numpy.log(1 + numpy.sum(x**2, axis=1))
+        y = 6 - np.log(1 + np.sum(x**2, axis=1))
         data = HistoricalData(dim)
-        data.append_historical_data(x, y, numpy.full_like(y, 1e-3))
+        data.append_historical_data(x, y, np.full_like(y, 1e-3))
         cov = SquareExponential([1.0] + [(N / 2) ** (-1 / dim)] * dim)
         gp = GaussianProcess(cov, data, [[0] * dim])
         epi = ExpectedParallelImprovement(gp, num_to_sample)

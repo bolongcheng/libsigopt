@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.aux.samplers import *
@@ -11,24 +11,24 @@ class TestGridSampler(object):
     def test_grid_generation(self):
         points_per_dimension: list[int] | int
 
-        domain_bounds = numpy.array([[0.0, 1.0], [-2.0, 3.0], [2.71, 3.14]])
+        domain_bounds = np.array([[0.0, 1.0], [-2.0, 3.0], [2.71, 3.14]])
         points_per_dimension = [7, 11, 8]
 
         # Test that all points are present
         grid = generate_grid_points(points_per_dimension, domain_bounds)
 
         per_axis_grid = [
-            numpy.linspace(bounds[0], bounds[1], points_per_dimension[i]) for i, bounds in enumerate(domain_bounds)
+            np.linspace(bounds[0], bounds[1], points_per_dimension[i]) for i, bounds in enumerate(domain_bounds)
         ]
 
         # Loop ordering assumes the output is ordered a certain way.
         for i, y_coord in enumerate(per_axis_grid[1]):
             for j, x_coord in enumerate(per_axis_grid[0]):
                 for k, z_coord in enumerate(per_axis_grid[2]):
-                    truth = numpy.array([x_coord, y_coord, z_coord])
+                    truth = np.array([x_coord, y_coord, z_coord])
                     index = i * per_axis_grid[2].size * per_axis_grid[0].size + j * per_axis_grid[2].size + k
                     test = grid[index, ...]
-                    assert numpy.all(test == truth)
+                    assert np.all(test == truth)
 
         # Also test that scalar points_per_dimension works
         points_per_dimension = [5, 5, 5]
@@ -37,7 +37,7 @@ class TestGridSampler(object):
         points_per_dimension = 5
         grid_test = generate_grid_points(points_per_dimension, domain_bounds)
 
-        assert numpy.all(grid_truth == grid_test)
+        assert np.all(grid_truth == grid_test)
 
 
 class TestLatinHypercubeSampler(object):
@@ -57,11 +57,11 @@ class TestLatinHypercubeSampler(object):
     )
     @pytest.mark.parametrize("num_points", [1, 2, 5, 10, 20])
     def test_latin_hypercube_equally_spaced(self, domain_bounds, num_points):
-        domain_bounds = numpy.asarray(domain_bounds)
+        domain_bounds = np.asarray(domain_bounds)
         points = generate_latin_hypercube_points(num_points, domain_bounds)
 
         for point in points:
-            assert numpy.all(point >= domain_bounds[:, 0]) and numpy.all(point <= domain_bounds[:, 1])
+            assert np.all(point >= domain_bounds[:, 0]) and np.all(point <= domain_bounds[:, 1])
 
         untunable_indexes = [i for i, interval in enumerate(domain_bounds) if interval[0] == interval[1]]
         for index in untunable_indexes:
@@ -105,11 +105,11 @@ class TestRandomSampler(object):
         ],
     )
     def test_random_points_within_domain(self, domain_bounds, num_points, random_generator):
-        domain_bounds = numpy.asarray(domain_bounds)
+        domain_bounds = np.asarray(domain_bounds)
         points = random_generator(num_points, domain_bounds)
 
         for point in points:
-            assert numpy.all(point >= domain_bounds[:, 0]) and numpy.all(point <= domain_bounds[:, 1])
+            assert np.all(point >= domain_bounds[:, 0]) and np.all(point <= domain_bounds[:, 1])
 
             untunable_indexes = [i for i, interval in enumerate(domain_bounds) if interval[0] == interval[1]]
             for index in untunable_indexes:
@@ -118,19 +118,19 @@ class TestRandomSampler(object):
 
 
 class TestConstrainedSamplers(object):
-    halfspaces = numpy.array([[1, 1, -1e-5], [-1, -0, 0], [1, 0, -1e2], [-0, -1, 0], [0, 1, -1e2]])
+    halfspaces = np.array([[1, 1, -1e-5], [-1, -0, 0], [1, 0, -1e2], [-0, -1, 0], [0, 1, -1e2]])
     A = halfspaces[:, :-1]
     b = -halfspaces[:, -1]
     x0, _, _ = find_interior_point(halfspaces)
-    domain_bounds = numpy.array([[0, 100] for _ in range(2)])
+    domain_bounds = np.array([[0, 100] for _ in range(2)])
 
     def check_points_satisfy_constraints(self, samples):
         for s in samples:
-            assert numpy.all(numpy.dot(self.A, s) <= self.b)
+            assert np.all(np.dot(self.A, s) <= self.b)
 
     def check_points_satisfy_domain_bounds(self, samples):
         for s in samples:
-            assert numpy.all((s >= 0) & (s <= 100))
+            assert np.all((s >= 0) & (s <= 100))
 
     def test_hitandrun_sampler(self):
         num_points = 100

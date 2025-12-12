@@ -4,7 +4,7 @@
 import copy
 from collections import namedtuple
 
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 from scipy.stats import norm
@@ -33,7 +33,7 @@ class TestGaussianProcessSum(NumericalTestCase):
     fixed_dims = False
     domains: list[ContinuousDomain]
     gaussian_process_lists: list[list[GaussianProcess]]
-    weights_lists: list[numpy.ndarray]
+    weights_lists: list[np.ndarray]
 
     @classmethod
     @pytest.fixture(autouse=True, scope="class")
@@ -42,35 +42,35 @@ class TestGaussianProcessSum(NumericalTestCase):
 
     @classmethod
     def _base_setup(cls):
-        dims: list[int] | numpy.ndarray = [7] * 10 if cls.fixed_dims else numpy.random.randint(2, 25, size=(10,))
+        dims: list[int] | np.ndarray = [7] * 10 if cls.fixed_dims else np.random.randint(2, 25, size=(10,))
         cls.domains = [CategoricalDomain([{"var_type": "double", "elements": (0, 1)}] * d).one_hot_domain for d in dims]
         cls.gaussian_process_lists = []
         cls.weights_lists = []
         list_size = 3
         for domain in cls.domains:
-            num_sampled = numpy.random.randint(50, 150)
+            num_sampled = np.random.randint(50, 150)
             x = domain.generate_quasi_random_points_in_domain(num_sampled)
-            y = numpy.sum((x - 0.5) ** 2, axis=1)
-            v = numpy.full_like(y, 10 ** -numpy.random.uniform(-4, -1))
+            y = np.sum((x - 0.5) ** 2, axis=1)
+            v = np.full_like(y, 10 ** -np.random.uniform(-4, -1))
             gaussian_process_list = []
             for _ in range(list_size):
                 data = HistoricalData(domain.dim)
                 data.append_historical_data(x, y, v)
-                cov = C2RadialMatern(numpy.random.uniform(0.2, 0.8, size=(domain.dim + 1,)))
+                cov = C2RadialMatern(np.random.uniform(0.2, 0.8, size=(domain.dim + 1,)))
                 gp = GaussianProcess(cov, data, [[0] * domain.dim])
                 gaussian_process_list.append(gp)
             cls.gaussian_process_lists.append(gaussian_process_list)
-            cls.weights_lists.append(numpy.random.uniform(0.2, 0.8, size=list_size))
+            cls.weights_lists.append(np.random.uniform(0.2, 0.8, size=list_size))
 
     @classmethod
     def compute_mixture_of_individual_gps_core_functionality(cls, gp_list, weights, xt, option):
         num_points_xt, dim = xt.shape
         num_of_gps = len(gp_list)
-        all_mean = numpy.zeros((num_points_xt, num_of_gps))
-        all_var = numpy.zeros((num_points_xt, num_of_gps))
-        all_grad_mean = numpy.zeros((num_points_xt, dim, num_of_gps))
-        all_grad_var = numpy.zeros((num_points_xt, dim, num_of_gps))
-        all_covariance = numpy.zeros((num_points_xt, num_points_xt, num_of_gps))
+        all_mean = np.zeros((num_points_xt, num_of_gps))
+        all_var = np.zeros((num_points_xt, num_of_gps))
+        all_grad_mean = np.zeros((num_points_xt, dim, num_of_gps))
+        all_grad_var = np.zeros((num_points_xt, dim, num_of_gps))
+        all_covariance = np.zeros((num_points_xt, num_points_xt, num_of_gps))
 
         for i, gp in enumerate(gp_list):
             if option in ("func",):
@@ -90,11 +90,11 @@ class TestGaussianProcessSum(NumericalTestCase):
             if option in ("all",):
                 all_covariance[:, :, i] = gp.compute_covariance_of_points(xt)
 
-        mean = numpy.dot(all_mean, weights)
-        var = numpy.dot(all_var, weights**2)
-        grad_mean = numpy.dot(all_grad_mean, weights)
-        grad_var = numpy.dot(all_grad_var, weights**2)
-        covariance = numpy.dot(all_covariance, weights**2)
+        mean = np.dot(all_mean, weights)
+        var = np.dot(all_var, weights**2)
+        grad_mean = np.dot(all_grad_mean, weights)
+        grad_var = np.dot(all_grad_var, weights**2)
+        covariance = np.dot(all_covariance, weights**2)
         return ExpectedResults(mean, var, grad_mean, grad_var, covariance)
 
     @classmethod
@@ -104,9 +104,9 @@ class TestGaussianProcessSum(NumericalTestCase):
         upper_bound = mean + deviation_from_mean
         lower_bound = mean - deviation_from_mean
 
-        counter = numpy.zeros((1, num_sampled_points))
+        counter = np.zeros((1, num_sampled_points))
         for sample in samples:
-            counter += numpy.logical_and(sample < upper_bound, sample > lower_bound).astype(int)
+            counter += np.logical_and(sample < upper_bound, sample > lower_bound).astype(int)
 
         # estimated probability of lying in the given interval
         probability_close_to_mean = counter / num_samples
@@ -116,9 +116,9 @@ class TestGaussianProcessSum(NumericalTestCase):
 
         # probability_close_to_mean is an estimation so let's make an assert with some wiggle room
         p = probability_close_to_mean  # probability of success of each counter
-        counter_expected_std = numpy.sqrt(p * (1 - p)).max()  # consider the worse case
+        counter_expected_std = np.sqrt(p * (1 - p)).max()  # consider the worse case
         estimation_confidence = 10  # increase the imprecision by this amount
-        counter_imprecision = counter_expected_std / numpy.sqrt(num_samples)
+        counter_imprecision = counter_expected_std / np.sqrt(num_samples)
         counter_imprecision = estimation_confidence * counter_imprecision
 
         # next line is basically testing if probability_close_to_mean > 0.9 if k = 3
@@ -156,7 +156,7 @@ class TestGaussianProcessSum(NumericalTestCase):
 
         weights[0] = weights[0] + 1
         assert not weights[0] == self.weights_lists[0][0]
-        assert all(numpy.isclose(w, z) for w, z in zip(gp_sum.weights, weights))
+        assert all(np.isclose(w, z) for w, z in zip(gp_sum.weights, weights))
 
     def test_gp_sum_properties(self):
         for gp_list, weights in zip(self.gaussian_process_lists, self.weights_lists):
@@ -167,16 +167,16 @@ class TestGaussianProcessSum(NumericalTestCase):
             for gp_from_sum, gp_from_list in zip(gp_sum.gaussian_process_list, gp_list):
                 assert gp_from_sum.dim == gp_from_list.dim
                 assert gp_from_sum.num_sampled == gp_from_list.num_sampled
-                assert numpy.allclose(gp_from_sum.points_sampled, gp_from_list.points_sampled)
-                assert numpy.allclose(gp_from_sum.points_sampled_value, gp_from_list.points_sampled_value)
-                assert numpy.allclose(
+                assert np.allclose(gp_from_sum.points_sampled, gp_from_list.points_sampled)
+                assert np.allclose(gp_from_sum.points_sampled_value, gp_from_list.points_sampled_value)
+                assert np.allclose(
                     gp_from_sum.points_sampled_noise_variance,
                     gp_from_list.points_sampled_noise_variance,
                 )
             assert len(gp_sum.points_sampled) == gp_sum.num_sampled
             assert len(gp_sum.points_sampled_value) == gp_sum.num_sampled
             assert len(gp_sum.points_sampled_noise_variance) == gp_sum.num_sampled
-            assert all(numpy.isclose(w_sum, w) for w_sum, w in zip(gp_sum.weights, weights))
+            assert all(np.isclose(w_sum, w) for w_sum, w in zip(gp_sum.weights, weights))
 
     def test_gp_sum_append_lie_data(self):
         for domain, gp_list, weights in zip(self.domains, self.gaussian_process_lists, self.weights_lists):
@@ -191,15 +191,15 @@ class TestGaussianProcessSum(NumericalTestCase):
             assert len(gp_sum.points_sampled) == num_sampled + num_new_points
             assert len(gp_sum.points_sampled_value) == num_sampled + num_new_points
             assert len(gp_sum.points_sampled_noise_variance) == num_sampled + num_new_points
-            assert numpy.all(gp_sum.points_sampled_value[-num_new_points:] == max(gp_sum.points_sampled_value))
+            assert np.all(gp_sum.points_sampled_value[-num_new_points:] == max(gp_sum.points_sampled_value))
 
     def test_gp_sum_best_value_and_location(self):
         for gp_list, weights in zip(self.gaussian_process_lists, self.weights_lists):
-            best_values = numpy.zeros((gp_list[0].num_sampled, len(gp_list)))
+            best_values = np.zeros((gp_list[0].num_sampled, len(gp_list)))
             for i, gp in enumerate(gp_list):
                 best_values[:, i] = gp.points_sampled_value
-            combined_values = numpy.dot(best_values, weights)
-            best_index = numpy.argmin(combined_values)
+            combined_values = np.dot(best_values, weights)
+            best_index = np.argmin(combined_values)
             expected_best_value = combined_values[best_index]
             expected_best_location = gp_list[0].points_sampled[best_index, :]
 
@@ -221,12 +221,12 @@ class TestGaussianProcessSum(NumericalTestCase):
 
             mean = gp_sum.compute_mean_of_points(xt)
             var = gp_sum.compute_variance_of_points(xt)
-            stds = numpy.sqrt(var)
+            stds = np.sqrt(var)
 
-            all_samples = numpy.zeros((n_samples, num_points, num_of_gps))
+            all_samples = np.zeros((n_samples, num_points, num_of_gps))
             for i, gp in enumerate(gp_list):
                 all_samples[:, :, i] = gp.draw_posterior_samples_of_points(n_samples, xt)
-            samples = numpy.dot(all_samples, weights)
+            samples = np.dot(all_samples, weights)
 
             samples_mean = samples.mean(axis=0)
             samples_var = samples.var(axis=0)
@@ -245,7 +245,7 @@ class TestGaussianProcessSum(NumericalTestCase):
             gp_sum = GaussianProcessSum(gp_list, weights)
             mean = gp_sum.compute_mean_of_points(xt)
             var = gp_sum.compute_variance_of_points(xt)
-            stds = numpy.sqrt(var)
+            stds = np.sqrt(var)
 
             samples = gp_sum.draw_posterior_samples_of_points(n_samples, xt)
 
@@ -279,14 +279,14 @@ class TestGaussianProcessSum(NumericalTestCase):
                 gp_sum.compute_mean_of_points,
                 gp_sum.compute_grad_mean_of_points,
                 tol=h,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )
             self.check_gradient_with_finite_difference(
                 xt,
                 gp_sum.compute_variance_of_points,
                 gp_sum.compute_grad_variance_of_points,
                 tol=h,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )
 
             self.assert_vector_within_relative_norm(expected_results.mean, mean, 1e-6)
@@ -313,15 +313,15 @@ class TestGaussianProcessSum(NumericalTestCase):
             elif acquisition_function_name == "aei":
                 return AugmentedExpectedImprovement(predictor)
             elif acquisition_function_name == "eiwf":
-                threshold = numpy.random.random()
+                threshold = np.random.random()
                 return ExpectedImprovementWithFailures(predictor, ProbabilisticFailures(predictor, threshold))
             elif acquisition_function_name == "epi":
                 return ExpectedParallelImprovement(predictor, 1, points_being_sampled=points_being_sampled)
             elif acquisition_function_name == "epiwf":
-                threshold = numpy.random.random()
+                threshold = np.random.random()
                 list_of_pfs = []
                 for _ in range(2):
-                    threshold = numpy.random.random()
+                    threshold = np.random.random()
                     list_of_pfs.append(ProbabilisticFailures(predictor, threshold))
                 ppf = ProductOfListOfProbabilisticFailures(list_of_pfs)
                 return ExpectedParallelImprovementWithFailures(
@@ -358,5 +358,5 @@ class TestGaussianProcessSum(NumericalTestCase):
                     acquisition_function.evaluate_at_point_list,
                     acquisition_function.evaluate_grad_at_point_list,
                     tol=domain.dim * h,
-                    fd_step=h * numpy.ones(domain.dim),
+                    fd_step=h * np.ones(domain.dim),
                 )

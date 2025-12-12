@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 
 from testaux.numerical_test_case import NumericalTestCase
@@ -100,10 +100,10 @@ class TestNumericalTestCase(NumericalTestCase):
     def test_assert_vector_row_wise_norm_is_close(self, value, truth, tol, expected_to_pass):
         n = 12
         dim = 5
-        random_vector = numpy.zeros((n, dim))
-        index = numpy.random.choice(n)
-        value_vector = numpy.copy(random_vector)
-        truth_vector = numpy.copy(random_vector)
+        random_vector = np.zeros((n, dim))
+        index = np.random.choice(n)
+        value_vector = np.copy(random_vector)
+        truth_vector = np.copy(random_vector)
         value_vector[index, 0] = value
         truth_vector[index, 0] = truth
         if expected_to_pass:

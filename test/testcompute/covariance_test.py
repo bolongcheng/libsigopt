@@ -12,7 +12,7 @@ import inspect
 import itertools
 from typing import Callable
 
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 
@@ -28,9 +28,9 @@ class CovariancesTestBase(NumericalTestCase):
     all_covariance_bases: list
     all_covariances: list[Callable]
     differentiable_covariances: list
-    test_x: list[numpy.ndarray]
-    test_z: list[numpy.ndarray]
-    test_hparams: list[numpy.ndarray]
+    test_x: list[np.ndarray]
+    test_z: list[np.ndarray]
+    test_hparams: list[np.ndarray]
 
     @classmethod
     @pytest.fixture(autouse=True, scope="class")
@@ -50,15 +50,15 @@ class CovariancesTestBase(NumericalTestCase):
         ]
 
         num_tests = 10
-        dim_array = numpy.random.randint(1, 11, (num_tests,)).tolist()
-        num_points_array = numpy.random.randint(30, 80, (num_tests,)).tolist()
+        dim_array = np.random.randint(1, 11, (num_tests,)).tolist()
+        num_points_array = np.random.randint(30, 80, (num_tests,)).tolist()
         cls.test_z = []
         cls.test_x = []
         cls.test_hparams = []
         for dim, num_points in zip(dim_array, num_points_array):
-            cls.test_z.append(numpy.random.random((num_points, dim)))
-            cls.test_x.append(numpy.random.random((num_points - 10, dim)))
-            cls.test_hparams.append(numpy.random.random((dim + 1,)))
+            cls.test_z.append(np.random.random((num_points, dim)))
+            cls.test_x.append(np.random.random((num_points - 10, dim)))
+            cls.test_hparams.append(np.random.random((dim + 1,)))
 
 
 class TestCovariances(CovariancesTestBase):
@@ -75,8 +75,8 @@ class TestCovariances(CovariancesTestBase):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
             for covariance_object in self.differentiable_covariances:
                 cov = covariance_object(hparams)
                 basic_gtensor = cov.grad_covariance(full_xz, full_zx)
@@ -92,10 +92,10 @@ class TestCovariances(CovariancesTestBase):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             # Note that, because of the faster computation that we use to compute kernel
             # matrices, it's possible the diagonal errors scale with sqrt(machine precision)
             # In reality, probably never gonna be close to this, but even this accuracy is much higher than need be
@@ -115,24 +115,24 @@ class TestCovariances(CovariancesTestBase):
                     basic_symm_kernel_matrix,
                     d * zn * zn * 1e-8,
                 )
-                noise = numpy.full(zn, numpy.random.random() * 1e-4)
+                noise = np.full(zn, np.random.random() * 1e-4)
                 standard_symmetric_noisy_kernel_matrix = cov.build_kernel_matrix(z, noise_variance=noise)
-                kernel_diff = numpy.diag(standard_symmetric_noisy_kernel_matrix - standard_symm_kernel_matrix)
+                kernel_diff = np.diag(standard_symmetric_noisy_kernel_matrix - standard_symm_kernel_matrix)
                 self.assert_vector_within_relative(kernel_diff, noise, 1e-6)
 
     def test_kernel_gradient_tensor_evaluation(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             for covariance_object in self.differentiable_covariances:
                 cov = covariance_object(hparams)
                 standard_gtensor = cov.build_kernel_grad_tensor(z, x)
                 basic_gtensor = cov.grad_covariance(full_xz, full_zx)
-                standard_gtensor_flat = numpy.array([standard_gtensor[:, :, i].reshape(-1) for i in range(d)]).T
+                standard_gtensor_flat = np.array([standard_gtensor[:, :, i].reshape(-1) for i in range(d)]).T
                 self.assert_vector_within_relative_norm(
                     standard_gtensor_flat,
                     basic_gtensor,
@@ -140,7 +140,7 @@ class TestCovariances(CovariancesTestBase):
                 )
                 standard_sgtensor = cov.build_kernel_grad_tensor(z)
                 basic_sgtensor = cov.grad_covariance(full_zz_trans, full_zz)
-                standard_sgtensor_flat = numpy.array([standard_sgtensor[:, :, i].reshape(-1) for i in range(d)]).T
+                standard_sgtensor_flat = np.array([standard_sgtensor[:, :, i].reshape(-1) for i in range(d)]).T
                 self.assert_vector_within_relative_norm(
                     standard_sgtensor_flat,
                     basic_sgtensor,
@@ -151,16 +151,16 @@ class TestCovariances(CovariancesTestBase):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             for covariance_object in self.differentiable_covariances:
                 cov = covariance_object(hparams)
                 dh = cov.num_hyperparameters
                 standard_hgtensor = cov.build_kernel_hparam_grad_tensor(z, x)
                 basic_hgtensor = cov.hyperparameter_grad_covariance(full_xz, full_zx)
-                standard_hgtensor_flat = numpy.array([standard_hgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
+                standard_hgtensor_flat = np.array([standard_hgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
                 self.assert_vector_within_relative_norm(
                     standard_hgtensor_flat,
                     basic_hgtensor,
@@ -168,7 +168,7 @@ class TestCovariances(CovariancesTestBase):
                 )
                 standard_shgtensor = cov.build_kernel_hparam_grad_tensor(z)
                 basic_shgtensor = cov.hyperparameter_grad_covariance(full_zz_trans, full_zz)
-                standard_shgtensor_flat = numpy.array([standard_shgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
+                standard_shgtensor_flat = np.array([standard_shgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
                 self.assert_vector_within_relative_norm(
                     standard_shgtensor_flat,
                     basic_shgtensor,
@@ -183,15 +183,15 @@ class TestCovariances(CovariancesTestBase):
             for covariance_object in self.differentiable_covariances:
                 cov = covariance_object(hparams)
                 for i in range(n):
-                    func = lambda u: cov.covariance(u, numpy.reshape(z[i, :], (1, -1)))
-                    grad = lambda u: cov.grad_covariance(u, numpy.reshape(z[i, :], (1, -1)))
+                    func = lambda u: cov.covariance(u, np.reshape(z[i, :], (1, -1)))
+                    grad = lambda u: cov.grad_covariance(u, np.reshape(z[i, :], (1, -1)))
                     h = 1e-8
                     self.check_gradient_with_finite_difference(
-                        numpy.reshape(x[i, :], (1, -1)),
+                        np.reshape(x[i, :], (1, -1)),
                         func,
                         grad,
                         tol=d * 2e-6,
-                        fd_step=h * numpy.ones(d),
+                        fd_step=h * np.ones(d),
                         use_complex=True,
                     )
 
@@ -213,7 +213,7 @@ class TestCovariances(CovariancesTestBase):
                     return cov.hyperparameter_grad_covariance(x, z)
 
                 self.check_gradient_with_finite_difference(
-                    numpy.reshape(hparams, (1, -1)),
+                    np.reshape(hparams, (1, -1)),
                     func,
                     grad,
                     tol=d * n * n * 1e-6,
@@ -232,37 +232,37 @@ class TestMultitaskCovariance(CovariancesTestBase):
         with pytest.raises(HyperparameterInvalidError):
             MultitaskTensorCovariance([1.0, 1.2, -1.4], covariance.C2RadialMatern, covariance.C2RadialMatern)
         with pytest.raises(HyperparameterInvalidError):
-            MultitaskTensorCovariance([1.0, 1.2, numpy.nan], covariance.C2RadialMatern, covariance.C2RadialMatern)
+            MultitaskTensorCovariance([1.0, 1.2, np.nan], covariance.C2RadialMatern, covariance.C2RadialMatern)
         with pytest.raises(HyperparameterInvalidError):
             MultitaskTensorCovariance([1.0, 1.2, None], covariance.C2RadialMatern, covariance.C2RadialMatern)
         with pytest.raises(HyperparameterInvalidError):
-            MultitaskTensorCovariance([1.0, 1.2, numpy.inf], covariance.C2RadialMatern, covariance.C2RadialMatern)
+            MultitaskTensorCovariance([1.0, 1.2, np.inf], covariance.C2RadialMatern, covariance.C2RadialMatern)
 
         cov = MultitaskTensorCovariance([2.3, 4.5, 6.7], covariance.SquareExponential, covariance.C2RadialMatern)
-        assert numpy.all(cov.hyperparameters == [2.3, 4.5, 6.7])
+        assert np.all(cov.hyperparameters == [2.3, 4.5, 6.7])
         assert cov.process_variance == 2.3
         assert cov.dim == 2
         assert cov.physical_covariance is not None
-        assert numpy.all(cov.physical_covariance.hyperparameters == [1.0, 4.5])
+        assert np.all(cov.physical_covariance.hyperparameters == [1.0, 4.5])
         assert cov.physical_covariance.process_variance == 1.0
         assert cov.physical_covariance.dim == 1
         assert cov.task_covariance is not None
-        assert numpy.all(cov.task_covariance.hyperparameters == [1.0, 6.7])
+        assert np.all(cov.task_covariance.hyperparameters == [1.0, 6.7])
         assert cov.task_covariance.process_variance == 1.0
         assert cov.task_covariance.dim == 1
 
         cov.hyperparameters = [1.2, 3.4, 5.6, 7.8]
-        assert numpy.all(cov.hyperparameters == [1.2, 3.4, 5.6, 7.8])
+        assert np.all(cov.hyperparameters == [1.2, 3.4, 5.6, 7.8])
         assert cov.physical_covariance.dim == 2
         assert cov.task_covariance.dim == 1
 
     def test_covariance_symmetric(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             z_trunc = z[: len(x), :]
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z_trunc, numpy.random.choice(self.tasks, size=(len(z_trunc), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z_trunc, np.random.choice(self.tasks, size=(len(z_trunc), 1))), axis=1)
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, numpy.random.random())
+                hparams_with_task = np.append(hparams, np.random.random())
                 cov = MultitaskTensorCovariance(hparams_with_task, c1, c2)
                 kernel_at_xz = cov.covariance(x=x, z=z)
                 kernel_at_zx = cov.covariance(x=z, z=x)
@@ -270,16 +270,16 @@ class TestMultitaskCovariance(CovariancesTestBase):
 
     def test_kernel_matrix_evaluation(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z, numpy.random.choice(self.tasks, size=(len(z), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z, np.random.choice(self.tasks, size=(len(z), 1))), axis=1)
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, numpy.random.random())
+                hparams_with_task = np.append(hparams, np.random.random())
                 cov = MultitaskTensorCovariance(hparams_with_task, c1, c2)
                 standard_kernel_matrix = cov.build_kernel_matrix(z, x)
                 basic_kernel_matrix = cov.covariance(full_xz, full_zx)
@@ -295,27 +295,27 @@ class TestMultitaskCovariance(CovariancesTestBase):
                     basic_symm_kernel_matrix,
                     zn * zn * 1e-8,
                 )
-                noise = numpy.full(zn, numpy.random.random() * 1e-4)
+                noise = np.full(zn, np.random.random() * 1e-4)
                 standard_symmetric_noisy_kernel_matrix = cov.build_kernel_matrix(z, noise_variance=noise)
-                kernel_diff = numpy.diag(standard_symmetric_noisy_kernel_matrix - standard_symm_kernel_matrix)
+                kernel_diff = np.diag(standard_symmetric_noisy_kernel_matrix - standard_symm_kernel_matrix)
                 self.assert_vector_within_relative(kernel_diff, noise, 1e-6)
 
     def test_kernel_gradient_tensor_evaluation(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z, numpy.random.choice(self.tasks, size=(len(z), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z, np.random.choice(self.tasks, size=(len(z), 1))), axis=1)
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, numpy.random.random())
+                hparams_with_task = np.append(hparams, np.random.random())
                 cov = MultitaskTensorCovariance(hparams_with_task, c1, c2)
                 standard_gtensor = cov.build_kernel_grad_tensor(z, x)
                 basic_gtensor = cov.grad_covariance(full_xz, full_zx)
-                standard_gtensor_flat = numpy.array([standard_gtensor[:, :, i].reshape(-1) for i in range(d)]).T
+                standard_gtensor_flat = np.array([standard_gtensor[:, :, i].reshape(-1) for i in range(d)]).T
                 self.assert_vector_within_relative_norm(
                     standard_gtensor_flat,
                     basic_gtensor,
@@ -323,7 +323,7 @@ class TestMultitaskCovariance(CovariancesTestBase):
                 )
                 standard_sgtensor = cov.build_kernel_grad_tensor(z)
                 basic_sgtensor = cov.grad_covariance(full_zz_trans, full_zz)
-                standard_sgtensor_flat = numpy.array([standard_sgtensor[:, :, i].reshape(-1) for i in range(d)]).T
+                standard_sgtensor_flat = np.array([standard_sgtensor[:, :, i].reshape(-1) for i in range(d)]).T
                 self.assert_vector_within_relative_norm(
                     standard_sgtensor_flat,
                     basic_sgtensor,
@@ -332,38 +332,38 @@ class TestMultitaskCovariance(CovariancesTestBase):
 
     def test_kernel_gradient_against_finite_difference(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z, numpy.random.choice(self.tasks, size=(len(z), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z, np.random.choice(self.tasks, size=(len(z), 1))), axis=1)
             xn, d = x.shape
             zn, _ = z.shape
             n = min(xn, zn)
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, max(numpy.random.random(), TASK_LENGTH_LOWER_BOUND))
+                hparams_with_task = np.append(hparams, max(np.random.random(), TASK_LENGTH_LOWER_BOUND))
                 cov = MultitaskTensorCovariance(hparams_with_task, c1, c2)
                 for i in range(n):
-                    func = lambda u: cov.covariance(u, numpy.reshape(z[i, :], (1, -1)))
-                    grad = lambda u: cov.grad_covariance(u, numpy.reshape(z[i, :], (1, -1)))
+                    func = lambda u: cov.covariance(u, np.reshape(z[i, :], (1, -1)))
+                    grad = lambda u: cov.grad_covariance(u, np.reshape(z[i, :], (1, -1)))
                     h = 1e-8
                     self.check_gradient_with_finite_difference(
-                        numpy.reshape(x[i, :], (1, -1)),
+                        np.reshape(x[i, :], (1, -1)),
                         func,
                         grad,
                         tol=d * 1e-6,
-                        fd_step=h * numpy.ones(d),
+                        fd_step=h * np.ones(d),
                         use_complex=True,
                     )
 
     def test_kernel_hyperparameter_gradient_against_finite_difference(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z, numpy.random.choice(self.tasks, size=(len(z), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z, np.random.choice(self.tasks, size=(len(z), 1))), axis=1)
             xn, d = x.shape
             zn, _ = z.shape
             n = min(xn, zn)
             x = x[:n, :]
             z = z[:n, :]
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, numpy.random.random())
+                hparams_with_task = np.append(hparams, np.random.random())
 
                 def func(hparams):
                     cov = MultitaskTensorCovariance(hparams.squeeze(), c1, c2)
@@ -374,7 +374,7 @@ class TestMultitaskCovariance(CovariancesTestBase):
                     return cov.hyperparameter_grad_covariance(x, z)
 
                 self.check_gradient_with_finite_difference(
-                    numpy.reshape(hparams_with_task, (1, -1)),
+                    np.reshape(hparams_with_task, (1, -1)),
                     func,
                     grad,
                     tol=d * n * n * 1e-6,
@@ -383,21 +383,21 @@ class TestMultitaskCovariance(CovariancesTestBase):
 
     def test_kernel_hyperparameter_gradient_tensor_evaluation(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
-            x = numpy.concatenate((x, numpy.random.choice(self.tasks, size=(len(x), 1))), axis=1)
-            z = numpy.concatenate((z, numpy.random.choice(self.tasks, size=(len(z), 1))), axis=1)
+            x = np.concatenate((x, np.random.choice(self.tasks, size=(len(x), 1))), axis=1)
+            z = np.concatenate((z, np.random.choice(self.tasks, size=(len(z), 1))), axis=1)
             xn, d = x.shape
             zn, _ = z.shape
-            full_zx = numpy.tile(z, (xn, 1))
-            full_xz = numpy.reshape(numpy.tile(x, (1, zn)), (xn * zn, d))
-            full_zz = numpy.tile(z, (zn, 1))
-            full_zz_trans = numpy.reshape(numpy.tile(z, (1, zn)), (zn * zn, d))
+            full_zx = np.tile(z, (xn, 1))
+            full_xz = np.reshape(np.tile(x, (1, zn)), (xn * zn, d))
+            full_zz = np.tile(z, (zn, 1))
+            full_zz_trans = np.reshape(np.tile(z, (1, zn)), (zn * zn, d))
             for c1, c2 in itertools.product(self.differentiable_covariances, self.differentiable_covariances):
-                hparams_with_task = numpy.append(hparams, numpy.random.random())
+                hparams_with_task = np.append(hparams, np.random.random())
                 cov = MultitaskTensorCovariance(hparams_with_task, c1, c2)
                 dh = cov.num_hyperparameters
                 standard_hgtensor = cov.build_kernel_hparam_grad_tensor(z, x)
                 basic_hgtensor = cov.hyperparameter_grad_covariance(full_xz, full_zx)
-                standard_hgtensor_flat = numpy.array([standard_hgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
+                standard_hgtensor_flat = np.array([standard_hgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
                 self.assert_vector_within_relative_norm(
                     standard_hgtensor_flat,
                     basic_hgtensor,
@@ -405,7 +405,7 @@ class TestMultitaskCovariance(CovariancesTestBase):
                 )
                 standard_shgtensor = cov.build_kernel_hparam_grad_tensor(z)
                 basic_shgtensor = cov.hyperparameter_grad_covariance(full_zz_trans, full_zz)
-                standard_shgtensor_flat = numpy.array([standard_shgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
+                standard_shgtensor_flat = np.array([standard_shgtensor[:, :, i].reshape(-1) for i in range(dh)]).T
                 self.assert_vector_within_relative_norm(
                     standard_shgtensor_flat,
                     basic_shgtensor,
@@ -418,8 +418,8 @@ class TestMultitaskCovariance(CovariancesTestBase):
 @pytest.mark.parametrize("num_points", [1, 4, 10])
 def test_scale_difference_matrix2(dim, num_points):
     def _generate_random_scale_and_difference_matrix(dim, num_points):
-        scale = numpy.random.uniform(-1000, 1000, size=(num_points, num_points))
-        difference_matrix = numpy.random.uniform(-1000, 1000, size=(num_points, num_points, dim))
+        scale = np.random.uniform(-1000, 1000, size=(num_points, num_points))
+        difference_matrix = np.random.uniform(-1000, 1000, size=(num_points, num_points, dim))
         return scale, difference_matrix
 
     scale, difference_matrix = _generate_random_scale_and_difference_matrix(dim, num_points)
@@ -427,7 +427,7 @@ def test_scale_difference_matrix2(dim, num_points):
     scaled = covariance._scale_difference_matrix(scale, difference_matrix)
     # pylint: enable=protected-access
     for i in range(dim):
-        numpy.testing.assert_array_equal(scaled[:, :, i], scale * difference_matrix[:, :, i])
+        np.testing.assert_array_equal(scaled[:, :, i], scale * difference_matrix[:, :, i])
 
 
 class TestLinkers(object):

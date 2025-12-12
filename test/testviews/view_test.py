@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 # pylint: disable=too-many-positional-arguments
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.aux.adapter_info_containers import MetricsInfo
@@ -37,7 +37,7 @@ class TestView(NumericalTestCase):
 
     metrics_info = MetricsInfo(
         requires_pareto_frontier_optimization=True,
-        observation_budget=numpy.random.randint(40, 100),
+        observation_budget=np.random.randint(40, 100),
         user_specified_thresholds=[None, None],
         objectives=["maximize", "minimize"],
         optimized_metrics_index=[0, 1],
@@ -50,7 +50,7 @@ class TestView(NumericalTestCase):
             num_sampled=10,
             noise_per_point=1e-5,
             num_metrics=2,
-            task_options=numpy.random.random(2),
+            task_options=np.random.random(2),
             failure_prob=0,
         )
         (
@@ -76,7 +76,7 @@ class TestView(NumericalTestCase):
             num_sampled=10,
             noise_per_point=1e-5,
             num_metrics=1,
-            task_options=numpy.random.random(2),
+            task_options=np.random.random(2),
             failure_prob=0.5,
         )
         mmi = form_metric_midpoint_info(ps.values, ps.failures, ["maximize"])
@@ -91,7 +91,7 @@ class TestView(NumericalTestCase):
             num_sampled=10,
             noise_per_point=1e-5,
             num_metrics=2,
-            task_options=numpy.random.random(2),
+            task_options=np.random.random(2),
             failure_prob=0.5,
         )
         mmi = form_metric_midpoint_info(ps.values, ps.failures, ["maximize", "minimize"])
@@ -103,7 +103,7 @@ class TestView(NumericalTestCase):
             num_sampled=10,
             noise_per_point=1e-5,
             num_metrics=1,
-            task_options=numpy.random.random(2),
+            task_options=np.random.random(2),
             failure_prob=0.5,
         )
         with pytest.raises(AssertionError):
@@ -168,7 +168,7 @@ class TestView(NumericalTestCase):
         "num_constraint_metrics, constraint_metric_thresholds",
         [
             (0, None),
-            (2, numpy.random.random(2)),
+            (2, np.random.random(2)),
         ],
     )
     @pytest.mark.parametrize("num_stored_metrics", [0, 1])
@@ -220,8 +220,8 @@ class TestView(NumericalTestCase):
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].optimized_metrics_index = [0, 1]
         values = view_input["points_sampled"].values
-        metric_0_lower_bound = numpy.random.uniform(min(values[:, 0]), max(values[:, 0]))
-        metric_1_lower_bound = numpy.random.uniform(min(values[:, 1]), max(values[:, 1]))
+        metric_0_lower_bound = np.random.uniform(min(values[:, 0]), max(values[:, 0]))
+        metric_1_lower_bound = np.random.uniform(min(values[:, 1]), max(values[:, 1]))
 
         num_metrics = num_optimized_metrics + num_stored_metrics
         user_specified_thresholds = [None for _ in range(num_metrics)]
@@ -234,15 +234,15 @@ class TestView(NumericalTestCase):
             view.points_sampled_for_af_values,
             view.optimized_metrics_thresholds,
         )
-        bounds_array = numpy.array([[metric_0_lower_bound, metric_1_lower_bound]])
-        should_exclude = numpy.logical_not(
-            numpy.prod(
+        bounds_array = np.array([[metric_0_lower_bound, metric_1_lower_bound]])
+        should_exclude = np.logical_not(
+            np.prod(
                 values[:, view.optimized_metrics_index] > bounds_array,
                 axis=1,
                 dtype=bool,
             )
         )
-        assert numpy.array_equal(told_to_exclude, should_exclude)
+        assert np.array_equal(told_to_exclude, should_exclude)
 
     @pytest.mark.parametrize("dim", [3, 7])
     @pytest.mark.parametrize("num_sampled", [19, 41])
@@ -255,8 +255,8 @@ class TestView(NumericalTestCase):
     @pytest.mark.parametrize(
         "num_constraint_metrics, constraint_metric_thresholds",
         [
-            (1, numpy.random.random(1)),
-            (4, numpy.random.random(4)),
+            (1, np.random.random(1)),
+            (4, np.random.random(4)),
         ],
     )
     @pytest.mark.parametrize("num_stored_metrics", [0, 1])

@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 from flaky import flaky
 
 from libsigopt.compute.covariance import SquareExponential
@@ -30,27 +30,27 @@ class TestExpectedImprovement(GaussianProcessTestCase):
     def _check_ei_symmetry(cls, ei_eval, point_to_sample, shifts):
         """Compute ei at each ``[point_to_sample +/- shift for shift in shifts]`` and check for equality."""
         for shift in shifts:
-            left_ei = ei_eval.evaluate_at_point_list(numpy.atleast_2d(point_to_sample - shift))[0]
-            left_grad_ei = ei_eval.evaluate_grad_at_point_list(numpy.atleast_2d(point_to_sample - shift))[0]
+            left_ei = ei_eval.evaluate_at_point_list(np.atleast_2d(point_to_sample - shift))[0]
+            left_grad_ei = ei_eval.evaluate_grad_at_point_list(np.atleast_2d(point_to_sample - shift))[0]
 
-            right_ei = ei_eval.evaluate_at_point_list(numpy.atleast_2d(point_to_sample + shift))[0]
-            right_grad_ei = ei_eval.evaluate_grad_at_point_list(numpy.atleast_2d(point_to_sample + shift))[0]
+            right_ei = ei_eval.evaluate_at_point_list(np.atleast_2d(point_to_sample + shift))[0]
+            right_grad_ei = ei_eval.evaluate_grad_at_point_list(np.atleast_2d(point_to_sample + shift))[0]
 
             cls.assert_scalar_within_relative(left_ei, right_ei, 5.0e-15)
             cls.assert_vector_within_relative(left_grad_ei, -right_grad_ei, 5.0e-15)
 
     def test_1d_analytic_ei_edge_cases(self):
         """Test cases where analytic EI would attempt to compute 0/0 without variance lower bounds."""
-        base_coord = numpy.array([[0.5]])
-        points = numpy.array([base_coord, base_coord * 2.0])
-        values = numpy.array([-1.809342, -1.09342])
-        value_vars = numpy.array([0, 0])
+        base_coord = np.array([[0.5]])
+        points = np.array([base_coord, base_coord * 2.0])
+        values = np.array([-1.809342, -1.09342])
+        value_vars = np.array([0, 0])
 
         # First a symmetric case: only one historical point
         data = HistoricalData(1)
         data.append_historical_data(points[0], values[0, None], value_vars[0, None])
 
-        hyperparameters = numpy.array([0.2, 0.3])
+        hyperparameters = np.array([0.2, 0.3])
         covariance = SquareExponential(hyperparameters)
         gaussian_process = GaussianProcess(covariance, data)
 
@@ -59,7 +59,7 @@ class TestExpectedImprovement(GaussianProcessTestCase):
         ei = ei_eval.evaluate_at_point_list(base_coord)[0]
         grad_ei = ei_eval.evaluate_grad_at_point_list(base_coord)[0]
         self.assert_scalar_within_relative(ei, 0.0, 1.0e-14)
-        self.assert_vector_within_relative(grad_ei, numpy.zeros(grad_ei.shape), 1.0e-15)
+        self.assert_vector_within_relative(grad_ei, np.zeros(grad_ei.shape), 1.0e-15)
 
         shifts = (2.0e-15, 4.0e-11, 3.14e-6, 8.89e-1, 2.71)
         self._check_ei_symmetry(ei_eval, base_coord[0], shifts)
@@ -74,7 +74,7 @@ class TestExpectedImprovement(GaussianProcessTestCase):
         ei = ei_eval.evaluate_at_point_list(base_coord - shift)[0]
         grad_ei = ei_eval.evaluate_grad_at_point_list(base_coord - shift)[0]
         self.assert_scalar_within_relative(ei, 0.0, 1.0e-14)
-        self.assert_vector_within_relative(grad_ei, numpy.zeros(grad_ei.shape), 1.0e-15)
+        self.assert_vector_within_relative(grad_ei, np.zeros(grad_ei.shape), 1.0e-15)
 
     def test_best_value_and_location(self, gaussian_process_list):
         for gaussian_process in gaussian_process_list:
@@ -110,7 +110,7 @@ class TestExpectedImprovement(GaussianProcessTestCase):
                 )
                 assert (
                     ei_eval.evaluate_at_point_list(
-                        numpy.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+                        np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
                     )[0]
                     >= 0
                 )
@@ -159,31 +159,31 @@ class TestExpectedImprovement(GaussianProcessTestCase):
 
                 mc_results = [
                     ei_eval.evaluate_at_point_list(
-                        numpy.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+                        np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
                     )[0]
                     for _ in range(num_random_tests)
                 ]
-                ei_mean_eapl, ei_std_eapl = numpy.mean(mc_results), numpy.std(mc_results)
+                ei_mean_eapl, ei_std_eapl = np.mean(mc_results), np.std(mc_results)
 
                 mc_results = [
                     ei_eval.evaluate_at_point_list(
-                        numpy.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+                        np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
                     )[0]
                     for _ in range(num_random_tests)
                 ]
-                ei_mean_caf, ei_std_caf = numpy.mean(mc_results), numpy.std(mc_results)
+                ei_mean_caf, ei_std_caf = np.mean(mc_results), np.std(mc_results)
 
                 assert abs(ei_mean_eapl - true_result) < 2 * ei_std_eapl
                 assert abs(ei_mean_caf - true_result) < 2 * ei_std_caf
                 std_results.append(ei_std_eapl)
-            assert all(numpy.diff(std_results) < 0) or any(numpy.array(std_results) == 0)
+            assert all(np.diff(std_results) < 0) or any(np.array(std_results) == 0)
 
     def test_multistart_analytic_expected_improvement_optimization(self):
         """
         Check that multistart optimization (gradient descent) can find the optimum point
         to sample (using 1D analytic EI).
         """
-        numpy.random.seed(3148)
+        np.random.seed(3148)
         dim = 3
         domain = self.form_continous_and_uniform_domain(dim=dim, lower_element=-2, higher_element=2)
         gaussian_process = self.form_gaussian_process_and_data(domain=domain, num_sampled=50, noise_per_point=0.002)
@@ -203,9 +203,9 @@ class TestExpectedImprovement(GaussianProcessTestCase):
         best_point, _ = ei_optimizer.optimize()
 
         # Check that gradients are small or that the answer is on a boundary
-        gradient = ei_eval.evaluate_grad_at_point_list(numpy.atleast_2d(best_point))
+        gradient = ei_eval.evaluate_grad_at_point_list(np.atleast_2d(best_point))
         if not expanded_domain.check_point_on_boundary(best_point, tol=1e-3):
-            self.assert_vector_within_relative(gradient, numpy.zeros(gradient.shape), tolerance)
+            self.assert_vector_within_relative(gradient, np.zeros(gradient.shape), tolerance)
 
         # Check that output is in the domain
         assert expanded_domain.check_point_acceptable(best_point) is True
@@ -243,7 +243,7 @@ class TestExpectedImprovementWithFailures(GaussianProcessTestCase):
                 eif.evaluate_at_point_list,
                 eif.evaluate_grad_at_point_list,
                 tol=domain.dim * 1e-6,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )
 
     def test_evaluation_product_probabilistic_failures(
@@ -285,5 +285,5 @@ class TestExpectedImprovementWithFailures(GaussianProcessTestCase):
                 eif.evaluate_at_point_list,
                 eif.evaluate_grad_at_point_list,
                 tol=domain.dim * 1e-6,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
             )

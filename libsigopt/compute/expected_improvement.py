@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 from scipy.stats import multivariate_normal, norm
 
 from libsigopt.compute.acquisition_function import AcquisitionFunction
@@ -26,8 +26,8 @@ MINIMUM_ACCEPTABLE_FAILURE_BEST_POINT_PROBABILITY = 0.5
 
 @dataclass(frozen=True, slots=True)
 class PenaltyComponents:
-    penalty: numpy.ndarray
-    grad_penalty: numpy.ndarray | None
+    penalty: np.ndarray
+    grad_penalty: np.ndarray | None
 
 
 class ExpectedImprovement(AcquisitionFunction):
@@ -37,7 +37,7 @@ class ExpectedImprovement(AcquisitionFunction):
         return self._evaluate_at_point_list_normalized(self.compute_core_components(points_to_evaluate, "func"))
 
     def _evaluate_at_point_list_normalized(self, core_components):
-        return core_components.sqrt_var * numpy.fmax(
+        return core_components.sqrt_var * np.fmax(
             0.0, core_components.z * core_components.cdf_z + core_components.pdf_z
         )
 
@@ -111,19 +111,19 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
     def __init__(self, predictor):
         super().__init__(predictor)
         mean, var = self.predictor.compute_mean_and_variance_of_points(self.predictor.points_sampled)
-        quantiles_values = mean + norm.ppf(AUGMENTED_EI_QUANTILE) * numpy.sqrt(var)
+        quantiles_values = mean + norm.ppf(AUGMENTED_EI_QUANTILE) * np.sqrt(var)
 
         # TODO(RTL-132): Think about tie-breakers - for example posterior variance to encourage exploration
-        best_index = numpy.argmin(quantiles_values)
+        best_index = np.argmin(quantiles_values)
         self.best_value = mean[best_index]
         self.best_location = self.predictor.points_sampled[best_index, :]
         # We decide to use mean of sample variances for global reported variance, it can be changed if there is better way
-        self.noise_variance = numpy.mean(self.predictor.points_sampled_noise_variance)
+        self.noise_variance = np.mean(self.predictor.points_sampled_noise_variance)
 
     def _evaluate_penalty(self, core_components, option):
         grad_penalty = None
         adjusted_var = core_components.var + self.noise_variance
-        sqrt_noise_to_signal_ratio = numpy.sqrt(self.noise_variance / adjusted_var)
+        sqrt_noise_to_signal_ratio = np.sqrt(self.noise_variance / adjusted_var)
         penalty = 1 - sqrt_noise_to_signal_ratio
         if option in ("grad", "both"):
             grad_penalty = 0.5 * (sqrt_noise_to_signal_ratio / adjusted_var)[:, None] * core_components.grad_var
@@ -149,12 +149,12 @@ class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
     def _get_best_location_value_not_failure(self):
         failure_probs = self.failure_model.compute_probability_of_success(self.gaussian_process.points_sampled)
         acceptable_points_idx = failure_probs > MINIMUM_ACCEPTABLE_FAILURE_BEST_POINT_PROBABILITY
-        if not numpy.any(acceptable_points_idx):
+        if not np.any(acceptable_points_idx):
             return self.best_location, self.best_value
 
         acceptable_points = self.gaussian_process.points_sampled[acceptable_points_idx, :]
         acceptable_values = self.gaussian_process.points_sampled_value[acceptable_points_idx]
-        best_index = numpy.argmin(acceptable_values)
+        best_index = np.argmin(acceptable_values)
         return acceptable_points[best_index, :], acceptable_values[best_index]
 
     def _evaluate_penalty(self, core_components, option):
@@ -184,11 +184,11 @@ class ExpectedParallelImprovement(AcquisitionFunction):
         self.num_points_to_sample = num_points_to_sample
         self.points_to_sample = None
         if self.num_points_to_sample == 0:
-            self.points_to_sample = numpy.empty((0, self.dim))
+            self.points_to_sample = np.empty((0, self.dim))
 
-        self.points_being_sampled = numpy.empty((0, self.dim))
+        self.points_being_sampled = np.empty((0, self.dim))
         if not (points_being_sampled is None or len(points_being_sampled) == 0):
-            self.points_being_sampled = numpy.copy(points_being_sampled)
+            self.points_being_sampled = np.copy(points_being_sampled)
 
         points_being_sampled_shape = self.points_being_sampled.shape
         assert len(points_being_sampled_shape) == 2, "Points must be passed as 2D arrays"
@@ -214,24 +214,24 @@ class ExpectedParallelImprovement(AcquisitionFunction):
         assert num_to_sample == self.num_points_to_sample and dim == self.dim
         covariance_size = self.num_points_to_sample + self.num_points_being_sampled
 
-        chol_cov_tensor = numpy.empty((covariance_size, covariance_size, num_to_evaluate))
+        chol_cov_tensor = np.empty((covariance_size, covariance_size, num_to_evaluate))
         for k in range(num_to_evaluate):
-            union_of_points = numpy.concatenate((points_to_evaluate[k, :, :], self.points_being_sampled), axis=0)
+            union_of_points = np.concatenate((points_to_evaluate[k, :, :], self.points_being_sampled), axis=0)
             cov_mat = self.predictor.compute_covariance_of_points(union_of_points)
             chol_cov_tensor[:, :, k] = compute_cholesky_for_gp_sampling(cov_mat)
 
-        mean_to_evaluate = self.predictor.compute_mean_of_points(numpy.concatenate(points_to_evaluate, axis=0))
-        mean_to_evaluate = numpy.reshape(mean_to_evaluate, (num_to_evaluate, num_to_sample)).T
+        mean_to_evaluate = self.predictor.compute_mean_of_points(np.concatenate(points_to_evaluate, axis=0))
+        mean_to_evaluate = np.reshape(mean_to_evaluate, (num_to_evaluate, num_to_sample)).T
 
         if self.num_points_being_sampled:
             mean_being_sampled = self.predictor.compute_mean_of_points(self.points_being_sampled)
 
         num_mc_iterations_per_loop = min(self.num_mc_iterations_per_loop, self.num_mc_iterations)
-        result = numpy.zeros(num_to_evaluate)
+        result = np.zeros(num_to_evaluate)
         num_mc_iterations_executed = 0
         while num_mc_iterations_executed < self.num_mc_iterations:
-            normals = numpy.random.normal(size=(num_mc_iterations_per_loop, covariance_size))
-            posterior_predictions = numpy.tensordot(chol_cov_tensor, normals, axes=([1], [1]))
+            normals = np.random.normal(size=(num_mc_iterations_per_loop, covariance_size))
+            posterior_predictions = np.tensordot(chol_cov_tensor, normals, axes=([1], [1]))
             posterior_predictions[:num_to_sample, :, :] += self.best_value - mean_to_evaluate[:, :, None]
 
             if self.num_points_being_sampled:
@@ -239,7 +239,7 @@ class ExpectedParallelImprovement(AcquisitionFunction):
                     self.best_value - mean_being_sampled[:, None, None]
                 )
 
-            result += numpy.sum(numpy.fmax(0.0, numpy.amax(posterior_predictions, axis=0)), axis=1)
+            result += np.sum(np.fmax(0.0, np.amax(posterior_predictions, axis=0)), axis=1)
             num_mc_iterations_executed += num_mc_iterations_per_loop
         return result / num_mc_iterations_executed
 
@@ -249,7 +249,7 @@ class ExpectedParallelImprovement(AcquisitionFunction):
         See Chevalier, and Ginsbourger (2012) for an explanation of it.
         """
         # Since points_being_sampled has already been included here, we do not add it to `num_points`
-        union_of_points = numpy.concatenate((points_to_sample, self.points_being_sampled), axis=0)
+        union_of_points = np.concatenate((points_to_sample, self.points_being_sampled), axis=0)
         mu_star = self.predictor.compute_mean_of_points(union_of_points)
         var_star = self.predictor.compute_covariance_of_points(union_of_points)
         num_points = len(mu_star)
@@ -258,14 +258,14 @@ class ExpectedParallelImprovement(AcquisitionFunction):
 
         def singlevar_norm_pdf(mean, var, param):
             """PDF of univariate Gaussian centered at m with variance var."""
-            return norm.pdf(param, mean, numpy.sqrt(var))
+            return norm.pdf(param, mean, np.sqrt(var))
 
         def multivar_norm_cdf(upper, cov_matrix):
             """CDF of multivariate Gaussian centered at 0 with covariance matrix cov_matrix.
             CDF is taken from -inf to u.
             """
             if upper.size == 1:
-                return norm.cdf(upper[0], 0, numpy.sqrt(cov_matrix[0, 0]))
+                return norm.cdf(upper[0], 0, np.sqrt(cov_matrix[0, 0]))
 
             return multivariate_normal.cdf(
                 x=upper,
@@ -286,7 +286,7 @@ class ExpectedParallelImprovement(AcquisitionFunction):
             m_k[k] = -mu_star[k]
             m_k = -m_k  # min
 
-            b_k = numpy.zeros(num_points)
+            b_k = np.zeros(num_points)
             b_k[k] = -best_so_far
             b_k = -b_k  # min
 
@@ -322,7 +322,7 @@ class ExpectedParallelImprovement(AcquisitionFunction):
                     c_k = c_k[index_no_i]
 
                     # cov_k_no_i introduced on top of page 4
-                    cov_k_no_i = cov_k - numpy.outer(cov_k[i, :], cov_k[i, :]) / cov_k[i, i]
+                    cov_k_no_i = cov_k - np.outer(cov_k[i, :], cov_k[i, :]) / cov_k[i, i]
                     cov_k_no_i = cov_k_no_i[index_no_i, ...][..., index_no_i]
 
                     sum_term += (
@@ -332,9 +332,9 @@ class ExpectedParallelImprovement(AcquisitionFunction):
                     )
 
             expected_improvement += prob_term + sum_term
-        if not numpy.isfinite(expected_improvement):
+        if not np.isfinite(expected_improvement):
             raise RuntimeError("Expected improvement not finite. Variance matrix may be singular.")
-        return numpy.fmax(0.0, expected_improvement)
+        return np.fmax(0.0, expected_improvement)
 
 
 class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
@@ -364,12 +364,12 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
     def _get_best_location_value_not_failure(self):
         failure_probs = self.failure_model.compute_probability_of_success(self.gaussian_process.points_sampled)
         acceptable_points_idx = failure_probs > MINIMUM_ACCEPTABLE_FAILURE_BEST_POINT_PROBABILITY
-        if not numpy.any(acceptable_points_idx):
+        if not np.any(acceptable_points_idx):
             return self.best_location, self.best_value
 
         acceptable_points = self.gaussian_process.points_sampled[acceptable_points_idx, :]
         acceptable_values = self.gaussian_process.points_sampled_value[acceptable_points_idx]
-        best_index = numpy.argmin(acceptable_values)
+        best_index = np.argmin(acceptable_values)
         return acceptable_points[best_index, :], acceptable_values[best_index]
 
     @property
@@ -385,8 +385,8 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
         assert num_to_sample == self.num_points_to_sample and dim == self.dim
         covariance_size = self.num_points_to_sample + self.num_points_being_sampled
 
-        chol_cov_tensor = numpy.empty((covariance_size, covariance_size, num_to_evaluate))
-        chol_cov_tensor_failures = numpy.empty(
+        chol_cov_tensor = np.empty((covariance_size, covariance_size, num_to_evaluate))
+        chol_cov_tensor_failures = np.empty(
             (
                 self.failure_model.num_pfs,
                 covariance_size,
@@ -395,16 +395,16 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
             )
         )
         for k in range(num_to_evaluate):
-            union_of_points = numpy.concatenate((points_to_evaluate[k, :, :], self.points_being_sampled), axis=0)
+            union_of_points = np.concatenate((points_to_evaluate[k, :, :], self.points_being_sampled), axis=0)
             cov_mat = self.gaussian_process.compute_covariance_of_points(union_of_points)
             chol_cov_tensor[:, :, k] = compute_cholesky_for_gp_sampling(cov_mat)
             for i, pf in enumerate(self.failure_model.list_of_probabilistic_failures):
                 cov_mat = pf.predictor.compute_covariance_of_points(union_of_points)
                 chol_cov_tensor_failures[i, :, :, k] = compute_cholesky_for_gp_sampling(cov_mat)
 
-        mean_to_evaluate = self.gaussian_process.compute_mean_of_points(numpy.concatenate(points_to_evaluate, axis=0))
-        mean_to_evaluate = numpy.reshape(mean_to_evaluate, (num_to_evaluate, num_to_sample)).T
-        mean_to_evaluate_failures = numpy.empty(
+        mean_to_evaluate = self.gaussian_process.compute_mean_of_points(np.concatenate(points_to_evaluate, axis=0))
+        mean_to_evaluate = np.reshape(mean_to_evaluate, (num_to_evaluate, num_to_sample)).T
+        mean_to_evaluate_failures = np.empty(
             (
                 self.failure_model.num_pfs,
                 num_to_sample,
@@ -412,30 +412,30 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
             )
         )
         for i, pf in enumerate(self.failure_model.list_of_probabilistic_failures):
-            mean_to_evaluate_failures[i] = numpy.reshape(
-                pf.predictor.compute_mean_of_points(numpy.concatenate(points_to_evaluate, axis=0)),
+            mean_to_evaluate_failures[i] = np.reshape(
+                pf.predictor.compute_mean_of_points(np.concatenate(points_to_evaluate, axis=0)),
                 (num_to_evaluate, num_to_sample),
             ).T
 
         if self.num_points_being_sampled:
             mean_being_sampled = self.gaussian_process.compute_mean_of_points(self.points_being_sampled)
-            mean_being_sampled_failures = numpy.empty((self.failure_model.num_pfs, len(self.points_being_sampled)))
+            mean_being_sampled_failures = np.empty((self.failure_model.num_pfs, len(self.points_being_sampled)))
             for i, pf in enumerate(self.failure_model.list_of_probabilistic_failures):
                 mean_being_sampled_failures[i] = pf.predictor.compute_mean_of_points(self.points_being_sampled)
 
         num_mc_iterations_per_loop = min(self.num_mc_iterations_per_loop, self.num_mc_iterations)
-        result = numpy.zeros(num_to_evaluate)
+        result = np.zeros(num_to_evaluate)
         num_mc_iterations_executed = 0
         while num_mc_iterations_executed < self.num_mc_iterations:
-            normals = numpy.random.normal(size=(num_mc_iterations_per_loop, covariance_size))
+            normals = np.random.normal(size=(num_mc_iterations_per_loop, covariance_size))
 
-            posterior_predictions = numpy.tensordot(chol_cov_tensor, normals, ([1], [1]))
+            posterior_predictions = np.tensordot(chol_cov_tensor, normals, ([1], [1]))
             posterior_predictions[: self.num_points_to_sample, :, :] += mean_to_evaluate[:, :, None]
             # TODO(RTL-36): investigate if these can be rewritten to be more efficient.
             if self.num_points_being_sampled:
                 posterior_predictions[-self.num_points_being_sampled :, :, :] += mean_being_sampled[:, None, None]
             # TODO(RTL-37): investigate which direction is best for this 4D tensor.
-            posterior_predictions_failures = numpy.zeros(
+            posterior_predictions_failures = np.zeros(
                 (
                     self.failure_model.num_pfs,
                     covariance_size,
@@ -444,7 +444,7 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
                 )
             )
             for i, pf in enumerate(self.failure_model.list_of_probabilistic_failures):
-                posterior_predictions_failures[i] = numpy.tensordot(chol_cov_tensor_failures[i], normals, ([1], [1]))
+                posterior_predictions_failures[i] = np.tensordot(chol_cov_tensor_failures[i], normals, ([1], [1]))
                 posterior_predictions_failures[i, : self.num_points_to_sample, :, :] += mean_to_evaluate_failures[
                     i, :, :, None
                 ]
@@ -454,7 +454,7 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
                     )
 
             posterior_improvement_predictions = self.best_value - posterior_predictions
-            posterior_predictions_failures_product = numpy.ones_like(posterior_improvement_predictions)
+            posterior_predictions_failures_product = np.ones_like(posterior_improvement_predictions)
             for i, pf in enumerate(self.failure_model.list_of_probabilistic_failures):
                 posterior_predictions_failures_product *= posterior_predictions_failures[i] < pf.threshold
 
@@ -462,14 +462,14 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
                 posterior_improvement_predictions * posterior_predictions_failures_product
             )
 
-            max_improvement = numpy.fmax(0.0, numpy.amax(posterior_improvement_predictions_not_failures, axis=0))
-            if numpy.sum(max_improvement) == 0:
+            max_improvement = np.fmax(0.0, np.amax(posterior_improvement_predictions_not_failures, axis=0))
+            if np.sum(max_improvement) == 0:
                 success_prob = self.failure_model.compute_probability_of_success(points_to_evaluate[:, 0, :])
                 posterior_improvement_predictions_not_failures = (
                     posterior_improvement_predictions * success_prob[None, :, None]
                 )
-                max_improvement = numpy.fmax(0.0, numpy.amax(posterior_improvement_predictions_not_failures, axis=0))
-            contribution_this_loop = numpy.sum(max_improvement, axis=1)
+                max_improvement = np.fmax(0.0, np.amax(posterior_improvement_predictions_not_failures, axis=0))
+            contribution_this_loop = np.sum(max_improvement, axis=1)
             result += contribution_this_loop
             num_mc_iterations_executed += num_mc_iterations_per_loop
         return result / num_mc_iterations_executed

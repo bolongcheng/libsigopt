@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 
 from libsigopt.compute.covariance_base import DifferentiableCovariance
 
@@ -72,7 +72,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
     def get_hyperparameters(self):
         physical_hyperparameters = self.physical_covariance.hyperparameters
-        hyperparameters = numpy.empty(len(physical_hyperparameters) + 1)
+        hyperparameters = np.empty(len(physical_hyperparameters) + 1)
         hyperparameters[0] = self.process_variance
         hyperparameters[1:-1] = physical_hyperparameters[1:]
         hyperparameters[-1] = self.task_covariance.hyperparameters[-1]
@@ -80,7 +80,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
     def set_hyperparameters(self, hyperparameters):
         """We choose to deal with the process_variance as part of the full kernel, not the component kernels."""
-        hyperparameters = numpy.copy(hyperparameters)
+        hyperparameters = np.copy(hyperparameters)
         assert len(hyperparameters.shape) == 1 and len(hyperparameters) >= 3
 
         self.process_variance = hyperparameters[0]
@@ -89,7 +89,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         physical_hyperparameters[0] = 1.0
         self.physical_covariance = self.physical_covariance_class(physical_hyperparameters)
 
-        task_hyperparameters = numpy.array([1.0, hyperparameters[-1]])
+        task_hyperparameters = np.array([1.0, hyperparameters[-1]])
         self.task_covariance = self.task_covariance_class(task_hyperparameters)
 
     hyperparameters = property(get_hyperparameters, set_hyperparameters)
@@ -114,7 +114,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         physical_covariance_grad_tensor = self.physical_covariance._grad_covariance(x_phys, z_phys)
         task_covariance_grad_tensor = self.task_covariance._grad_covariance(x_task, z_task)
 
-        grad_covariance_tensor = numpy.empty((len(x), self.dim))
+        grad_covariance_tensor = np.empty((len(x), self.dim))
         grad_covariance_tensor[:, :-1] = physical_covariance_grad_tensor * task_covariance_vector[:, None]
         grad_covariance_tensor[:, -1:] = task_covariance_grad_tensor * physical_covariance_vector[:, None]
         return grad_covariance_tensor
@@ -126,7 +126,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         phys_hgc = self.physical_covariance._hyperparameter_grad_covariance_without_process_variance(x_phys, z_phys)
         task_hgc = self.task_covariance._hyperparameter_grad_covariance_without_process_variance(x_task, z_task)
 
-        hparam_grad_covariance_tensor = numpy.empty((len(x), self.num_hyperparameters - 1))
+        hparam_grad_covariance_tensor = np.empty((len(x), self.num_hyperparameters - 1))
         hparam_grad_covariance_tensor[:, :-1] = phys_hgc * task_covariance_vector[:, None]
         hparam_grad_covariance_tensor[:, -1:] = task_hgc * physical_covariance_vector[:, None]
         return hparam_grad_covariance_tensor
@@ -140,7 +140,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
         n_cols = len(points_sampled)
         n_rows = n_cols if points_to_sample is None else len(points_to_sample)
-        kg_tensor = numpy.empty((n_rows, n_cols, self.dim))
+        kg_tensor = np.empty((n_rows, n_cols, self.dim))
         kg_tensor[:, :, :-1] = phys_kgt * task_matrix[:, :, None]
         kg_tensor[:, :, -1:] = task_kgt * phys_matrix[:, :, None]
         return kg_tensor
@@ -154,7 +154,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
         n_cols = len(points_sampled)
         n_rows = n_cols if points_to_sample is None else len(points_to_sample)
-        kg_tensor = numpy.empty((n_rows, n_cols, self.num_hyperparameters - 1))
+        kg_tensor = np.empty((n_rows, n_cols, self.num_hyperparameters - 1))
         kg_tensor[:, :, :-1] = phys_kgt * task_matrix[:, :, None]
         kg_tensor[:, :, -1:] = task_kgt * phys_matrix[:, :, None]
         return kg_tensor

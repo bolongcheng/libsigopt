@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 # pylint: disable=too-many-positional-arguments
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 from mock import Mock
@@ -61,7 +61,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             assert domain.is_discrete
             easily_available_points = domain.generate_distinct_random_points(
                 view_input["num_to_sample"],
-                excluded_points=numpy.array(view_input["points_sampled"].points),
+                excluded_points=np.array(view_input["points_sampled"].points),
                 duplicate_prob=0,
             )
             assert len(points_to_sample) >= len(easily_available_points)
@@ -69,7 +69,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             assert len(points_to_sample[0]) == view_input["domain_info"].dim
         assert all(domain.check_point_acceptable(p) for p in points_to_sample)
 
-        task_options = numpy.array(view_input["task_options"])
+        task_options = np.array(view_input["task_options"])
         if task_options.size:
             task_costs = response["task_costs"]
             assert len(task_costs) == len(points_to_sample)
@@ -338,7 +338,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
         one_hot_point = [0.4, 0.5, 0.6, 2.3, -0.5, 17.2, -5.2, 0.1, 0.9, 0.5, 0.3, 2.3]
         assert self.mixed_domain.one_hot_domain.check_point_acceptable(one_hot_point)
         neighboring_integer_points = generate_neighboring_integer_points(one_hot_point, self.mixed_domain)
-        known_neighbors = numpy.array(
+        known_neighbors = np.array(
             [
                 [0.4, 0.5, 0.6, 2.0, -0.5, 17.0, -5.2, 0.1, 0.9, 0.5, 0.3, 2.3],
                 [0.4, 0.5, 0.6, 2.0, -0.5, 18.0, -5.2, 0.1, 0.9, 0.5, 0.3, 2.3],
@@ -353,10 +353,10 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
         one_hot_point = [0.4, 0.5, 0.6, 2.3, -0.5, 17.2, -5.2, 0.1, 0.9, 0.5, 0.3, 0.5]
         assert self.mixed_domain.one_hot_domain.check_point_acceptable(one_hot_point)
         neighboring_categorical_points = generate_neighboring_categorical_points(
-            numpy.atleast_2d(one_hot_point),
+            np.atleast_2d(one_hot_point),
             self.mixed_domain,
         )
-        known_neighbors = numpy.array(
+        known_neighbors = np.array(
             [
                 [1.0, 0.0, 0.0, 2.3, -0.5, 17.2, -5.2, 1.0, 0.0, 0.0, 0.0, 0.5],
                 [1.0, 0.0, 0.0, 2.3, -0.5, 17.2, -5.2, 0.0, 1.0, 0.0, 0.0, 0.5],
@@ -424,9 +424,9 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
     def test_convert_from_one_hot(self):
         class dummy_acquisition_function(object):
             def evaluate_at_point_list(self, x):
-                return numpy.arange(len(x))
+                return np.arange(len(x))
 
-        one_hot_points = numpy.array(
+        one_hot_points = np.array(
             [
                 [0.4, 0.5, 0.6, 2.8, -0.5, 17.2, -5.2, 0.1, 0.9, 0.5, 0.3, 0.23],
                 [0.9, 0.2, 0.6, 4.3, -0.1, 19.5, 2.2, 0.8, 0.2, 0.9, 0.4, -2.0],
@@ -438,7 +438,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
             dummy_acquisition_function(),
             "none",
         )
-        assert numpy.all(one_hot_points == none_best_one_hot_points)
+        assert np.all(one_hot_points == none_best_one_hot_points)
 
         int_best_one_hot_neighbors = find_best_one_hot_neighbor_by_af(
             one_hot_points,
@@ -446,13 +446,13 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
             dummy_acquisition_function(),
             "int",
         )
-        correct_answers_int_best_one_hot_neighbors = numpy.array(
+        correct_answers_int_best_one_hot_neighbors = np.array(
             [
                 [0.0, 0.0, 1.0, 3.0, -0.5, 18.0, -5.2, 0.0, 1.0, 0.0, 0.0, 0.2],
                 [1.0, 0.0, 0.0, 5.0, -0.1, 20.0, 2.2, 0.0, 0.0, 1.0, 0.0, -0.1],
             ]
         )
-        assert numpy.all(int_best_one_hot_neighbors == correct_answers_int_best_one_hot_neighbors)
+        assert np.all(int_best_one_hot_neighbors == correct_answers_int_best_one_hot_neighbors)
 
         cat_best_one_hot_neighbors = find_best_one_hot_neighbor_by_af(
             one_hot_points,
@@ -460,13 +460,13 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
             dummy_acquisition_function(),
             "cat",
         )
-        correct_answers_cat_best_one_hot_neighbors = numpy.array(
+        correct_answers_cat_best_one_hot_neighbors = np.array(
             [
                 [0.0, 0.0, 1.0, 3.0, -0.5, 17.0, -5.2, 0.0, 0.0, 0.0, 1.0, 0.2],
                 [0.0, 0.0, 1.0, 4.0, -0.1, 20.0, 2.2, 0.0, 0.0, 0.0, 1.0, -0.1],
             ]
         )
-        assert numpy.all(cat_best_one_hot_neighbors == correct_answers_cat_best_one_hot_neighbors)
+        assert np.all(cat_best_one_hot_neighbors == correct_answers_cat_best_one_hot_neighbors)
 
         both_best_one_hot_neighbors = find_best_one_hot_neighbor_by_af(
             one_hot_points,
@@ -474,13 +474,13 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
             dummy_acquisition_function(),
             "both",
         )
-        correct_answers_both_best_one_hot_neighbors = numpy.array(
+        correct_answers_both_best_one_hot_neighbors = np.array(
             [
                 [0.0, 0.0, 1.0, 3.0, -0.5, 18.0, -5.2, 0.0, 0.0, 0.0, 1.0, 0.2],
                 [0.0, 0.0, 1.0, 5.0, -0.1, 20.0, 2.2, 0.0, 0.0, 0.0, 1.0, -0.1],
             ]
         )
-        assert numpy.all(both_best_one_hot_neighbors == correct_answers_both_best_one_hot_neighbors)
+        assert np.all(both_best_one_hot_neighbors == correct_answers_both_best_one_hot_neighbors)
 
         correct_cat_domain_points_given_dummy_acquisition_function = [
             [5, 3.0, -0.5, 18.0, -5.2, 9.0, 0.2],
@@ -502,7 +502,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
     def test_replacing_non_unique_points(self):
         data = HistoricalData(self.mixed_domain.one_hot_dim)
         data.append_lies(self.mixed_domain.one_hot_domain.generate_quasi_random_points_in_domain(10), 0, 0)
-        categorical_points = numpy.array(
+        categorical_points = np.array(
             [
                 (5.0, 3.0, -0.5, 18.0, -5.2, 2.0, 0.2),
                 (3.0, 5.0, -0.1, 20.0, 2.2, 6.0, 0.5),
@@ -532,7 +532,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
 
 
 class TestAugmentedDomain:
-    tasks = numpy.array([0.5, 0.2, 1.0])
+    tasks = np.array([0.5, 0.2, 1.0])
 
     def test_no_acquisition_function(self):
         domain = CategoricalDomain([{"var_type": "double", "elements": (-2, 3.3)}])

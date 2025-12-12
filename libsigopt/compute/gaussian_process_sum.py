@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 
 from libsigopt.compute.gaussian_process import GaussianProcess
 from libsigopt.compute.misc.constant import CONSTANT_LIAR_MIN
@@ -25,7 +25,7 @@ class GaussianProcessSum(Predictor):
         for gp in gaussian_process_list:
             assert isinstance(gp, GaussianProcess)
             assert first_gp.dim == gp.dim
-            assert numpy.allclose(first_gp.points_sampled, gp.points_sampled)
+            assert np.allclose(first_gp.points_sampled, gp.points_sampled)
         self.gaussian_process_list = gaussian_process_list
         self.weights = weights
         self._best_index = None
@@ -42,7 +42,7 @@ class GaussianProcessSum(Predictor):
     @property
     def best_index(self):
         if self._best_index is None:
-            self._best_index = numpy.argmin(self.points_sampled_value)
+            self._best_index = np.argmin(self.points_sampled_value)
         return self._best_index
 
     @property
@@ -82,13 +82,13 @@ class GaussianProcessSum(Predictor):
         return self._points_sampled_noise_variance_sum
 
     def _compute_points_sampled_value_sum(self):
-        points_sampled_value = numpy.zeros(self.num_sampled)
+        points_sampled_value = np.zeros(self.num_sampled)
         for w, gp in zip(self.weights, self.gaussian_process_list):
             points_sampled_value = points_sampled_value + w * gp.points_sampled_value
         return points_sampled_value
 
     def _compute_points_sampled_noise_variance_sum(self):
-        points_sampled_noise_variance = numpy.zeros(self.num_sampled)
+        points_sampled_noise_variance = np.zeros(self.num_sampled)
         for w, gp in zip(self.weights, self.gaussian_process_list):
             points_sampled_noise_variance = points_sampled_noise_variance + (w**2) * gp.points_sampled_noise_variance
         return points_sampled_noise_variance
@@ -99,29 +99,29 @@ class GaussianProcessSum(Predictor):
 
     def compute_mean_of_points(self, points_to_sample):
         num_points = points_to_sample.shape[0]
-        mean = numpy.zeros(num_points)
+        mean = np.zeros(num_points)
         for w, gp in zip(self.weights, self.gaussian_process_list):
             mean = mean + w * gp.compute_mean_of_points(points_to_sample)
         return mean
 
     def compute_variance_of_points(self, points_to_sample):
         num_points = points_to_sample.shape[0]
-        var = numpy.zeros(num_points)
+        var = np.zeros(num_points)
         for w, gp in zip(self.weights, self.gaussian_process_list):
             var = var + (w**2) * gp.compute_variance_of_points(points_to_sample)
         return var
 
     def compute_covariance_of_points(self, points_to_sample):
         num_points = points_to_sample.shape[0]
-        covariance = numpy.zeros((num_points, num_points))
+        covariance = np.zeros((num_points, num_points))
         for w, gp in zip(self.weights, self.gaussian_process_list):
             covariance = covariance + (w**2) * gp.compute_covariance_of_points(points_to_sample)
         return covariance
 
     def compute_mean_and_variance_of_points(self, points_to_sample):
         num_points = points_to_sample.shape[0]
-        mean = numpy.zeros(num_points)
-        var = numpy.zeros(num_points)
+        mean = np.zeros(num_points)
+        var = np.zeros(num_points)
         for w, gp in zip(self.weights, self.gaussian_process_list):
             gp_mean, gp_var = gp.compute_mean_and_variance_of_points(points_to_sample)
             mean = mean + w * gp_mean
@@ -130,24 +130,24 @@ class GaussianProcessSum(Predictor):
 
     def compute_grad_mean_of_points(self, points_to_sample):
         num_points, dim = points_to_sample.shape
-        grad_mean = numpy.zeros((num_points, dim))
+        grad_mean = np.zeros((num_points, dim))
         for w, gp in zip(self.weights, self.gaussian_process_list):
             grad_mean = grad_mean + w * gp.compute_grad_mean_of_points(points_to_sample)
         return grad_mean
 
     def compute_grad_variance_of_points(self, points_to_sample):
         num_points, dim = points_to_sample.shape
-        grad_var = numpy.zeros((num_points, dim))
+        grad_var = np.zeros((num_points, dim))
         for w, gp in zip(self.weights, self.gaussian_process_list):
             grad_var = grad_var + (w**2) * gp.compute_grad_variance_of_points(points_to_sample)
         return grad_var
 
     def compute_mean_variance_grad_of_points(self, points_to_sample):
         num_points, dim = points_to_sample.shape
-        mean = numpy.zeros(num_points)
-        var = numpy.zeros(num_points)
-        grad_mean = numpy.zeros((num_points, dim))
-        grad_var = numpy.zeros((num_points, dim))
+        mean = np.zeros(num_points)
+        var = np.zeros(num_points)
+        grad_mean = np.zeros((num_points, dim))
+        grad_var = np.zeros((num_points, dim))
         for w, gp in zip(self.weights, self.gaussian_process_list):
             (
                 gp_mean,
@@ -163,7 +163,7 @@ class GaussianProcessSum(Predictor):
 
     def draw_posterior_samples_of_points(self, num_samples, points_to_sample):
         num_points = points_to_sample.shape[0]
-        samples = numpy.zeros((num_samples, num_points))
+        samples = np.zeros((num_samples, num_points))
         for w, gp in zip(self.weights, self.gaussian_process_list):
             samples = samples + w * gp.draw_posterior_samples_of_points(num_samples, points_to_sample)
         return samples

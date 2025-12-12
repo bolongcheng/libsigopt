@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 # pylint: disable=too-many-positional-arguments
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 
@@ -55,7 +55,7 @@ class TestSPENextPointsViews(object):
         assert len(points_to_sample[0]) == view_input["domain_info"].dim
         assert all(domain.check_point_acceptable(p) for p in points_to_sample)
 
-        task_options = numpy.array(view_input["task_options"])
+        task_options = np.array(view_input["task_options"])
         if task_options.size:
             task_costs = response["task_costs"]
             assert len(task_costs) == len(points_to_sample)
@@ -157,7 +157,7 @@ class TestSPENextPointsViews(object):
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
         assert augmented_points_sampled_failures[0]
-        assert not numpy.any(augmented_points_sampled_failures[1:])
+        assert not np.any(augmented_points_sampled_failures[1:])
 
         zs = ZigoptSimulator(3, 22, 2, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
@@ -169,7 +169,7 @@ class TestSPENextPointsViews(object):
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
         assert augmented_points_sampled_failures[-1]
-        assert not numpy.any(augmented_points_sampled_failures[:-1])
+        assert not np.any(augmented_points_sampled_failures[:-1])
 
     @pytest.mark.parametrize("dim", [3, 7, 56])
     @pytest.mark.parametrize("num_sampled", [106, 507, 960])
@@ -182,7 +182,7 @@ class TestSPENextPointsViews(object):
         )
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        assert numpy.all(numpy.logical_not(augmented_points_sampled_failures))
+        assert np.all(np.logical_not(augmented_points_sampled_failures))
 
         # Choose a situation with points on both sides of the metric bound (with high probability)
         values = view_input["points_sampled"].values
@@ -193,9 +193,9 @@ class TestSPENextPointsViews(object):
         ]
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        bounds_array = numpy.array([[metric_0_lower_bound, metric_1_lower_bound]])
-        should_exclude = numpy.logical_not(numpy.prod(values > bounds_array, axis=1, dtype=bool))
-        assert numpy.array_equal(augmented_points_sampled_failures, should_exclude)
+        bounds_array = np.array([[metric_0_lower_bound, metric_1_lower_bound]])
+        should_exclude = np.logical_not(np.prod(values > bounds_array, axis=1, dtype=bool))
+        assert np.array_equal(augmented_points_sampled_failures, should_exclude)
 
         # Confirm this works with only one bound attached
         values = view_input["points_sampled"].values
@@ -206,9 +206,9 @@ class TestSPENextPointsViews(object):
         )
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        bounds_array = numpy.array([[metric_0_lower_bound, -numpy.inf]])
-        should_exclude = numpy.logical_not(numpy.prod(values > bounds_array, axis=1, dtype=bool))
-        assert numpy.array_equal(augmented_points_sampled_failures, should_exclude)
+        bounds_array = np.array([[metric_0_lower_bound, -np.inf]])
+        should_exclude = np.logical_not(np.prod(values > bounds_array, axis=1, dtype=bool))
+        assert np.array_equal(augmented_points_sampled_failures, should_exclude)
 
         # Confirm this works with a small number of failures present in the data naturally
         zs = ZigoptSimulator(dim, num_sampled, 2, failure_prob=0.2)
@@ -221,12 +221,12 @@ class TestSPENextPointsViews(object):
         ]
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        bounds_array = numpy.array([[metric_0_lower_bound, metric_1_lower_bound]])
-        should_exclude = numpy.logical_not(numpy.prod(values > bounds_array, axis=1, dtype=bool))
+        bounds_array = np.array([[metric_0_lower_bound, metric_1_lower_bound]])
+        should_exclude = np.logical_not(np.prod(values > bounds_array, axis=1, dtype=bool))
         natural_failures = view.points_sampled_failures
-        assert numpy.array_equal(
+        assert np.array_equal(
             augmented_points_sampled_failures,
-            numpy.logical_or(should_exclude, natural_failures),
+            np.logical_or(should_exclude, natural_failures),
         )
 
     @pytest.mark.parametrize("dim", [3, 56])
@@ -247,17 +247,17 @@ class TestSPENextPointsViews(object):
         )
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        bounds_array = numpy.array([[metric_0_lower_bound, -numpy.inf]])
-        should_exclude = numpy.logical_not(numpy.prod(values > bounds_array, axis=1, dtype=bool))
-        assert numpy.array_equal(augmented_points_sampled_failures, should_exclude)
+        bounds_array = np.array([[metric_0_lower_bound, -np.inf]])
+        should_exclude = np.logical_not(np.prod(values > bounds_array, axis=1, dtype=bool))
+        assert np.array_equal(augmented_points_sampled_failures, should_exclude)
 
         view_input["points_sampled"].failures[:270] = True
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        bounds_array = numpy.array([[metric_0_lower_bound, -numpy.inf]])
-        should_exclude = numpy.logical_not(numpy.prod(values > bounds_array, axis=1, dtype=bool))
-        assert numpy.all(augmented_points_sampled_failures[:270])
-        assert numpy.array_equal(augmented_points_sampled_failures[270:], should_exclude[270:])
+        bounds_array = np.array([[metric_0_lower_bound, -np.inf]])
+        should_exclude = np.logical_not(np.prod(values > bounds_array, axis=1, dtype=bool))
+        assert np.all(augmented_points_sampled_failures[:270])
+        assert np.array_equal(augmented_points_sampled_failures[270:], should_exclude[270:])
 
     def test_identify_spe_failures_with_bounds_violations_edge_cases(self):
         # Consider when none of the points satisfy the stated bounds (ignore the bounds, only deal with normal failures)
@@ -269,31 +269,31 @@ class TestSPENextPointsViews(object):
             metric_0_lower_bound,
             metric_1_lower_bound,
         ]
-        view_input["points_sampled"].values = numpy.full((n, 2), -1)
+        view_input["points_sampled"].values = np.full((n, 2), -1)
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        assert not numpy.any(augmented_points_sampled_failures)
+        assert not np.any(augmented_points_sampled_failures)
 
         # Consider when there are already too many failures present to allow the bounds
         num_natural_fails = n - MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS + 1
-        view_input["points_sampled"].values = numpy.concatenate(
+        view_input["points_sampled"].values = np.concatenate(
             (
-                numpy.random.random((n - num_natural_fails, 2)) - 1,
-                numpy.random.random((num_natural_fails, 2)),
+                np.random.random((n - num_natural_fails, 2)) - 1,
+                np.random.random((num_natural_fails, 2)),
             ),
             axis=0,
         )
-        expected_bounds_violations = numpy.concatenate(
-            (numpy.ones(n - num_natural_fails), numpy.zeros(num_natural_fails))
+        expected_bounds_violations = np.concatenate(
+            (np.ones(n - num_natural_fails), np.zeros(num_natural_fails))
         )
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        assert numpy.array_equiv(augmented_points_sampled_failures, expected_bounds_violations)
+        assert np.array_equiv(augmented_points_sampled_failures, expected_bounds_violations)
 
         view_input["points_sampled"].failures[:num_natural_fails] = True
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
-        assert numpy.array_equal(augmented_points_sampled_failures, view_input["points_sampled"].failures)
+        assert np.array_equal(augmented_points_sampled_failures, view_input["points_sampled"].failures)
 
     # These optimized_metric_thresholds could maybe be more intelligent in tests where function values are complicated
     @pytest.mark.parametrize("dim", [23])
@@ -332,8 +332,8 @@ class TestSPENextPointsViews(object):
     @pytest.mark.parametrize(
         "num_constraint_metrics, constraint_metric_thresholds",
         [
-            (1, numpy.random.random(1)),
-            (3, numpy.random.random(3)),
+            (1, np.random.random(1)),
+            (3, np.random.random(3)),
         ],
     )
     @pytest.mark.parametrize("num_stored_metrics", [0, 8])
@@ -395,7 +395,7 @@ class TestSPENextPointsViews(object):
         assert computed_phase == phase
 
         # Create view_input with desired observation_budget, observation_count, and failure_count
-        failures = numpy.array([False] * observation_count)
+        failures = np.array([False] * observation_count)
         failures[:failure_count] = True
         zs = ZigoptSimulator(dim=dim, num_sampled=observation_count)
         view_input, _ = zs.form_spe_next_points_inputs()
@@ -418,7 +418,7 @@ class TestSPENextPointsViews(object):
         assert computed_phase == phase
 
         # Create view_input with desired observation_budget, observation_count, and failure_count
-        failures = numpy.array([False] * observation_count)
+        failures = np.array([False] * observation_count)
         failures[:failure_count] = True
         zs = ZigoptSimulator(dim=dim, num_sampled=observation_count)
         view_input, _ = zs.form_spe_next_points_inputs()

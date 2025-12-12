@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 from testviews.zigopt_input_utils import form_points_sampled, form_random_hyperparameter_dict
 
@@ -20,14 +20,14 @@ from testaux.numerical_test_case import NumericalTestCase
 
 def fill_random_covariance_hyperparameters(interval, num_hyperparameters, covariance_type):
     assert len(interval) == 2
-    return covariance_type([numpy.random.uniform(*interval) for _ in range(num_hyperparameters)])
+    return covariance_type([np.random.uniform(*interval) for _ in range(num_hyperparameters)])
 
 
 def fill_random_domain_bounds(lower_bound_interval, upper_bound_interval, dim):
     assert len(lower_bound_interval) == len(upper_bound_interval) == 2
-    domain_bounds = numpy.empty((dim, 2))
-    domain_bounds[:, 0] = numpy.random.uniform(*lower_bound_interval)
-    domain_bounds[:, 1] = numpy.random.uniform(*upper_bound_interval)
+    domain_bounds = np.empty((dim, 2))
+    domain_bounds[:, 0] = np.random.uniform(*lower_bound_interval)
+    domain_bounds[:, 1] = np.random.uniform(*upper_bound_interval)
     return domain_bounds
 
 
@@ -43,7 +43,7 @@ class GaussianProcessTestCase(NumericalTestCase):
 
     @pytest.fixture(scope="module")
     def any_domain_list(self):
-        random_dim_list = sorted(numpy.random.choice(range(2, 25), 10, replace=False))
+        random_dim_list = sorted(np.random.choice(range(2, 25), 10, replace=False))
         return [
             self.form_continous_and_uniform_domain(dim=dim, lower_element=-1, higher_element=1)
             for dim in random_dim_list
@@ -73,7 +73,7 @@ class GaussianProcessTestCase(NumericalTestCase):
 
     @pytest.fixture(scope="module")
     def gaussian_process_and_domain(self):
-        dim = numpy.random.randint(1, 9)
+        dim = np.random.randint(1, 9)
         domain = self.form_continous_and_uniform_domain(dim)
         gaussian_process = self.form_gaussian_process_and_data(domain)
         return gaussian_process, domain
@@ -87,8 +87,8 @@ class GaussianProcessTestCase(NumericalTestCase):
         pf_list = []
         for gp in gaussian_process_list:
             cov, data, mpi, tikhonov = gp.get_core_data_copy()
-            data.points_sampled_values = numpy.sum((data.points_sampled - 0.2) ** 2, axis=1)
-            threshold = numpy.random.uniform(0.2, 0.8)
+            data.points_sampled_values = np.sum((data.points_sampled - 0.2) ** 2, axis=1)
+            threshold = np.random.uniform(0.2, 0.8)
             pf = ProbabilisticFailures(GaussianProcess(cov, data, mpi, tikhonov), threshold)
             pf_list.append(pf)
         return pf_list
@@ -127,8 +127,8 @@ class GaussianProcessTestCase(NumericalTestCase):
                 num_sampled=num_sampled,
                 noise_per_point=noise_per_point,
             )
-            threshold = numpy.random.random() * (
-                numpy.max(gp.points_sampled_value) - numpy.min(gp.points_sampled_value)
+            threshold = np.random.random() * (
+                np.max(gp.points_sampled_value) - np.min(gp.points_sampled_value)
             )
             pf_class = ProbabilisticFailuresCDF if pf_cdf else ProbabilisticFailures
             list_of_pfs.append(pf_class(gp, threshold))
@@ -139,14 +139,14 @@ class GaussianProcessTestCase(NumericalTestCase):
         if mpi is None:
             mpi = [[0] * domain.one_hot_dim] if num_sampled > 2 else [[]]
         hparam_dict = form_random_hyperparameter_dict(domain)[0]
-        length_scales = numpy.concatenate(hparam_dict["length_scales"]).tolist()
+        length_scales = np.concatenate(hparam_dict["length_scales"]).tolist()
         cov = SquareExponential([hparam_dict["alpha"]] + length_scales)
         points_sampled = form_points_sampled(
             domain.one_hot_domain,
             num_sampled,
             noise_per_point,
             num_metrics=1,
-            task_options=numpy.array([]),
+            task_options=np.array([]),
             snap_cats=True,
             failure_prob=0,
         )
@@ -161,7 +161,7 @@ class GaussianProcessTestCase(NumericalTestCase):
     def form_deterministic_gaussian_process(dim, num_sampled, noise_variance_base=0.002):
         # HACK: This is one seed for which the tests I care about pass.  We'll need to think some more
         #  about exactly what we ought to be testing, though.
-        numpy.random.seed(14)
+        np.random.seed(14)
         num_hyperparameters = dim + 1
         covariance = fill_random_covariance_hyperparameters(
             interval=(3.0, 5.0),
@@ -178,7 +178,7 @@ class GaussianProcessTestCase(NumericalTestCase):
         gaussian_process = GaussianProcessTestCase.form_gaussian_process(
             points_sampled,
             covariance,
-            noise_variance=numpy.full(num_sampled, noise_variance_base),
+            noise_variance=np.full(num_sampled, noise_variance_base),
         )
         return gaussian_process
 
@@ -192,10 +192,10 @@ class GaussianProcessTestCase(NumericalTestCase):
     ):
         num_points, dim = points_sampled.shape
 
-        mean = numpy.mean(points_sampled, axis=0)
-        values = numpy.exp(-numpy.sum((points_sampled - mean[None, :]) ** 2, axis=1))
-        noise_variance = numpy.zeros(num_points) if noise_variance is None else noise_variance
-        mmi = SingleMetricMidpointInfo(values, numpy.zeros_like(values))
+        mean = np.mean(points_sampled, axis=0)
+        values = np.exp(-np.sum((points_sampled - mean[None, :]) ** 2, axis=1))
+        noise_variance = np.zeros(num_points) if noise_variance is None else noise_variance
+        mmi = SingleMetricMidpointInfo(values, np.zeros_like(values))
         scaled_values = mmi.relative_objective_value(values)
         scaled_variance = mmi.relative_objective_variance(noise_variance)
 

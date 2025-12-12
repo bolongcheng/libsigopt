@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 
 from libsigopt.compute.acquisition_function import AcquisitionFunction
 from libsigopt.compute.domain import ContinuousDomain, FixedIndicesOnContinuousDomain
@@ -92,7 +92,7 @@ class VectorizedOptimizer(Optimizer):
         else:
             values = self.af.evaluate_at_point_list(points)
 
-        best_index_now = numpy.nanargmax(values)
+        best_index_now = np.nanargmax(values)
         best_value_now = values[best_index_now]
         if self.best_value is None or best_value_now > self.best_value:
             self._best_location = points[best_index_now].flatten()
@@ -106,10 +106,10 @@ class VectorizedOptimizer(Optimizer):
         else:
             num_extra_starts = self.num_multistarts - len(selected_starts)
             if num_extra_starts <= 0:
-                starting_points = numpy.copy(selected_starts)
+                starting_points = np.copy(selected_starts)
             else:
                 extra_starts = self.domain.generate_quasi_random_points_in_domain(num_extra_starts)
-                starting_points = numpy.concatenate((selected_starts, extra_starts), axis=0)
+                starting_points = np.concatenate((selected_starts, extra_starts), axis=0)
 
         # Restrict points makes a copy of starting points and guarantees they are all valid
         restricted_starting_points = self.restrict_points_to_domain(starting_points)
@@ -165,10 +165,10 @@ class DEOptimizer(VectorizedOptimizer):
         #  [0, 1, 3, ...., n],
         #  ....
         #  [0, 1, 2, ...., n-1]]
-        self.index_matrix = numpy.triu(
-            numpy.tile(numpy.arange(1, self.num_multistarts, dtype=int), (self.num_multistarts, 1))
-        ) + numpy.tril(
-            numpy.tile(numpy.arange(0, self.num_multistarts - 1, dtype=int), (self.num_multistarts, 1)),
+        self.index_matrix = np.triu(
+            np.tile(np.arange(1, self.num_multistarts, dtype=int), (self.num_multistarts, 1))
+        ) + np.tril(
+            np.tile(np.arange(0, self.num_multistarts - 1, dtype=int), (self.num_multistarts, 1)),
             -1,
         )
 
@@ -180,11 +180,11 @@ class DEOptimizer(VectorizedOptimizer):
     def _optimize(self, points):
         self.evaluate_and_monitor(points)
         for _ in range(self.maxiter):
-            selection_indices = numpy.random.randint(0, self.num_multistarts - 1, (self.num_multistarts, 3))
-            selection_indices = self.index_matrix[numpy.arange(self.num_multistarts)[:, None], selection_indices]
+            selection_indices = np.random.randint(0, self.num_multistarts - 1, (self.num_multistarts, 3))
+            selection_indices = self.index_matrix[np.arange(self.num_multistarts)[:, None], selection_indices]
             mutants = self.mutation_strat(points, selection_indices)
-            cross_points = numpy.random.random((self.num_multistarts, self.dim)) < self.crossover_probability
-            trials = numpy.where(cross_points, mutants, points)
+            cross_points = np.random.random((self.num_multistarts, self.dim)) < self.crossover_probability
+            trials = np.where(cross_points, mutants, points)
 
             # makes sure we always evaluate_and_monitor acceptable points
             trials = self.domain.restrict_points_to_domain(trials)
@@ -243,8 +243,8 @@ class AdamOptimizer(VectorizedOptimizer):
         assert self.epsilon >= 0
 
     def _optimize(self, points):
-        first_moment = numpy.zeros(self.dim)
-        second_moment = numpy.zeros(self.dim)
+        first_moment = np.zeros(self.dim)
+        second_moment = np.zeros(self.dim)
         for i in range(1, self.maxiter):
             _, gradients = self.evaluate_and_monitor(points)
             ascend_gradients = -gradients
@@ -252,7 +252,7 @@ class AdamOptimizer(VectorizedOptimizer):
             second_moment = self.beta_2 * second_moment + (1 - self.beta_2) * ascend_gradients**2
             first_moment_unbiased = first_moment / (1 - self.beta_1**i)
             second_moment_unbiased = second_moment / (1 - self.beta_2**i)
-            update = -self.learning_rate * first_moment_unbiased / (numpy.sqrt(second_moment_unbiased) + self.epsilon)
+            update = -self.learning_rate * first_moment_unbiased / (np.sqrt(second_moment_unbiased) + self.epsilon)
             next_points = points + update
             points = self.restrict_points_to_domain(next_points)
         return points

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
 from libsigopt.compute.acquisition_function import AcquisitionFunction
@@ -14,9 +14,9 @@ from libsigopt.compute.probabilistic_failures import ProbabilisticFailuresBase
 
 @dataclass(frozen=True, slots=True)
 class SearchCoreComponents:
-    search_points_to_evaluate: numpy.ndarray
-    pi: numpy.ndarray | None
-    pi_grad: numpy.ndarray | None
+    search_points_to_evaluate: np.ndarray
+    pi: np.ndarray | None
+    pi_grad: np.ndarray | None
 
 
 class FakePredictor(Predictor):
@@ -34,7 +34,7 @@ class SearchAcquisitionFunction(AcquisitionFunction):
         super().__init__(FakePredictor())
         self.domain = domain
         self.failure_model = failure_model
-        self.repulsor_points = numpy.empty((0, self.dim))
+        self.repulsor_points = np.empty((0, self.dim))
 
     @property
     def differentiable(self):
@@ -58,7 +58,7 @@ class SearchAcquisitionFunction(AcquisitionFunction):
         assert len(one_hot_points.shape) == 2
         assert one_hot_points.shape[1] == self.dim
         search_points = convert_one_hot_to_search_hypercube_points(self.domain, one_hot_points)
-        self.repulsor_points = numpy.append(self.repulsor_points, search_points, axis=0)
+        self.repulsor_points = np.append(self.repulsor_points, search_points, axis=0)
 
     def compute_core_components(self, points_to_evaluate, option):
         assert option == "func"
@@ -90,7 +90,7 @@ class ProbabilityOfImprovementSearch(SearchAcquisitionFunction):
     def _evaluate_at_point_list_normalized(self, core_components):
         probability_of_improvement = core_components.pi
         distance = compute_distance_matrix_squared(self.repulsor_points, core_components.search_points_to_evaluate)
-        similar_indices = numpy.any(distance < self.distance_parameter, axis=0)
+        similar_indices = np.any(distance < self.distance_parameter, axis=0)
         probability_of_improvement[similar_indices] = 0
         return probability_of_improvement
 
@@ -102,7 +102,7 @@ def round_one_hot_points_categorical_values_to_target(domain, one_hot_points, ta
     categorical_component_mappings = domain.get_categorical_component_mappings()
     for categorical_component_mapping in categorical_component_mappings:
         cat_indices = list(categorical_component_mapping["input_ind_value_map"])
-        best_categories = numpy.argmax(one_hot_points[:, cat_indices], axis=1)
+        best_categories = np.argmax(one_hot_points[:, cat_indices], axis=1)
         one_hot_points[:, cat_indices] = 0
         one_hot_points[range(len(one_hot_points)), cat_indices[0] + best_categories] = target
     return one_hot_points
@@ -129,5 +129,5 @@ def map_non_categorical_points_from_unit_hypercube(one_hot_domain, unit_search_p
 def convert_one_hot_to_search_hypercube_points(domain, one_hot_points):
     assert isinstance(domain, CategoricalDomain)
     unit_one_hot_points = map_non_categorical_points_to_unit_hypercube(domain.one_hot_domain, one_hot_points)
-    largest_distance = numpy.sqrt(domain.one_hot_dim)
+    largest_distance = np.sqrt(domain.one_hot_dim)
     return round_one_hot_points_categorical_values_to_target(domain, unit_one_hot_points, largest_distance)

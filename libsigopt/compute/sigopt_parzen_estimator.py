@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 
-import numpy
+import numpy as np
 
 from libsigopt.compute.covariance_base import DifferentiableCovariance, RadialCovariance
 from libsigopt.compute.optimization import ScipyOptimizable
@@ -30,8 +30,8 @@ class SPEInsufficientDataError(Exception):
 # forget_factor: the proportion of the earlier data to be "forgotten" when finding lower/greater
 #                the points are assumed to be ordered with the earliest points in the first rows
 class SigOptParzenEstimator(ScipyOptimizable):
-    lower_points: numpy.ndarray
-    greater_points: numpy.ndarray
+    lower_points: np.ndarray
+    greater_points: np.ndarray
 
     def __init__(
         self,
@@ -48,17 +48,17 @@ class SigOptParzenEstimator(ScipyOptimizable):
         self.gamma = gamma
         self.forget_factor = forget_factor
         self.dim = len(points_sampled_points[0])
-        self.lower_points = numpy.array([])
-        self.greater_points = numpy.array([])
+        self.lower_points = np.array([])
+        self.greater_points = np.array([])
 
-        # This is a list of 1D numpy.arrays full of lies to tell the model
+        # This is a list of 1D np.arrays full of lies to tell the model
         self.lower_lies = []
         self.greater_lies = []
 
         self.update_covariances(lower_covariance, greater_covariance)
 
         # This is to allow for the optimizer to run (maybe could just have current_point)
-        self.point_to_sample = numpy.empty((0, self.dim))
+        self.point_to_sample = np.empty((0, self.dim))
 
         self.num_points = None  # Will be set in the function below
         self.form_model(
@@ -98,10 +98,10 @@ class SigOptParzenEstimator(ScipyOptimizable):
         if list_of_lying_arrays:
             if lower:
                 self.lower_lies.extend(list_of_lying_arrays)
-                self.lower_points = numpy.concatenate((self.lower_points, numpy.atleast_2d(list_of_lying_arrays)))
+                self.lower_points = np.concatenate((self.lower_points, np.atleast_2d(list_of_lying_arrays)))
             else:
                 self.greater_lies.extend(list_of_lying_arrays)
-                self.greater_points = numpy.concatenate((self.greater_points, numpy.atleast_2d(list_of_lying_arrays)))
+                self.greater_points = np.concatenate((self.greater_points, np.atleast_2d(list_of_lying_arrays)))
 
     def clear_lies(self):
         if self.lower_lies:
@@ -136,7 +136,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
         values = points_sampled_values[: self.num_points]
         points = points_sampled_points[: self.num_points]
 
-        indexes = numpy.argsort(values)
+        indexes = np.argsort(values)
         data = points[indexes, :]
 
         sub_seq_len = max(int(self.num_points * self.gamma), SPE_MINIMUM_LOWER_POINT_TOTAL)
@@ -166,9 +166,9 @@ class SigOptParzenEstimator(ScipyOptimizable):
     def _evaluate_base(self, points_to_sample, points_sampled, covariance, grad=False):
         if grad:
             assert self.differentiable
-            density = numpy.mean(covariance.build_kernel_grad_tensor(points_sampled, points_to_sample), axis=1)
+            density = np.mean(covariance.build_kernel_grad_tensor(points_sampled, points_to_sample), axis=1)
         else:
-            density = numpy.mean(covariance.build_kernel_matrix(points_sampled, points_to_sample), axis=1)
+            density = np.mean(covariance.build_kernel_matrix(points_sampled, points_to_sample), axis=1)
         return density
 
     def evaluate_expected_improvement(self, points_to_sample):
@@ -178,7 +178,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
         return lpdf, gpdf, 1 / (self.gamma + gpdf / lpdf * (1 - self.gamma))
 
     def compute_objective_function(self):
-        return self.evaluate_expected_improvement(numpy.atleast_2d(self.point_to_sample))[2][0]
+        return self.evaluate_expected_improvement(np.atleast_2d(self.point_to_sample))[2][0]
 
     def evaluate_grad_expected_improvement(self, points_to_sample):
         lpdf, gpdf, ei = self.evaluate_expected_improvement(points_to_sample)
@@ -191,4 +191,4 @@ class SigOptParzenEstimator(ScipyOptimizable):
         return -(ei**2) * (1 - self.gamma) * (lpdf * gpdf_g - gpdf * lpdf_g) / lpdf**2
 
     def compute_grad_objective_function(self):
-        return self.evaluate_grad_expected_improvement(numpy.atleast_2d(self.point_to_sample))[0]
+        return self.evaluate_grad_expected_improvement(np.atleast_2d(self.point_to_sample))[0]

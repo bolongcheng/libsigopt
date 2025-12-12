@@ -4,7 +4,7 @@
 import math
 import sys
 
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.aux.utils import is_integer, is_number
@@ -17,13 +17,13 @@ class TestUtils(object):
         assert is_number(num)
 
     @pytest.mark.parametrize(
-        "num", ["a", True, [], numpy.nan, numpy.inf, float("inf"), float("nan"), math.inf, -math.inf]
+        "num", ["a", True, [], np.nan, np.inf, float("inf"), float("nan"), math.inf, -math.inf]
     )
     def test_not_int_or_numbers(self, num):
         assert is_integer(num) is False
         assert is_number(num) is False
 
-    @pytest.mark.parametrize("num", [-1e-32, -1.023, 0.0, 1.2, numpy.pi, 1e32, 1e123])
+    @pytest.mark.parametrize("num", [-1e-32, -1.023, 0.0, 1.2, np.pi, 1e32, 1e123])
     def test_double_is_not_int(self, num):
         assert is_integer(num) is False
         assert is_number(num)

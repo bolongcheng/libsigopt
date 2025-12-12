@@ -4,7 +4,7 @@
 import logging
 from dataclasses import asdict
 
-import numpy
+import numpy as np
 
 from libsigopt.aux.adapter_info_containers import GPModelInfo
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR
@@ -55,12 +55,12 @@ AUGMENTED_EI_THRESHOLD = 1e-7
 
 
 def filter_points_sampled(points_sampled, metrics_info):
-    optimized_metrics_index = numpy.asarray(metrics_info.optimized_metrics_index)
+    optimized_metrics_index = np.asarray(metrics_info.optimized_metrics_index)
     has_optimization_metrics = metrics_info.has_optimization_metrics
     has_constraint_metrics = metrics_info.has_constraint_metrics
     constraint_metrics_index = None
     if has_constraint_metrics:
-        constraint_metrics_index = numpy.asarray(metrics_info.constraint_metrics_index)
+        constraint_metrics_index = np.asarray(metrics_info.constraint_metrics_index)
 
     return (
         points_sampled.points,
@@ -75,9 +75,9 @@ def filter_points_sampled(points_sampled, metrics_info):
 
 def form_one_hot_points_with_tasks(domain, points, task_costs=None):
     assert isinstance(domain, CategoricalDomain)
-    one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in points])
+    one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in points])
     if task_costs is not None and one_hot_points.size:
-        one_hot_points = numpy.concatenate((one_hot_points, task_costs[:, None]), axis=1)
+        one_hot_points = np.concatenate((one_hot_points, task_costs[:, None]), axis=1)
     return one_hot_points
 
 
@@ -91,16 +91,16 @@ def form_metric_midpoint_info(points_sampled_values, points_sampled_failures, me
 
 
 def identify_scaled_values_exceeding_scaled_upper_thresholds(scaled_values, scaled_upper_thresholds):
-    within_bounds = numpy.full(len(scaled_values), True, dtype=bool)
+    within_bounds = np.full(len(scaled_values), True, dtype=bool)
     for i, scaled_upper_threshold in enumerate(scaled_upper_thresholds):
-        if not numpy.isnan(scaled_upper_threshold):
-            within_bounds = numpy.logical_and(within_bounds, scaled_values[:, i] < scaled_upper_threshold)
-    return numpy.logical_not(within_bounds)
+        if not np.isnan(scaled_upper_threshold):
+            within_bounds = np.logical_and(within_bounds, scaled_values[:, i] < scaled_upper_threshold)
+    return np.logical_not(within_bounds)
 
 
 def get_relevant_expected_improvement(predictor):
     # If mean of sample variances is above threshold we use Augmented Expected Improvement
-    noise_variance = numpy.mean(predictor.points_sampled_noise_variance)
+    noise_variance = np.mean(predictor.points_sampled_noise_variance)
     if noise_variance > AUGMENTED_EI_THRESHOLD:
         return AugmentedExpectedImprovement(predictor)
     else:
@@ -112,7 +112,7 @@ class View(object):
     optimized_metrics_index: list | None
     optimized_metrics_objectives: list | None
     multimetric_info: MultimetricInfo
-    constraint_thresholds: numpy.ndarray
+    constraint_thresholds: np.ndarray
 
     def __init__(self, params, logging_service=None):
         self.params = params
@@ -120,7 +120,7 @@ class View(object):
         self.tag = self.params["tag"]
 
         self.domain = CategoricalDomain(**asdict(self.params["domain_info"]))
-        self.task_options = numpy.array(self.params["task_options"])
+        self.task_options = np.array(self.params["task_options"])
         self.task_cost_populated = self.task_options.size
 
         self.optimized_metrics_index = None
@@ -181,7 +181,7 @@ class View(object):
         self.optimized_metrics_index = self.params["metrics_info"].optimized_metrics_index
         assert self.optimized_metrics_index is not None
         assert len(self.optimized_metrics_index) >= 1
-        self.optimized_metrics_objectives = numpy.asarray(
+        self.optimized_metrics_objectives = np.asarray(
             self.params["metrics_info"].objectives,
             dtype=str,
         )[self.optimized_metrics_index].tolist()
@@ -203,7 +203,7 @@ class View(object):
         self.points_sampled_for_af_value_vars = self._mmi.relative_objective_variance(
             self.points_sampled_for_af_value_vars
         )
-        unscaled_optimized_metrics_thresholds = numpy.asarray(
+        unscaled_optimized_metrics_thresholds = np.asarray(
             self.params["metrics_info"].user_specified_thresholds,
             dtype=float,
         )[self.optimized_metrics_index]
@@ -213,7 +213,7 @@ class View(object):
         self.constraint_metrics_index = self.params["metrics_info"].constraint_metrics_index
         assert self.constraint_metrics_index is not None
         assert len(self.constraint_metrics_index) >= 1
-        self.constraint_metrics_objectives = numpy.asarray(
+        self.constraint_metrics_objectives = np.asarray(
             self.params["metrics_info"].objectives,
             dtype=str,
         )[self.constraint_metrics_index].tolist()
@@ -233,7 +233,7 @@ class View(object):
         self.points_sampled_for_pf_value_vars = self._constraint_mmi.relative_objective_variance(
             self.points_sampled_for_pf_value_vars
         )
-        unscaled_constraint_thresholds = numpy.asarray(
+        unscaled_constraint_thresholds = np.asarray(
             self.params["metrics_info"].user_specified_thresholds,
             dtype=float,
         )[self.constraint_metrics_index]
@@ -290,7 +290,7 @@ class View(object):
             self.params["metrics_info"].has_optimized_metric_thresholds,
             self.params["metrics_info"].observation_budget,
             len(self.params["points_sampled"].points),
-            numpy.sum(self.params["points_sampled"].failures),
+            np.sum(self.params["points_sampled"].failures),
             num_open_suggestions,
         )
         self.multimetric_info = form_multimetric_info_from_phase(phase, kwargs)
@@ -399,7 +399,7 @@ class GPView(View):
                 )
                 gaussian_process_list.append(gp)
             assert isinstance(self.multimetric_info.params, ConvexCombinationParams)
-            weights = numpy.copy(self.multimetric_info.params.weights)
+            weights = np.copy(self.multimetric_info.params.weights)
             main_gaussian_process = GaussianProcessSum(gaussian_process_list, weights)
         else:
             assert num_models == 1
@@ -463,7 +463,7 @@ class GPView(View):
         threshold_0 = threshold_1 = None
         assert self.optimized_metrics_thresholds is not None
         if (
-            not numpy.any(numpy.isnan(self.optimized_metrics_thresholds))
+            not np.any(np.isnan(self.optimized_metrics_thresholds))
             and len(self.optimized_metrics_thresholds) == 2
         ):
             threshold_0, threshold_1 = self.optimized_metrics_thresholds

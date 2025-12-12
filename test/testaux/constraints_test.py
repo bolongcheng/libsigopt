@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 
 from libsigopt.aux.geometry_utils import find_interior_point
@@ -13,7 +13,7 @@ from testaux.numerical_test_case import NumericalTestCase
 def nd_simplex_halfspaces(dim):
     # return the halfspaces of an n-dim simplex, x_1 + x_2 + ..... x_n <= 1, x_i >= 0 and x_i <=1.
     n_halfspaces = 2 * dim + 1
-    halfspaces = numpy.zeros((n_halfspaces, dim + 1))
+    halfspaces = np.zeros((n_halfspaces, dim + 1))
 
     halfspaces[0, :-1] = 1
     halfspaces[0, -1] = -1
@@ -32,56 +32,56 @@ def nd_simplex_halfspaces(dim):
 
 class TestFindInteriorPoint(NumericalTestCase):
     def test_feasibly_constraint(self):
-        dim = numpy.random.randint(2, 20)
+        dim = np.random.randint(2, 20)
         halfspaces = nd_simplex_halfspaces(dim)
         _, _, feasibility = find_interior_point(halfspaces)
         assert feasibility
 
     def test_infeasible_equality_constraint(self):
-        dim = numpy.random.randint(2, 20)
+        dim = np.random.randint(2, 20)
         halfspaces = nd_simplex_halfspaces(dim)
-        halfspaces = numpy.vstack((-halfspaces[0], halfspaces))
+        halfspaces = np.vstack((-halfspaces[0], halfspaces))
         _, _, feasibility = find_interior_point(halfspaces)
         assert not feasibility
 
     def test_infeasible_almost_equality_constraint(self):
-        dim = numpy.random.randint(2, 20)
+        dim = np.random.randint(2, 20)
         halfspaces = nd_simplex_halfspaces(dim)
-        halfspaces = numpy.vstack((-halfspaces[0], halfspaces))
+        halfspaces = np.vstack((-halfspaces[0], halfspaces))
         halfspaces[0, -1] -= 1e-8
         halfspaces[1, -1] -= 1e-8
         _, _, feasibility = find_interior_point(halfspaces)
         assert not feasibility
 
     def test_infeasible_constraint(self):
-        dim = numpy.random.randint(2, 20)
+        dim = np.random.randint(2, 20)
         halfspaces = nd_simplex_halfspaces(dim)
-        halfspaces = numpy.vstack((-halfspaces[0], halfspaces))
+        halfspaces = np.vstack((-halfspaces[0], halfspaces))
         halfspaces[0, -1] += 1
         halfspaces[1, -1] += 1
         _, _, feasibility = find_interior_point(halfspaces)
         assert not feasibility
 
     def test_chebyshev_center_hypercube(self):
-        dim = numpy.random.randint(2, 40)
+        dim = np.random.randint(2, 40)
         halfspaces = nd_simplex_halfspaces(dim)
         halfspaces = halfspaces[1:]
         center, radius, feasibility = find_interior_point(halfspaces)
         assert feasibility
         self.assert_scalar_within_relative(radius, 0.5, 1e-8)
-        self.assert_vector_within_relative(center, numpy.full_like(center, 0.5), 1e-8)
+        self.assert_vector_within_relative(center, np.full_like(center, 0.5), 1e-8)
 
     def test_chebyshev_center_simplex(self):
-        dim = numpy.random.randint(2, 40)
+        dim = np.random.randint(2, 40)
         halfspaces = nd_simplex_halfspaces(dim)
         center, radius, feasibility = find_interior_point(halfspaces)
-        radius_exact = 1 / (numpy.sqrt(dim) * (numpy.sqrt(dim) + 1))
+        radius_exact = 1 / (np.sqrt(dim) * (np.sqrt(dim) + 1))
         assert feasibility
         self.assert_scalar_within_relative(radius, radius_exact, tol=1e-8)
-        self.assert_vector_within_relative(center, numpy.full_like(center, radius_exact), 1e-8)
+        self.assert_vector_within_relative(center, np.full_like(center, radius_exact), 1e-8)
 
     def test_chebyshev_center_relaxed_hypercube(self):
-        dim = numpy.random.randint(2, 40)
+        dim = np.random.randint(2, 40)
         halfspaces = nd_simplex_halfspaces(dim)
         halfspaces = halfspaces[1:]
         # relax the first bound to be [0, 2]
@@ -89,7 +89,7 @@ class TestFindInteriorPoint(NumericalTestCase):
         center, radius, feasibility = find_interior_point(halfspaces)
         assert feasibility
         self.assert_scalar_within_relative(radius, 0.5, tol=1e-8)
-        self.assert_vector_within_relative(center[1:], numpy.full_like(center[1:], 0.5), 1e-8)
+        self.assert_vector_within_relative(center[1:], np.full_like(center[1:], 0.5), 1e-8)
 
 
 def map_one_hot_points_to_categorical_no_integer_snapping(domain, one_hot_points):
@@ -108,7 +108,7 @@ class TestNeighborsFeasibility(object):
             ]
         )
         with pytest.raises(AssertionError):
-            one_hot_point = numpy.array([0.5, 0.5, 0, 0, 0])
+            one_hot_point = np.array([0.5, 0.5, 0, 0, 0])
             domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
 
         # Fails with only double constraints
@@ -129,7 +129,7 @@ class TestNeighborsFeasibility(object):
             ],
         )
         with pytest.raises(AssertionError):
-            one_hot_point = numpy.array([0, 0, 0, 0, 0.5, 0.5, 0, 0, 0])
+            one_hot_point = np.array([0, 0, 0, 0, 0.5, 0.5, 0, 0, 0])
             domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
 
     def test_generate_neighboring_integers_points_exactly_test(self):
@@ -162,11 +162,11 @@ class TestNeighborsFeasibility(object):
         )
 
         n_neighbors = 2 ** len(domain.constrained_integer_indices)
-        one_hot_point = numpy.array([1.1, 1.1, 1.1, 0, 0, 0, 0, 0])
+        one_hot_point = np.array([1.1, 1.1, 1.1, 0, 0, 0, 0, 0])
         neighbors = domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
         assert neighbors.shape[0] == n_neighbors
         assert neighbors.shape[1] == domain.one_hot_dim
-        true_neighbors = numpy.array(
+        true_neighbors = np.array(
             [
                 [1, 1, 1, 0, 0, 0, 0, 0],
                 [1, 1, 2, 0, 0, 0, 0, 0],
@@ -182,14 +182,14 @@ class TestNeighborsFeasibility(object):
             assert true_neighbor in neighbors
 
     def test_generate_neighboring_integers_grid(self):
-        d = numpy.random.randint(1, MAX_GRID_DIM)
+        d = np.random.randint(1, MAX_GRID_DIM)
         domain = CategoricalDomain(
             domain_components=[{"var_type": "int", "elements": (2, 3 + d)} for _ in range(d)],
             constraint_list=[
                 {"weights": [0.5] * d, "rhs": 1, "var_type": "int"},
             ],
         )
-        one_hot_point = numpy.array([2.5 + d for _ in range(d)])
+        one_hot_point = np.array([2.5 + d for _ in range(d)])
         neighbors = domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
         assert neighbors.shape[0] == 2**d
 
@@ -201,7 +201,7 @@ class TestNeighborsFeasibility(object):
                 {"weights": [1] * d, "rhs": d, "var_type": "int"},
             ],
         )
-        one_hot_point = numpy.ones(d)
+        one_hot_point = np.ones(d)
         neighbors = domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
         assert neighbors.shape[0] == DEFAULT_NUM_RANDOM_NEIGHBORS
 
@@ -253,7 +253,7 @@ class TestNeighborsFeasibility(object):
         )
 
         # A standard check to make sure we get three feasible integer neighbors from three points w/ feasible neighbors
-        one_hot_next_points = numpy.array(
+        one_hot_next_points = np.array(
             [
                 [4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 4.1, 1, 0, 0],
                 [5.1, 5.1, 5.1, 5.1, 5.1, 5.1, 5.1, 5.1, 1, 0, 0],
@@ -269,7 +269,7 @@ class TestNeighborsFeasibility(object):
             assert domain.check_point_satisfies_constraints(categorical_point)
 
         # One point has many feasible neighbors and the rest have none ... confirm that we get all feasible points
-        one_hot_next_points = numpy.array(
+        one_hot_next_points = np.array(
             [
                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
@@ -289,7 +289,7 @@ class TestNeighborsFeasibility(object):
             assert domain.check_point_satisfies_constraints(categorical_point)
 
         # None of the points are feasible, in which case we ought to return an empty numpy aray
-        one_hot_next_points = numpy.array(
+        one_hot_next_points = np.array(
             [
                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
                 [1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0],
@@ -306,7 +306,7 @@ class TestNeighborsFeasibility(object):
 
         # One next_point has two feasible neighbors and the other two one_hot_next_points have no feasible neighbors.
         # We ought to return only two feasible points, not three
-        one_hot_next_points = numpy.array(
+        one_hot_next_points = np.array(
             [
                 [1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
                 [2, 2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
@@ -374,7 +374,7 @@ class TestNeighborsFeasibility(object):
                 {"weights": [1] * d, "rhs": d, "var_type": "int"},
             ],
         )
-        one_hot_next_points = numpy.array(
+        one_hot_next_points = np.array(
             [
                 [0.1] * d,
                 [1.1] * d,

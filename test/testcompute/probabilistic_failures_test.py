@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 """Test the Python implementation of Knowledge Gradient."""
 
-import numpy
+import numpy as np
 from scipy.stats import norm
 
 from libsigopt.compute.probabilistic_failures import (
@@ -19,21 +19,21 @@ from testcompute.gaussian_process_test_case import GaussianProcessTestCase
 class TestProbabilisticFailures(GaussianProcessTestCase):
     def test_probability_value_bounded(self, one_hot_domain_list, gaussian_process_list):
         for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = numpy.random.randn() * 0.05
+            threshold = np.random.randn() * 0.05
             pf = ProbabilisticFailures(gp, threshold)
             pfcdf = ProbabilisticFailuresCDF(gp, threshold)
 
             num_to_evaluate = 10
             points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
             probability_values = pf.compute_probability_of_success(points_to_evaluate)
-            assert (numpy.array(probability_values) >= 0).all() and (numpy.array(probability_values) <= 1).all()
+            assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
 
             probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
-            assert (numpy.array(probability_values) >= 0).all() and (numpy.array(probability_values) <= 1).all()
+            assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
 
     def test_probability_values(self, one_hot_domain_list, gaussian_process_list):
         for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = numpy.random.randn() * 0.05
+            threshold = np.random.randn() * 0.05
             pf = ProbabilisticFailures(gp, threshold)
             pfcdf = ProbabilisticFailuresCDF(gp, threshold)
 
@@ -44,7 +44,7 @@ class TestProbabilisticFailures(GaussianProcessTestCase):
             means = pf.predictor.compute_mean_of_points(points_to_evaluate)
             exponent = pf.kappa * (means - threshold)
             exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
-            prob_of_success = 1.0 / (1.0 + numpy.exp(exponent))
+            prob_of_success = 1.0 / (1.0 + np.exp(exponent))
 
             for p, q in zip(probability_values, prob_of_success):
                 self.assert_scalar_within_relative(p, q, 1.0e-14)
@@ -52,14 +52,14 @@ class TestProbabilisticFailures(GaussianProcessTestCase):
             probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
             means = pfcdf.predictor.compute_mean_of_points(points_to_evaluate)
             variances = pfcdf.predictor.compute_variance_of_points(points_to_evaluate)
-            prob_of_success = norm.cdf((threshold - means) / numpy.sqrt(variances))
+            prob_of_success = norm.cdf((threshold - means) / np.sqrt(variances))
 
             for p, q in zip(probability_values, prob_of_success):
                 self.assert_scalar_within_relative(p, q, 1.0e-14)
 
     def test_grad_probability_values(self, one_hot_domain_list, gaussian_process_list):
         for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = numpy.random.randn() * 0.05
+            threshold = np.random.randn() * 0.05
             pf = ProbabilisticFailures(gp, threshold)
 
             num_to_evaluate = 10
@@ -69,7 +69,7 @@ class TestProbabilisticFailures(GaussianProcessTestCase):
             means = pf.predictor.compute_mean_of_points(points_to_evaluate)
             exponent = pf.kappa * (means - threshold)
             exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
-            grad_logistic = pf.kappa * numpy.exp(exponent) / (1.0 + numpy.exp(exponent)) ** 2
+            grad_logistic = pf.kappa * np.exp(exponent) / (1.0 + np.exp(exponent)) ** 2
 
             grad_prob_of_success = -grad_logistic[:, None] * pf.predictor.compute_grad_mean_of_points(
                 points_to_evaluate
@@ -82,7 +82,7 @@ class TestProbabilisticFailures(GaussianProcessTestCase):
         h = 1e-7
         n_test = 50
         for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = numpy.random.randn() * 0.05
+            threshold = np.random.randn() * 0.05
             pf = ProbabilisticFailuresCDF(gp, threshold)
             pts = domain.generate_quasi_random_points_in_domain(n_test)
             self.check_gradient_with_finite_difference(
@@ -90,7 +90,7 @@ class TestProbabilisticFailures(GaussianProcessTestCase):
                 pf.compute_probability_of_success,
                 pf.compute_grad_probability_of_success,
                 tol=domain.dim * 1e-6,
-                fd_step=h * numpy.ones(domain.dim),
+                fd_step=h * np.ones(domain.dim),
                 use_complex=True,
             )
 
@@ -105,4 +105,4 @@ class TestProductOfListOfProbabilisticFailures(GaussianProcessTestCase):
             for pf in list_of_pfs:
                 product *= pf.compute_probability_of_success(points_to_evaluate)
             self.assert_vector_within_relative(product_pv, product, 1.0e-15)
-            assert numpy.all((product_pv >= 0) * (product_pv <= 1))
+            assert np.all((product_pv >= 0) * (product_pv <= 1))

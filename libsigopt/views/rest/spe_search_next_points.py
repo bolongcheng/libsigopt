@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 
-import numpy
+import numpy as np
 
 from libsigopt.compute.covariance import C4RadialMatern
 from libsigopt.compute.sigopt_parzen_estimator import SigOptParzenEstimator
@@ -35,7 +35,7 @@ class SPESearchNextPoints(View):
 
     def single_metric_spe_next_points(self):
         assert self.constraint_metrics_index is not None
-        optimized_metric = numpy.random.choice(self.constraint_metrics_index)
+        optimized_metric = np.random.choice(self.constraint_metrics_index)
         view_input = deepcopy(self.params)
         view_input["metrics_info"].optimized_metrics_index = [optimized_metric]
         view_input["metrics_info"].constraint_metrics_index = []
@@ -45,7 +45,7 @@ class SPESearchNextPoints(View):
         assert self.constraint_metrics_index is not None
         if len(self.constraint_metrics_index) == 1:
             return self.single_metric_spe_next_points()
-        optimized_metric = numpy.random.choice(self.constraint_metrics_index)
+        optimized_metric = np.random.choice(self.constraint_metrics_index)
         constraint_metrics = [i for i in self.params["metrics_info"].constraint_metrics_index if i != optimized_metric]
         view_input = deepcopy(self.params)
         view_input["metrics_info"].optimized_metrics_index = [optimized_metric]
@@ -100,7 +100,7 @@ class SPESearchNextPoints(View):
     def spe_search_next_points(self):
         num_to_sample = self.params["num_to_sample"]
         assert self.constraint_metrics_index is not None
-        random_pf_metric_index = numpy.random.choice(len(self.constraint_metrics_index))
+        random_pf_metric_index = np.random.choice(len(self.constraint_metrics_index))
         sigopt_parzen_estimator = self.form_sigopt_parzen_estimator_for_search(
             self.one_hot_points_sampled_points,
             self.points_sampled_for_pf_values[:, random_pf_metric_index],
@@ -118,7 +118,7 @@ class SPESearchNextPoints(View):
         observation_budget = self.params["metrics_info"].observation_budget
         observation_count = len(self.params["points_sampled"].points)
         num_open_suggestions = len(self.one_hot_points_being_sampled_points)
-        failure_count = numpy.sum(self.params["points_sampled"].failures)
+        failure_count = np.sum(self.params["points_sampled"].failures)
         return identify_search_phase(
             observation_budget,
             observation_count,

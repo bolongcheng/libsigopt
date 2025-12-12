@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import asdict, dataclass
 
-import numpy
+import numpy as np
 
 
 class Optimizer(object):
@@ -23,9 +23,9 @@ class OptimizerInfo:
 
 @dataclass(frozen=True, slots=True)
 class OptimizationResults:
-    starting_points: numpy.ndarray
-    ending_points: numpy.ndarray
-    function_values: numpy.ndarray
+    starting_points: np.ndarray
+    ending_points: np.ndarray
+    function_values: np.ndarray
 
 
 ####

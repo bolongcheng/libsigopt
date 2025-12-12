@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 
@@ -32,7 +32,7 @@ class TestRandomSearchNextPoints(object):
                 elif dc["var_type"] == "int":
                     assert int(pt[i]) == pt[i]
 
-        task_options = numpy.array(view_input["task_options"])
+        task_options = np.array(view_input["task_options"])
         if task_options.size:
             task_costs = response["task_costs"]
             assert len(task_costs) == len(points_to_sample)

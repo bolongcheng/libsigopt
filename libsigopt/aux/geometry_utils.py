@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 from scipy.optimize import linprog
 
 
@@ -24,10 +24,10 @@ def find_interior_point(halfspaces):
 
     """
 
-    norm_vector = numpy.linalg.norm(halfspaces[:, :-1], axis=1)
-    c = numpy.zeros(halfspaces.shape[1])
+    norm_vector = np.linalg.norm(halfspaces[:, :-1], axis=1)
+    c = np.zeros(halfspaces.shape[1])
     c[-1] = -1
-    A = numpy.copy(halfspaces)
+    A = np.copy(halfspaces)
     A[:, -1] = norm_vector
     b = -halfspaces[:, -1]
     bounds = [(None, None)] * (halfspaces.shape[1] - 1) + [(0, None)]
@@ -46,6 +46,6 @@ def find_interior_point(halfspaces):
 
 def compute_distance_matrix_squared(x, z):
     assert x.shape[1] == z.shape[1]
-    sum_x_sq = numpy.sum(x**2, axis=1)[:, None]
-    sum_z_sq = numpy.sum(z**2, axis=1)[None, :]
-    return numpy.fmax(0, sum_x_sq + sum_z_sq - 2 * numpy.dot(x, z.T))
+    sum_x_sq = np.sum(x**2, axis=1)[:, None]
+    sum_z_sq = np.sum(z**2, axis=1)[None, :]
+    return np.fmax(0, sum_x_sq + sum_z_sq - 2 * np.dot(x, z.T))

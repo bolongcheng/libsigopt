@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 # pylint: disable=too-many-positional-arguments
-import numpy
+import numpy as np
 import pytest
 from mock import patch
 
@@ -26,7 +26,7 @@ class TestSearchNextPoints(object):
             assert domain.is_discrete
             easily_available_points = domain.generate_distinct_random_points(
                 view_input["num_to_sample"],
-                excluded_points=numpy.array(view_input["points_sampled"].points),
+                excluded_points=np.array(view_input["points_sampled"].points),
                 duplicate_prob=0,
             )
             assert len(points_to_sample) >= len(easily_available_points)

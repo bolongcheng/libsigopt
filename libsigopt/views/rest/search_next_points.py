@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 
-import numpy
+import numpy as np
 
 from libsigopt.compute.misc.constant import CATEGORICAL_POINT_UNIQUENESS_TOLERANCE, DEFAULT_MAX_SIMULTANEOUS_EI_POINTS
 from libsigopt.compute.optimization_auxiliary import DEParameters, OptimizerInfo
@@ -35,7 +35,7 @@ def get_distance_parameter(dim):
     # random scheduler for search distance parameter
     # values are based on the normalization of the points to a [0, 1]^d hypercube
     distances_squared = [0.04, 0.01, 0.0025, 0.0004]
-    distance_parameter = dim * numpy.random.choice(distances_squared, 1)
+    distance_parameter = dim * np.random.choice(distances_squared, 1)
     return distance_parameter
 
 
@@ -45,7 +45,7 @@ def search_strategy_optimization(
 ):
     assert isinstance(acquisition_function, ProbabilityOfImprovementSearch)
     domain = acquisition_function.domain
-    initial_repulsor_points = numpy.copy(acquisition_function.repulsor_points)
+    initial_repulsor_points = np.copy(acquisition_function.repulsor_points)
     initial_distance_parameter = acquisition_function.distance_parameter
     next_points = []
     # the acquisition function is optimized in the one_hot_domain
@@ -57,7 +57,7 @@ def search_strategy_optimization(
             pretest_locations,
             batch_size=DEFAULT_MAX_SIMULTANEOUS_EI_POINTS,
         )
-        best_af_location = pretest_locations[numpy.argmax(random_af_values), :]
+        best_af_location = pretest_locations[np.argmax(random_af_values), :]
         search_optimizer = DEOptimizer(
             domain=domain.one_hot_domain,
             acquisition_function=acquisition_function,
@@ -65,17 +65,17 @@ def search_strategy_optimization(
             optimizer_parameters=DEFAULT_SEARCH_OPTIMIZER_INFO.parameters,
             maxiter=SEARCH_OPTIMIZER_MAXITER,
         )
-        next_point, _ = search_optimizer.optimize(numpy.atleast_2d(best_af_location))
+        next_point, _ = search_optimizer.optimize(np.atleast_2d(best_af_location))
         assert next_point.shape == (acquisition_function.dim,)
         # add diversity
-        acquisition_function.add_normalized_repulsor_point(numpy.atleast_2d(next_point))
+        acquisition_function.add_normalized_repulsor_point(np.atleast_2d(next_point))
         acquisition_function.distance_parameter = get_distance_parameter(domain.dim)
         next_points.append(next_point)
     # revert changes to the acquisition function
     acquisition_function.repulsor_points = initial_repulsor_points
     acquisition_function.distance_parameter = initial_distance_parameter
     optimizer_info_dict = {"es_optimizer": repr(search_optimizer)}
-    return numpy.array(next_points), optimizer_info_dict
+    return np.array(next_points), optimizer_info_dict
 
 
 def identify_search_phase(
@@ -106,7 +106,7 @@ class SearchNextPoints(GPView):
         probabilistic_failures = self.form_probabilistic_failures_model()
         repulsor_points = self.one_hot_points_sampled_points
         if len(self.one_hot_points_being_sampled_points) > 0:
-            repulsor_points = numpy.concatenate(
+            repulsor_points = np.concatenate(
                 (repulsor_points, self.one_hot_points_being_sampled_points),
                 axis=0,
             )
@@ -129,7 +129,7 @@ class SearchNextPoints(GPView):
         assert self.constraint_metrics_index is not None
         if len(self.constraint_metrics_index) == 1:
             return self.search_next_points_expected_improvement()
-        optimized_metric = numpy.random.choice(self.constraint_metrics_index)
+        optimized_metric = np.random.choice(self.constraint_metrics_index)
         constraint_metrics = [i for i in self.params["metrics_info"].constraint_metrics_index if i != optimized_metric]
         view_input = deepcopy(self.params)
         view_input["metrics_info"].optimized_metrics_index = [optimized_metric]
@@ -138,7 +138,7 @@ class SearchNextPoints(GPView):
 
     def search_next_points_expected_improvement(self):
         assert self.constraint_metrics_index is not None
-        optimized_metric = numpy.random.choice(self.constraint_metrics_index)
+        optimized_metric = np.random.choice(self.constraint_metrics_index)
         view_input = deepcopy(self.params)
         view_input["metrics_info"].optimized_metrics_index = [optimized_metric]
         view_input["metrics_info"].constraint_metrics_index = []
@@ -148,7 +148,7 @@ class SearchNextPoints(GPView):
         observation_budget = self.params["metrics_info"].observation_budget
         observation_count = len(self.params["points_sampled"].points)
         num_open_suggestions = len(self.one_hot_points_being_sampled_points)
-        failure_count = numpy.sum(self.params["points_sampled"].failures)
+        failure_count = np.sum(self.params["points_sampled"].failures)
         return identify_search_phase(
             observation_budget,
             observation_count,
@@ -171,7 +171,7 @@ class SearchNextPoints(GPView):
             return self.search_next_points_expected_improvement_with_failures()
         else:
             assert search_phase == SEARCH_EXPLORE_RESOLVE_PHASE
-            if numpy.random.random() < RESOLVE_PHASE_PROB:
+            if np.random.random() < RESOLVE_PHASE_PROB:
                 proposed_next_points = self.next_points_probability_improvement()
             else:
                 return self.search_next_points_expected_improvement_with_failures()

@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 import copy
 
-import numpy
+import numpy as np
 import pytest
 from flaky import flaky
 from scipy.stats import beta, kstest, truncnorm
@@ -56,7 +56,7 @@ def domains_approximately_equal(domain1, domain2, inequality_tolerance=1e-14):
         if our_prior["params"].keys() != their_prior["params"].keys():
             return False
         for key1, key2 in zip(our_prior["params"].keys(), their_prior["params"].keys()):
-            if not numpy.isclose(our_prior["params"][key1], their_prior["params"][key2]):  # type: ignore
+            if not np.isclose(our_prior["params"][key1], their_prior["params"][key2]):  # type: ignore
                 return False
 
     for our_dc, their_dc in zip(domain1.domain_components, domain2.domain_components):
@@ -111,13 +111,13 @@ class TestContinuousDomain(object):
         assert not domain.check_point_on_boundary([1e-3, -2 + 1e-3])
         assert domain.check_point_on_boundary([1e-3, -2 + 1e-3], tol=1e-2)
         assert not domain.is_constrained
-        assert numpy.all(domain.get_lower_upper_bounds() == numpy.array([[0, -2], [1, 3]]))
+        assert np.all(domain.get_lower_upper_bounds() == np.array([[0, -2], [1, 3]]))
 
     # NOTE: other_domain is hard-coded outside domain by looking at form_random_domain
     def test_point_generation(self):
-        dim = numpy.random.randint(2, 6)
+        dim = np.random.randint(2, 6)
         domain = form_random_unconstrained_categorical_domain(dim, categoricals_allowed=False).one_hot_domain
-        num_points = numpy.random.randint(10, 1000)
+        num_points = np.random.randint(10, 1000)
         random_points = domain.generate_quasi_random_points_in_domain(num_points)
         assert tuple(random_points.shape) == (num_points, domain.dim)
         assert all(domain.check_point_acceptable(p) for p in random_points)
@@ -129,7 +129,7 @@ class TestContinuousDomain(object):
         outside_points = other_domain.generate_quasi_random_points_in_domain(num_points)
         assert all(not domain.check_point_acceptable(p) for p in outside_points)
         assert all(domain.check_point_on_boundary(p) for p in domain.restrict_points_to_domain(outside_points))
-        inner_points = domain.generate_random_points_near_point(num_points, domain.midpoint, numpy.random.gamma(1, 1))
+        inner_points = domain.generate_random_points_near_point(num_points, domain.midpoint, np.random.gamma(1, 1))
         assert all(domain.check_point_acceptable(p) for p in inner_points)
 
     def test_constraints(self):
@@ -137,7 +137,7 @@ class TestContinuousDomain(object):
         domain = ContinuousDomain([[0, 1], [-2, 3], [-1, 2]])
         constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 1,
             }
         ]
@@ -164,12 +164,12 @@ class TestContinuousDomain(object):
         scipy_constraints = domain_with_constraints.get_constraints_for_scipy()
         for sc, cons in zip(scipy_constraints, constraint_list):
             assert sc["type"] == "ineq"
-            assert numpy.all(sc["fun"](constrained_points) >= 0)
-            assert numpy.all(sc["jac"](0) == cons["weights"])
+            assert np.all(sc["fun"](constrained_points) >= 0)
+            assert np.all(sc["jac"](0) == cons["weights"])
 
         infeasible_constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 6,
             }
         ]
@@ -181,7 +181,7 @@ class TestContinuousDomain(object):
         domain = ContinuousDomain([[0, 1], [-2, 3], [-1, 2]])
         constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 1,
             }
         ]
@@ -191,7 +191,7 @@ class TestContinuousDomain(object):
         unconstrained_points = domain.generate_quasi_random_points_in_domain(num_points)
         unconstrained_points[-1, :] = [0, 0, 0]  # Does not satisfy the constraints
         constrained_points = domain_with_constraints.restrict_points_to_domain(unconstrained_points)
-        assert not numpy.allclose(unconstrained_points, constrained_points)
+        assert not np.allclose(unconstrained_points, constrained_points)
         assert not all(unconstrained_points[:, 0] + unconstrained_points[:, 2] > 1)
         assert all(constrained_points[:, 0] + constrained_points[:, 2] > 1)
         assert all(domain_with_constraints.check_point_satisfies_constraints(p) for p in constrained_points)
@@ -204,9 +204,9 @@ class TestContinuousDomain(object):
             unconstrained_points,
             on_constraint=True,
         )
-        assert not numpy.allclose(unconstrained_points, constrained_points_on)
+        assert not np.allclose(unconstrained_points, constrained_points_on)
         on_constraint = constrained_points_on[:, 0] + constrained_points_on[:, 2] < 1
-        assert numpy.allclose(
+        assert np.allclose(
             constrained_points_on[on_constraint, 0] + constrained_points_on[on_constraint, 2],
             1,
         )
@@ -228,13 +228,13 @@ class TestContinuousDomain(object):
             ],
         )
 
-        viable_point = numpy.array([49.5040619673 - 1e-14, 49.5040619673])
+        viable_point = np.array([49.5040619673 - 1e-14, 49.5040619673])
         assert domain.one_hot_domain.check_point_acceptable(viable_point)
         assert not domain.one_hot_domain.check_point_on_boundary(viable_point)
         assert domain.one_hot_domain.check_point_on_boundary(viable_point, 1e-10)
 
-        violate_point = numpy.array([99.0, 2.0])
-        restricted_point = domain.one_hot_domain.restrict_points_to_domain(numpy.atleast_2d(violate_point))
+        violate_point = np.array([99.0, 2.0])
+        restricted_point = domain.one_hot_domain.restrict_points_to_domain(np.atleast_2d(violate_point))
         assert domain.one_hot_domain.check_point_acceptable(restricted_point[0])
 
     def test_restrict_points_to_domain_multiple_constraints(self):
@@ -277,7 +277,7 @@ class TestContinuousDomain(object):
         assert all(one_hot_domain.check_point_acceptable(p) for p in one_hot_points) is False
 
         restricted_points = one_hot_domain.restrict_points_to_domain(one_hot_points)
-        assert not numpy.allclose(one_hot_points, restricted_points)
+        assert not np.allclose(one_hot_points, restricted_points)
         assert all(one_hot_domain.check_point_acceptable(p) for p in restricted_points)
 
     @pytest.mark.parametrize("on_constraint", [True, False])
@@ -307,19 +307,19 @@ class TestContinuousDomain(object):
             viable_point=larger_domain.midpoint,
             on_constraint=on_constraint,
         )
-        assert not numpy.allclose(unconstrained_points, constrained_points)
+        assert not np.allclose(unconstrained_points, constrained_points)
         assert all(domain.check_point_satisfies_constraints(p) for p in constrained_points)
         assert all(sum(p) <= dim for p in constrained_points)
 
         # make viable points some corners of the domain
-        edge_points = numpy.eye(dim)
+        edge_points = np.eye(dim)
         for viable_point in edge_points:
             constrained_points = domain.restrict_points_to_domain(
                 unconstrained_points,
                 viable_point=viable_point,
                 on_constraint=on_constraint,
             )
-            assert not numpy.allclose(unconstrained_points, constrained_points)
+            assert not np.allclose(unconstrained_points, constrained_points)
             assert all(
                 domain.check_point_on_boundary(p, tolerance)
                 for p in constrained_points
@@ -334,7 +334,7 @@ class TestContinuousDomain(object):
         domain = ContinuousDomain([[0, 1], [-2, 3], [-1, 2]])
         constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 1,
             }
         ]
@@ -349,16 +349,16 @@ class TestContinuousDomain(object):
                 _,
             ) = find_interior_point(halfspaces)
         else:
-            point = numpy.array(point)
+            point = np.array(point)
 
         inner_points = domain_with_constraints.generate_random_points_near_point(
             num_points,
             point,
-            numpy.random.gamma(1, 1),
+            np.random.gamma(1, 1),
             on_constraint=on_constraint,
         )
         if on_constraint:
-            assert numpy.all(inner_points[:, 0] + inner_points[:, 2] >= 1 - 1e8)
+            assert np.all(inner_points[:, 0] + inner_points[:, 2] >= 1 - 1e8)
         else:
             assert all(domain_with_constraints.check_point_acceptable(p) for p in inner_points)
 
@@ -380,9 +380,9 @@ class TestContinuousDomain(object):
         )
         domain = categorical_domain.one_hot_domain
         # viable points are the corners of the domain
-        midpoint = numpy.atleast_2d(domain.midpoint)
-        corners = numpy.eye(dim)
-        edge_points = numpy.concatenate((midpoint, corners), axis=0)
+        midpoint = np.atleast_2d(domain.midpoint)
+        corners = np.eye(dim)
+        edge_points = np.concatenate((midpoint, corners), axis=0)
         for point in edge_points:
             random_near_points = domain.generate_random_points_near_point(
                 num_points, point, std_dev, on_constraint=on_constraint
@@ -414,7 +414,7 @@ class TestCategoricalDomain(object):
         assert domain.has_categoricals
         assert domain.has_quantized
 
-        one_hot_domain_bounds = numpy.array(
+        one_hot_domain_bounds = np.array(
             [
                 [0, 2],
                 [3, 8],
@@ -425,24 +425,24 @@ class TestCategoricalDomain(object):
             ]
         )
         assert domain.one_hot_dim == 6
-        assert numpy.all(one_hot_domain_bounds == domain.one_hot_domain.domain_bounds)
+        assert np.all(one_hot_domain_bounds == domain.one_hot_domain.domain_bounds)
 
         # Cannot consider a non-integer point for an integer dimension
         with pytest.raises(AssertionError):
             assert domain.check_point_acceptable([0.3, 4.5, 3, 0.2])
 
-        assert domain.identify_unique_points(numpy.array([[1, 3, 3, 2], [1, 3, 3, 2]])).shape == (1, 4)
-        assert domain.identify_unique_points(numpy.array([[1, 3, 3, -0.1], [1 + 1e-3, 3, 3, -0.1]])).shape == (2, 4)
+        assert domain.identify_unique_points(np.array([[1, 3, 3, 2], [1, 3, 3, 2]])).shape == (1, 4)
+        assert domain.identify_unique_points(np.array([[1, 3, 3, -0.1], [1 + 1e-3, 3, 3, -0.1]])).shape == (2, 4)
         assert domain.identify_unique_points(
-            numpy.array([[1, 3, 3, 0.2], [1 + 1e-3, 3, 3, 0.2]]), tolerance=1e-2
+            np.array([[1, 3, 3, 0.2], [1 + 1e-3, 3, 3, 0.2]]), tolerance=1e-2
         ).shape == (1, 4)
 
-        reference_points = numpy.array([[1, 3, 3, 0.2], [1.1, 4, 7, 2]])
-        test_points = numpy.array([[1, 3, 3, 0.2]])
+        reference_points = np.array([[1, 3, 3, 0.2], [1.1, 4, 7, 2]])
+        test_points = np.array([[1, 3, 3, 0.2]])
         assert domain.identify_unique_points(test_points, reference_points).shape == (0, 4)
-        test_points = numpy.array([[1 + 1e-3, 3, 3, 0.2]])
+        test_points = np.array([[1 + 1e-3, 3, 3, 0.2]])
         assert domain.identify_unique_points(test_points, reference_points).shape == (1, 4)
-        test_points = numpy.array([[1 + 1e-3, 3, 3, 0.2]])
+        test_points = np.array([[1 + 1e-3, 3, 3, 0.2]])
         assert domain.identify_unique_points(test_points, reference_points, tolerance=1e-2).shape == (0, 4)
 
     def test_domain_equality(self):
@@ -765,7 +765,7 @@ class TestCategoricalDomain(object):
     def test_quantized_domain(self):
         inf_quantized_comp: DomainComponent = {
             "var_type": "quantized",
-            "elements": [-0.2, 0.2, numpy.inf],
+            "elements": [-0.2, 0.2, np.inf],
         }
         with pytest.raises(AssertionError):
             assert CategoricalDomain(domain_components=[inf_quantized_comp])
@@ -797,7 +797,7 @@ class TestCategoricalDomain(object):
             ]
         )
 
-        one_hot_points = numpy.array(
+        one_hot_points = np.array(
             [
                 [0.1, -5],
                 [1000, 0],
@@ -808,7 +808,7 @@ class TestCategoricalDomain(object):
             ]
         )
 
-        quantized_points = numpy.array(
+        quantized_points = np.array(
             [
                 [0.1, -5],
                 [1000, 0],
@@ -819,9 +819,9 @@ class TestCategoricalDomain(object):
             ]
         )
 
-        assert numpy.all(domain.round_one_hot_points_quantized_values(one_hot_points) == quantized_points)
-        assert numpy.all(domain.map_one_hot_points_to_categorical(one_hot_points) == quantized_points)
-        assert numpy.all(domain.map_categorical_point_to_one_hot(one_hot_points) == one_hot_points)
+        assert np.all(domain.round_one_hot_points_quantized_values(one_hot_points) == quantized_points)
+        assert np.all(domain.map_one_hot_points_to_categorical(one_hot_points) == quantized_points)
+        assert np.all(domain.map_categorical_point_to_one_hot(one_hot_points) == one_hot_points)
 
     def test_quantized_unique(self):
         domain = CategoricalDomain(
@@ -832,18 +832,18 @@ class TestCategoricalDomain(object):
                 }
             ]
         )
-        points = numpy.array([[1e-5], [1.1e-5], [1.11e-5], [1.111e-5]])
+        points = np.array([[1e-5], [1.1e-5], [1.11e-5], [1.111e-5]])
         unique_points = domain.identify_unique_points(points)
         assert len(unique_points) == 4
-        assert numpy.all(points == unique_points)
+        assert np.all(points == unique_points)
 
         unique_points = domain.identify_unique_points(points, tolerance=1e-5)
         assert len(unique_points) == 1
-        assert numpy.all(points[0] == unique_points)
+        assert np.all(points[0] == unique_points)
 
         unique_points = domain.identify_unique_points(points, tolerance=1e-7)
         assert len(unique_points) == 3
-        assert numpy.all(points[:3] == unique_points)
+        assert np.all(points[:3] == unique_points)
 
         domain = CategoricalDomain(
             [
@@ -855,33 +855,33 @@ class TestCategoricalDomain(object):
         )
         unique_points = domain.identify_unique_points(points)
         assert len(unique_points) == 4
-        assert numpy.all(points == unique_points)
+        assert np.all(points == unique_points)
 
         unique_points = domain.identify_unique_points(points, tolerance=1e-4)
         assert len(unique_points) == 1
-        assert numpy.all(points[0] == unique_points)
+        assert np.all(points[0] == unique_points)
 
         unique_points = domain.identify_unique_points(points, tolerance=1e-5)
         assert len(unique_points) == 3
-        assert numpy.all(points[:3] == unique_points)
+        assert np.all(points[:3] == unique_points)
 
     def test_unconstrained_point_generation(self):
-        domain = form_random_unconstrained_categorical_domain(numpy.random.randint(2, 10))
-        num_points = numpy.random.randint(50, 150)
+        domain = form_random_unconstrained_categorical_domain(np.random.randint(2, 10))
+        num_points = np.random.randint(50, 150)
 
         points = domain.generate_quasi_random_points_in_domain(num_points)
         assert tuple(points.shape) == (num_points, domain.dim)
         assert all(domain.check_point_acceptable(point) for point in points)
-        one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in points])
+        one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in points])
         remapped_categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points, temperature=1e-2)
-        assert numpy.all(points == remapped_categorical_points)
+        assert np.all(points == remapped_categorical_points)
 
         one_hot_points = domain.one_hot_domain.generate_quasi_random_points_in_domain(num_points)
         categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points, temperature=1e-2)
-        remapped_one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in categorical_points])
+        remapped_one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in categorical_points])
         for mapping in domain.one_hot_to_categorical_mapping:
             if mapping["var_type"] == "double":
-                assert numpy.all(
+                assert np.all(
                     one_hot_points[:, mapping["input_ind"]] == remapped_one_hot_points[:, mapping["input_ind"]]
                 )
 
@@ -889,7 +889,7 @@ class TestCategoricalDomain(object):
         domain = form_random_constrained_categorical_domain(
             n_double_param=5, n_int_param=5, n_cat_param=1, n_quantized_param=1
         )
-        num_points = numpy.random.randint(50, 150)
+        num_points = np.random.randint(50, 150)
 
         # Check points in categorical domain
         categorical_points = domain.generate_quasi_random_points_in_domain(num_points)
@@ -913,7 +913,7 @@ class TestCategoricalDomain(object):
         ]
         domain = CategoricalDomain(domain_components, less_than_constraints)
         categorical_points = domain.generate_quasi_random_points_in_domain(100)
-        constraint_values = numpy.sum(categorical_points, axis=1)
+        constraint_values = np.sum(categorical_points, axis=1)
         assert 10 in constraint_values
 
         # Check ability to return points that satisfy not just strict greater than inequality but also equality
@@ -922,7 +922,7 @@ class TestCategoricalDomain(object):
         ]
         domain = CategoricalDomain(domain_components, greater_than_constraints)
         categorical_points = domain.generate_quasi_random_points_in_domain(100)
-        constraint_values = numpy.sum(categorical_points, axis=1)
+        constraint_values = np.sum(categorical_points, axis=1)
         assert 10 in constraint_values
 
     def test_round_one_hot_points(self):
@@ -936,38 +936,38 @@ class TestCategoricalDomain(object):
             ]
         )
 
-        one_hot_points = numpy.array(
+        one_hot_points = np.array(
             [
                 [4.8, 0.8, 0.9, 0.9, 0.5, 0.6, 0.5],
                 [3.3, 2.3, 0.2, 0.4, 0.6, 0.8, 4.1],
             ]
         )
-        int_rounded_answers = numpy.array(
+        int_rounded_answers = np.array(
             [
                 [5.0, 0.8, 0.9, 0.9, 0.5, 0.6, 0.5],
                 [3.0, 2.3, 0.2, 0.4, 0.6, 0.8, 4.1],
             ]
         )
         int_rounded_points = domain.round_one_hot_points_integer_values(one_hot_points)
-        assert numpy.all(int_rounded_points == int_rounded_answers)
+        assert np.all(int_rounded_points == int_rounded_answers)
 
-        cat_rounded_answers = numpy.array(
+        cat_rounded_answers = np.array(
             [
                 [4.8, 0.8, 1.0, 0.0, 0.0, 0.0, 0.5],
                 [3.3, 2.3, 0.0, 0.0, 0.0, 1.0, 4.1],
             ]
         )
         cat_rounded_points = domain.round_one_hot_points_categorical_values(one_hot_points)
-        assert numpy.all(cat_rounded_points == cat_rounded_answers)
+        assert np.all(cat_rounded_points == cat_rounded_answers)
 
-        quant_rounded_answers = numpy.array(
+        quant_rounded_answers = np.array(
             [
                 [4.8, 0.8, 0.9, 0.9, 0.5, 0.6, 1.0],
                 [3.3, 2.3, 0.2, 0.4, 0.6, 0.8, 5.3],
             ]
         )
         quant_rounded_points = domain.round_one_hot_points_quantized_values(one_hot_points)
-        assert numpy.all(quant_rounded_points == quant_rounded_answers)
+        assert np.all(quant_rounded_points == quant_rounded_answers)
 
     @flaky(max_runs=2)
     def test_snapping_points_with_temperature(self):
@@ -990,7 +990,7 @@ class TestCategoricalDomain(object):
             for nonzero_value in [0.03, 0.2, 1.0]:
                 cat_vals = [0.0] * len(all_cats)
                 cat_vals[winning_cat_index] = nonzero_value
-                one_hot_points = numpy.array([[3, 2.2] + cat_vals + [0.1]]) * numpy.ones((num_conversions, 1))
+                one_hot_points = np.array([[3, 2.2] + cat_vals + [0.1]]) * np.ones((num_conversions, 1))
                 for temperature in [1e-2, 1e-1, 1e0]:
                     categorical_points = domain.map_one_hot_points_to_categorical(
                         one_hot_points, temperature=temperature
@@ -1001,34 +1001,34 @@ class TestCategoricalDomain(object):
         # In these settings, all categories are equally desired, so we should randomly yield results
         for zero_or_nonzero_value in [0, 0.3, 1.0]:
             cat_vals = [zero_or_nonzero_value] * len(all_cats)
-            one_hot_points = numpy.array([[3, 2.2] + cat_vals + [2]]) * numpy.ones((num_conversions, 1))
+            one_hot_points = np.array([[3, 2.2] + cat_vals + [2]]) * np.ones((num_conversions, 1))
             uniform_proportion = 1.0 / len(all_cats)
             for temperature in [1e-2, 1e-1, 1e0]:
                 categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points, temperature=temperature)
                 chosen_categories = categorical_points[:, 2]
-                proportions = numpy.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
+                proportions = np.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
                 assert all(abs(proportions - uniform_proportion) < 0.06)
 
         # Check that if the first and the second categories match in value they are returned equally often
         cat_vals = [0.54321, 0.54321] + [0] * (len(all_cats) - 2)
-        one_hot_points = numpy.array([[3, 2.2] + cat_vals + [0]]) * numpy.ones((num_conversions, 1))
+        one_hot_points = np.array([[3, 2.2] + cat_vals + [0]]) * np.ones((num_conversions, 1))
         for temperature in [1e-2, 1e-1, 1e0]:
             categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points, temperature=temperature)
             chosen_categories = categorical_points[:, 2]
-            proportions = numpy.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
+            proportions = np.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
             assert all(abs(proportions[:2] - 0.5) < 0.06)
             assert all(proportions[2:] == 0)
 
         # Check that if two categories are nearly equally prominent that increasing the temperature balances them out
         cat_vals = [0.63, 0.37] + [0] * (len(all_cats) - 2)
-        one_hot_points = numpy.array([[3, 2.2] + cat_vals + [-0.1]]) * numpy.ones((num_conversions, 1))
+        one_hot_points = np.array([[3, 2.2] + cat_vals + [-0.1]]) * np.ones((num_conversions, 1))
         sampling_gap = []
         for temperature in [1e-2, 2e-1, 1e0, 1e1]:
             categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points, temperature=temperature)
             chosen_categories = categorical_points[:, 2]
-            proportions = numpy.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
+            proportions = np.array([sum(c == chosen_categories) for c in all_cats]) / float(num_conversions)
             sampling_gap.append(proportions[0] - proportions[1])
-        assert all(numpy.diff(sampling_gap) < 0)
+        assert all(np.diff(sampling_gap) < 0)
 
     def test_remove_points_outside_domain(self):
         domain = CategoricalDomain(
@@ -1046,7 +1046,7 @@ class TestCategoricalDomain(object):
         points[7, :] = [10, 2, 4, 5.3]
         points[8, :] = [50, 6, 5, 5.3]
         points_inside_domain = domain.remove_points_outside_domain(points)
-        assert numpy.array_equiv(points_inside_domain, points[[1, 2, 4, 5, 9], :])
+        assert np.array_equiv(points_inside_domain, points[[1, 2, 4, 5, 9], :])
 
     def test_discrete_domain(self):
         domain_components: list[DomainComponent] = [
@@ -1067,7 +1067,7 @@ class TestCategoricalDomain(object):
         # This domain only has 45 distinct values
         total_unique_points = 45
 
-        num_points = numpy.random.randint(100, 150)
+        num_points = np.random.randint(100, 150)
         points = domain.generate_quasi_random_points_in_domain(num_points)
         assert tuple(points.shape) == (num_points, domain.dim)
         assert all(domain.check_point_acceptable(p) for p in points)
@@ -1084,7 +1084,7 @@ class TestCategoricalDomain(object):
         only_unique_points = domain.generate_distinct_random_points(total_unique_points + 1)
         assert len(all_unique_points) == len(only_unique_points) == total_unique_points
 
-        points_already_sampled = numpy.array(
+        points_already_sampled = np.array(
             [
                 [0, 3, 2.4],
                 [1, 4, 23],
@@ -1153,17 +1153,17 @@ class TestCategoricalDomain(object):
         num_points = 86
         points = domain.generate_quasi_random_points_in_domain(num_points)
         assert points.shape == (num_points, domain.dim)
-        assert numpy.all(points == domain.map_categorical_points_to_enumeration(points))
-        assert numpy.all(points == domain.identify_unique_points(points))
+        assert np.all(points == domain.map_categorical_points_to_enumeration(points))
+        assert np.all(points == domain.identify_unique_points(points))
 
-        one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in points])
-        remapped_categorical_points = numpy.array(domain.map_one_hot_points_to_categorical(one_hot_points))
-        assert numpy.all(points == remapped_categorical_points)
+        one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in points])
+        remapped_categorical_points = np.array(domain.map_one_hot_points_to_categorical(one_hot_points))
+        assert np.all(points == remapped_categorical_points)
 
         one_hot_points = domain.one_hot_domain.generate_quasi_random_points_in_domain(num_points)
         categorical_points = domain.map_one_hot_points_to_categorical(one_hot_points)
-        remapped_one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in categorical_points])
-        assert numpy.all(one_hot_points == remapped_one_hot_points)
+        remapped_one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in categorical_points])
+        assert np.all(one_hot_points == remapped_one_hot_points)
 
     def test_constraints(self):
         domain_components: list[DomainComponent] = [
@@ -1272,7 +1272,7 @@ class TestCategoricalDomain(object):
         categorical_domain = CategoricalDomain(domain_components, constraint_list)
         domain = categorical_domain.one_hot_domain
         halfspace = domain.convert_func_list_to_halfspaces()
-        expected_halfspace = numpy.array(
+        expected_halfspace = np.array(
             [
                 [-2, -3, 0, 1],
                 [-1, -5, -2, 2],
@@ -1284,7 +1284,7 @@ class TestCategoricalDomain(object):
                 [0, 0, 1, -1],
             ]
         )
-        assert numpy.all(expected_halfspace == halfspace)
+        assert np.all(expected_halfspace == halfspace)
 
     def test_constrained_domain_construction_failures(self):
         # Constraint typing has to be consistent with domain type
@@ -1714,31 +1714,31 @@ class TestFixedIndicesOnContinuousDomain(object):
         assert domain.fixed_indices == fixed_indices
 
     def test_point_generation(self):
-        dim = numpy.random.randint(3, 6)
+        dim = np.random.randint(3, 6)
         cn_domain = form_random_unconstrained_categorical_domain(dim, categoricals_allowed=False).one_hot_domain
         midpoint = cn_domain.midpoint
         fixed_indices = {0: midpoint[0], 2: cn_domain.domain_bounds[2, 1]}
         domain = FixedIndicesOnContinuousDomain(cn_domain, fixed_indices)
 
-        num_points = numpy.random.randint(10, 1000)
+        num_points = np.random.randint(10, 1000)
         random_points = domain.generate_quasi_random_points_in_domain(num_points)
         assert random_points.shape == (num_points, domain.dim)
-        assert numpy.all(random_points[:, 0] == midpoint[0])
-        assert numpy.all(random_points[:, 2] == cn_domain.domain_bounds[2, 1])
+        assert np.all(random_points[:, 0] == midpoint[0])
+        assert np.all(random_points[:, 2] == cn_domain.domain_bounds[2, 1])
         assert all(cn_domain.check_point_acceptable(p) for p in random_points)
 
         ref_point = midpoint
         ref_point[2] = cn_domain.domain_bounds[2, 1]
-        inner_points = domain.generate_random_points_near_point(num_points, ref_point, numpy.random.gamma(1, 1))
+        inner_points = domain.generate_random_points_near_point(num_points, ref_point, np.random.gamma(1, 1))
         assert all(cn_domain.check_point_acceptable(p) for p in inner_points)
-        assert numpy.all(inner_points[:, 0] == midpoint[0])
-        assert numpy.all(inner_points[:, 2] == cn_domain.domain_bounds[2, 1])
+        assert np.all(inner_points[:, 0] == midpoint[0])
+        assert np.all(inner_points[:, 2] == cn_domain.domain_bounds[2, 1])
 
     def test_constraints(self):
         cn_domain = ContinuousDomain([[0, 1], [-2, 3], [-1, 2]])
         constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 1,
             }
         ]
@@ -1762,7 +1762,7 @@ class TestFixedIndicesOnContinuousDomain(object):
         cn_domain = ContinuousDomain([[0, 1], [-2, 3], [-1, 2]])
         constraint_list = [
             {
-                "weights": numpy.array([1, 0, 1]),
+                "weights": np.array([1, 0, 1]),
                 "rhs": 1,
             }
         ]
@@ -1779,7 +1779,7 @@ class TestFixedIndicesOnContinuousDomain(object):
         unconstrained_points = domain.generate_quasi_random_points_in_domain(num_points)
         unconstrained_points[-1, :] = [0, 0, 0]  # Does not satisfy the constraints
         constrained_points = domain_with_constraints.restrict_points_to_domain(unconstrained_points)
-        assert not numpy.allclose(unconstrained_points, constrained_points)
+        assert not np.allclose(unconstrained_points, constrained_points)
         assert any(unconstrained_points[:, 0] + unconstrained_points[:, 2] <= 1)
         assert all(constrained_points[:, 0] + constrained_points[:, 2] > 1)
         assert all(cn_domain.check_point_satisfies_constraints(p) for p in constrained_points)
@@ -1789,9 +1789,9 @@ class TestFixedIndicesOnContinuousDomain(object):
             unconstrained_points,
             on_constraint=True,
         )
-        assert not numpy.allclose(unconstrained_points, constrained_points_on)
+        assert not np.allclose(unconstrained_points, constrained_points_on)
         on_constraint = constrained_points_on[:, 0] + constrained_points_on[:, 2] < 1
-        assert numpy.allclose(
+        assert np.allclose(
             constrained_points_on[on_constraint, 0] + constrained_points_on[on_constraint, 2],
             1,
         )

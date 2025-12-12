@@ -4,7 +4,7 @@
 # pylint: disable=too-many-positional-arguments
 from copy import deepcopy
 
-import numpy
+import numpy as np
 import pytest
 from mock import Mock
 
@@ -76,8 +76,8 @@ class TestCategoricalTools(NumericalTestCase):
         )
         assert hp_domain_log.dim == 9
         for db, db_log in zip(hp_domain.domain_bounds, hp_domain_log.domain_bounds):
-            assert numpy.log(db[0]) == db_log[0]
-            assert numpy.log(db[1]) == db_log[1]
+            assert np.log(db[0]) == db_log[0]
+            assert np.log(db[1]) == db_log[1]
 
         hp_domain_tikhonov = form_one_hot_hyperparameter_domain(
             categorical_domain=domain,
@@ -184,7 +184,7 @@ class TestCategoricalTools(NumericalTestCase):
 
         assert len(hyperparameter_dicts) == num_metrics
         for i, hyperparameter_dict in enumerate(hyperparameter_dicts):
-            if i not in numpy.append(optimized_metrics_index, constraint_metrics_index):
+            if i not in np.append(optimized_metrics_index, constraint_metrics_index):
                 assert hyperparameter_dict["alpha"] == old_hyperparameter_dict[i]["alpha"]
                 assert hyperparameter_dict["task_length"] is None
                 assert hyperparameter_dict["tikhonov"] is None
@@ -292,7 +292,7 @@ class TestCategoricalTools(NumericalTestCase):
             hyperparameter_dicts = response["hyperparameter_dict"]
             assert len(hyperparameter_dicts) == num_metrics
             for i, hyperparameter_dict in enumerate(hyperparameter_dicts):
-                if i in numpy.append(optimized_metrics_index, constraint_metrics_index):
+                if i in np.append(optimized_metrics_index, constraint_metrics_index):
                     self.assert_hyperparameter_dict_keys(hyperparameter_dict)
                     assert hyperparameter_dict["alpha"] > 0
                     assert hyperparameter_dict["task_length"] is None
@@ -328,7 +328,7 @@ class TestCategoricalTools(NumericalTestCase):
             num_tasks=0,
         )
         view_input, domain = zs.form_gp_hyper_opt_categorical_inputs()
-        view_input["points_sampled"].values = 3.14 * numpy.ones_like(view_input["points_sampled"].values)
+        view_input["points_sampled"].values = 3.14 * np.ones_like(view_input["points_sampled"].values)
         old_hyperparameter_dict = deepcopy(view_input["model_info"].hyperparameters)
 
         response = GpHyperOptMultimetricView(view_input).call()

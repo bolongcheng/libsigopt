@@ -4,7 +4,7 @@
 import copy
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 from scipy.linalg import cho_factor, cho_solve, solve_triangular
 
 from libsigopt.compute.covariance_base import CovarianceBase, DifferentiableCovariance
@@ -31,9 +31,9 @@ MINIMUM_KRIGING_VARIANCE = 1e-100  # Just something really small
 
 @dataclass(frozen=True, slots=True)
 class PosteriorCoreComponents:
-    K_eval: numpy.ndarray | None
-    grad_K_eval: numpy.ndarray | None
-    cardinal_functions_at_points_to_sample: numpy.ndarray | None
+    K_eval: np.ndarray | None
+    grad_K_eval: np.ndarray | None
+    cardinal_functions_at_points_to_sample: np.ndarray | None
 
 
 class GaussianProcess(Predictor):
@@ -69,7 +69,7 @@ class GaussianProcess(Predictor):
     @property
     def best_index(self):
         if self._best_index is None:
-            self._best_index = numpy.argmin(self.points_sampled_value)
+            self._best_index = np.argmin(self.points_sampled_value)
         return self._best_index
 
     @property
@@ -127,11 +127,11 @@ class GaussianProcess(Predictor):
 
     def build_precomputed_data(self):
         if self.num_sampled == 0:
-            self.K_chol = numpy.array([])
-            self.K_inv_y = numpy.array([])
+            self.K_chol = np.array([])
+            self.K_inv_y = np.array([])
         else:
             if self.tikhonov_param is not None:
-                noise_diag_vector = numpy.full(self.num_sampled, self.tikhonov_param)
+                noise_diag_vector = np.full(self.num_sampled, self.tikhonov_param)
             else:
                 noise_diag_vector = self.points_sampled_noise_variance
             kernel_matrix = self.covariance.build_kernel_matrix(
@@ -159,8 +159,8 @@ class GaussianProcess(Predictor):
         self.mean_poly_indices = polynomial_index_point_check(self.mean_poly_indices, self.dim)
 
         if self.has_zero_mean:
-            self.poly_coef = numpy.array([0.0])
-            self.demeaned_y = numpy.copy(self.points_sampled_value)
+            self.poly_coef = np.array([0.0])
+            self.demeaned_y = np.copy(self.points_sampled_value)
             self.K_inv_demeaned_y = self.K_inv_y
         else:
             m = len(self.points_sampled)
@@ -170,11 +170,11 @@ class GaussianProcess(Predictor):
 
             self.P = build_polynomial_matrix(self.mean_poly_indices, self.points_sampled)
             self.K_inv_P = cho_solve(self.K_chol, self.P)
-            PT_K_inv_P = numpy.dot(self.P.T, self.K_inv_P)
+            PT_K_inv_P = np.dot(self.P.T, self.K_inv_P)
             self.PKP_chol = cho_factor(PT_K_inv_P, lower=True, overwrite_a=True)
             assert self.K_inv_y is not None
-            self.poly_coef = cho_solve(self.PKP_chol, numpy.dot(self.P.T, self.K_inv_y))
-            nonzero_gp_mean = numpy.dot(self.P, self.poly_coef)
+            self.poly_coef = cho_solve(self.PKP_chol, np.dot(self.P.T, self.K_inv_y))
+            nonzero_gp_mean = np.dot(self.P, self.poly_coef)
             self.demeaned_y = self.points_sampled_value - nonzero_gp_mean
             self.K_inv_demeaned_y = self.K_inv_y - cho_solve(self.K_chol, nonzero_gp_mean)
 
@@ -205,7 +205,7 @@ class GaussianProcess(Predictor):
         P_eval = build_polynomial_matrix(self.mean_poly_indices, points_to_sample)
         assert self.K_inv_demeaned_y is not None
         assert self.poly_coef is not None
-        return numpy.dot(K_eval, self.K_inv_demeaned_y) + numpy.dot(P_eval, self.poly_coef)
+        return np.dot(K_eval, self.K_inv_demeaned_y) + np.dot(P_eval, self.poly_coef)
 
     def compute_variance_of_points(self, points_to_sample):
         """Compute the pointwise Kriging variance at a list of points.
@@ -228,10 +228,10 @@ class GaussianProcess(Predictor):
                 lower=self.K_chol[1],
                 overwrite_b=True,
             )
-            schur_complement_component = numpy.sum(V**2, axis=0)
+            schur_complement_component = np.sum(V**2, axis=0)
         else:
-            schur_complement_component = numpy.sum(K_eval * cardinal_functions_at_points_to_sample, axis=1)
-        return numpy.fmax(MINIMUM_KRIGING_VARIANCE, K_x_x_array - schur_complement_component)
+            schur_complement_component = np.sum(K_eval * cardinal_functions_at_points_to_sample, axis=1)
+        return np.fmax(MINIMUM_KRIGING_VARIANCE, K_x_x_array - schur_complement_component)
 
     def compute_mean_and_variance_of_points(self, points_to_sample):
         posterior_core_components = self._compute_core_posterior_components(points_to_sample, "K_eval")
@@ -248,7 +248,7 @@ class GaussianProcess(Predictor):
         assert self.K_inv_demeaned_y is not None
         assert self.poly_coef is not None
         grad_P_eval = build_grad_polynomial_tensor(self.mean_poly_indices, points=points_to_sample)
-        return numpy.einsum("ijk, j", grad_K_eval, self.K_inv_demeaned_y) + numpy.einsum(
+        return np.einsum("ijk, j", grad_K_eval, self.K_inv_demeaned_y) + np.einsum(
             "ijk, j", grad_P_eval, self.poly_coef
         )
 
@@ -265,7 +265,7 @@ class GaussianProcess(Predictor):
         if not self.covariance.translation_invariant:
             raise NotImplementedError("Not yet ready for general kernels.")
 
-        return -2 * numpy.sum(grad_K_eval * cardinal_functions_at_points_to_sample[:, :, None], axis=1)
+        return -2 * np.sum(grad_K_eval * cardinal_functions_at_points_to_sample[:, :, None], axis=1)
 
     def compute_mean_variance_grad_of_points(self, points_to_sample):
         pcc = self._compute_core_posterior_components(points_to_sample, "all")
@@ -287,7 +287,7 @@ class GaussianProcess(Predictor):
         """
         K_eval_var = self.covariance.build_kernel_matrix(points_to_sample)
         if self.num_sampled == 0:
-            return numpy.diag(numpy.diag(K_eval_var))
+            return np.diag(np.diag(K_eval_var))
 
         assert self.K_chol is not None
         K_eval = self.covariance.build_kernel_matrix(self.points_sampled, points_to_sample=points_to_sample)
@@ -298,7 +298,7 @@ class GaussianProcess(Predictor):
             overwrite_b=True,
         )
 
-        return K_eval_var - numpy.dot(V.T, V)
+        return K_eval_var - np.dot(V.T, V)
 
     def draw_posterior_samples_of_points(self, num_samples, points_to_sample):
         r"""Draw samples from the posterior at ``Xs`` (``point_to_sample``)) points.
@@ -312,8 +312,8 @@ class GaussianProcess(Predictor):
         L = compute_cholesky_for_gp_sampling(cov)
 
         # z_samples is an array with shape (num_points, num_samples)
-        z_samples = numpy.atleast_2d(numpy.random.normal(size=(len(mean), num_samples)))
-        return mean[None, :] + numpy.transpose(numpy.dot(L, z_samples))
+        z_samples = np.atleast_2d(np.random.normal(size=(len(mean), num_samples)))
+        return mean[None, :] + np.transpose(np.dot(L, z_samples))
 
     def draw_posterior_samples(self, num_samples):
         return self.draw_posterior_samples_of_points(num_samples, self.points_sampled)
@@ -321,15 +321,15 @@ class GaussianProcess(Predictor):
     def append_lie_data(self, lie_locations, lie_method=CONSTANT_LIAR_MIN):
         assert lie_method in (CONSTANT_LIAR_MAX, CONSTANT_LIAR_MIN, CONSTANT_LIAR_MEAN)
         if lie_method == CONSTANT_LIAR_MIN:
-            lie_value = numpy.max(self.historical_data.points_sampled_value)
+            lie_value = np.max(self.historical_data.points_sampled_value)
         elif lie_method == CONSTANT_LIAR_MAX:
-            lie_value = numpy.min(self.historical_data.points_sampled_value)
+            lie_value = np.min(self.historical_data.points_sampled_value)
         else:
-            lie_value = numpy.mean(self.historical_data.points_sampled_value)
+            lie_value = np.mean(self.historical_data.points_sampled_value)
 
         self.historical_data.append_historical_data(
             lie_locations,
-            lie_value * numpy.ones(len(lie_locations)),
-            DEFAULT_CONSTANT_LIAR_LIE_NOISE_VARIANCE * numpy.ones(len(lie_locations)),
+            lie_value * np.ones(len(lie_locations)),
+            DEFAULT_CONSTANT_LIAR_LIE_NOISE_VARIANCE * np.ones(len(lie_locations)),
         )
         self.update_historical_data(self.historical_data)

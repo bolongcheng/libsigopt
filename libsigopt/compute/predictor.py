@@ -3,22 +3,22 @@
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
 
-import numpy
+import numpy as np
 from scipy.stats import norm
 
 
 @dataclass(frozen=True, slots=True)
 class PredictorCoreComponents:
-    x: numpy.ndarray
-    mean: numpy.ndarray
-    var: numpy.ndarray
-    z: numpy.ndarray
-    sqrt_var: numpy.ndarray
-    cdf_z: numpy.ndarray
-    pdf_z: numpy.ndarray
-    grad_mean: numpy.ndarray
-    grad_var: numpy.ndarray
-    grad_sqrt_var: numpy.ndarray
+    x: np.ndarray
+    mean: np.ndarray
+    var: np.ndarray
+    z: np.ndarray
+    sqrt_var: np.ndarray
+    cdf_z: np.ndarray
+    pdf_z: np.ndarray
+    grad_mean: np.ndarray
+    grad_var: np.ndarray
+    grad_sqrt_var: np.ndarray
 
 
 class Predictor(object):
@@ -90,7 +90,7 @@ class HasPredictor(object):
                 grad_mean,
                 grad_var,
             ) = self.predictor.compute_mean_variance_grad_of_points(points_to_evaluate)
-        sqrt_var = numpy.sqrt(var)
+        sqrt_var = np.sqrt(var)
         if grad_var is not None:
             grad_sqrt_var = 0.5 * grad_var / sqrt_var[:, None]
 

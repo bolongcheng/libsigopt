@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 
-import numpy
+import numpy as np
 
 from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME
 from libsigopt.compute.covariance import C4RadialMatern
@@ -78,7 +78,7 @@ def get_solver_options(phase, progress):
         proposal_factor = SPE_PROPOSAL_FACTOR
     else:
         gamma = BOTTOM_GAMMA
-        proposal_factor = numpy.random.uniform(0.0, 0.5)
+        proposal_factor = np.random.uniform(0.0, 0.5)
     return gamma, proposal_factor
 
 
@@ -93,8 +93,8 @@ class SPENextPoints(View):
 
     @staticmethod
     def form_one_hot_covariance(covariance_class, domain, one_hot_points, cat_length_scale, factor):
-        point_spread = numpy.std(one_hot_points, axis=0) + STD_EPSILON_HACK
-        one_hot_bandwidths = factor * numpy.sqrt(point_spread / 2)
+        point_spread = np.std(one_hot_points, axis=0) + STD_EPSILON_HACK
+        one_hot_bandwidths = factor * np.sqrt(point_spread / 2)
 
         hyperparameters = [1.0]
         numerical_ind = [
@@ -163,7 +163,7 @@ class SPENextPoints(View):
             sorted_index_by_eis = sigopt_parzen_estimator.evaluate_expected_improvement(
                 sigopt_parzen_estimator.lower_points
             )[2].argsort()[::-1]
-            inbound = numpy.array(
+            inbound = np.array(
                 [
                     domain.check_point_acceptable(point)
                     for point in domain.map_one_hot_points_to_categorical(sigopt_parzen_estimator.lower_points)
@@ -175,7 +175,7 @@ class SPENextPoints(View):
             # with one of the lower_points that is inbound
             if not any(inbound[selected_starts_indexes]):
                 selected_starts[-1, :] = sigopt_parzen_estimator.lower_points[
-                    numpy.argmax(inbound[sorted_index_by_eis] == 1), :
+                    np.argmax(inbound[sorted_index_by_eis] == 1), :
                 ]  # Since True is represented as 1 in python
             new_suggestion, _ = multistart_optimizer.optimize(selected_starts=selected_starts)
             suggestion_list.append(new_suggestion)
@@ -184,7 +184,7 @@ class SPENextPoints(View):
         sigopt_parzen_estimator.recover_lies(lie_data)
         # The solver can return points such as -2e-16, which, during the one hot snapping, yields problems
         # This restriction prevents such issues, although perhaps this should be occurring in the solver
-        return domain.one_hot_domain.restrict_points_to_domain(numpy.array(suggestion_list))
+        return domain.one_hot_domain.restrict_points_to_domain(np.array(suggestion_list))
 
     # NOTE: I'm worried about sampling effectively in problems with categories
     #       May want to change the uniform random sampling to account for those situations
@@ -206,13 +206,13 @@ class SPENextPoints(View):
             domain,
             num_multistarts,
         )[0]
-        max_value = sigopt_parzen_estimator.evaluate_expected_improvement(numpy.atleast_2d(max_location))[2][0]
+        max_value = sigopt_parzen_estimator.evaluate_expected_improvement(np.atleast_2d(max_location))[2][0]
 
         uniform_domain = deepcopy(domain.one_hot_domain)
         uniform_domain.set_quasi_random_sampler_opts(SamplerOpts(sampler="uniform"))
 
         num_rejection_samples = 0
-        samples = numpy.empty((0, domain.one_hot_dim))
+        samples = np.empty((0, domain.one_hot_dim))
         # NOTE: lower_points are sorted by objective function values in decreasing order
         num_lower_points_used = max(1, int(proposal_factor * len(sigopt_parzen_estimator.lower_points)))
         while len(samples) < num_to_sample and num_rejection_samples < rejection_samples_limit:
@@ -224,20 +224,20 @@ class SPENextPoints(View):
                     proposal_std,
                 )
                 test_points_list.append(pts)
-            test_points = numpy.concatenate(test_points_list, axis=0)[:batch_size, :]
+            test_points = np.concatenate(test_points_list, axis=0)[:batch_size, :]
 
             test_ei_vals_scaled = sigopt_parzen_estimator.evaluate_expected_improvement(test_points)[2] / max_value
-            test_probs = numpy.random.random(batch_size)
-            samples = numpy.concatenate((samples, test_points[test_probs < test_ei_vals_scaled, :]), axis=0)
+            test_probs = np.random.random(batch_size)
+            samples = np.concatenate((samples, test_points[test_probs < test_ei_vals_scaled, :]), axis=0)
             num_rejection_samples += batch_size
 
         if len(samples) < num_to_sample:
             remaining_uniform_samples = uniform_domain.generate_quasi_random_points_in_domain(
                 num_to_sample - len(samples)
             )
-            samples = numpy.concatenate((samples, remaining_uniform_samples), axis=0)
+            samples = np.concatenate((samples, remaining_uniform_samples), axis=0)
         elif len(samples) > num_to_sample:
-            samples = samples[numpy.random.choice(range(len(samples)), size=num_to_sample, replace=False), :]
+            samples = samples[np.random.choice(range(len(samples)), size=num_to_sample, replace=False), :]
 
         return samples, num_rejection_samples, max_value, num_lower_points_used
 
@@ -249,13 +249,13 @@ class SPENextPoints(View):
             return observed_failures
 
         num_points = len(self.points_sampled_failures)
-        bounds_violations = numpy.zeros(num_points, dtype=bool)
+        bounds_violations = np.zeros(num_points, dtype=bool)
         if self.params["metrics_info"].requires_pareto_frontier_optimization:
             bounds_violations = identify_scaled_values_exceeding_scaled_upper_thresholds(
                 self.points_sampled_for_af_values,
                 self.optimized_metrics_thresholds,
             )
-        metric_constraints_violations = numpy.zeros(num_points, dtype=bool)
+        metric_constraints_violations = np.zeros(num_points, dtype=bool)
         if self.has_constraint_metrics:
             metric_constraints_violations = identify_scaled_values_exceeding_scaled_upper_thresholds(
                 self.points_sampled_for_pf_values,
@@ -264,9 +264,9 @@ class SPENextPoints(View):
         either_failure = observed_failures | bounds_violations | metric_constraints_violations
 
         if (
-            numpy.sum(bounds_violations) > num_points - MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS
-            or numpy.sum(metric_constraints_violations) > num_points - MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
-            or numpy.sum(either_failure) > num_points - MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
+            np.sum(bounds_violations) > num_points - MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS
+            or np.sum(metric_constraints_violations) > num_points - MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
+            or np.sum(either_failure) > num_points - MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
         ):
             return observed_failures
 
@@ -357,7 +357,7 @@ class SPENextPoints(View):
         phase, progress = get_experiment_phase(
             budget=budget,
             observation_count=len(self.params["points_sampled"].points),
-            failure_count=numpy.sum(self.params["points_sampled"].failures),
+            failure_count=np.sum(self.params["points_sampled"].failures),
         )
         self.tag.update({"spe_phase": phase})
 

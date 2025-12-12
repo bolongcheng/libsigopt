@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 import copy
 
-import numpy
+import numpy as np
 
 from libsigopt.compute.misc.constant import (
     AF_OPT_NEAR_BEST_STD_DEV,
@@ -188,13 +188,13 @@ def constant_liar_acquisition_function_optimization(
         )
         next_point = vectorized_acquisition_optimization(es_af_optimizer, gd_af_optimizer, pretest_locations)
         assert next_point.shape == (af.dim,)
-        af.append_lie_locations(numpy.atleast_2d(next_point))
+        af.append_lie_locations(np.atleast_2d(next_point))
         next_points.append(next_point)
     optimizer_info_dict = {
         "es_optimizer": repr(es_af_optimizer),
         "gd_optimizer": repr(gd_af_optimizer),
     }
-    return numpy.array(next_points), optimizer_info_dict
+    return np.array(next_points), optimizer_info_dict
 
 
 def vectorized_acquisition_optimization(es_af_optimizer, gd_af_optimizer, pretest_locations):
@@ -202,17 +202,17 @@ def vectorized_acquisition_optimization(es_af_optimizer, gd_af_optimizer, pretes
         pretest_locations,
         batch_size=DEFAULT_MAX_SIMULTANEOUS_EI_POINTS,
     )
-    best_af_location = pretest_locations[numpy.argmax(random_af_values), :]
+    best_af_location = pretest_locations[np.argmax(random_af_values), :]
     best_observed_location = es_af_optimizer.af.best_location
 
-    best_es_result, all_es_results = es_af_optimizer.optimize(numpy.vstack((best_af_location, best_observed_location)))
+    best_es_result, all_es_results = es_af_optimizer.optimize(np.vstack((best_af_location, best_observed_location)))
     random_near_best_es_result = es_af_optimizer.domain.generate_random_points_near_point(
         DEFAULT_NEXT_POINTS_GB_OPTIMIZER_INFO.num_random_samples,
         best_es_result,
         AF_OPT_NEAR_BEST_STD_DEV,
     )
     random_es_results = all_es_results.ending_points[
-        numpy.random.choice(
+        np.random.choice(
             es_af_optimizer.num_multistarts,
             DEFAULT_NEXT_POINTS_GB_OPTIMIZER_INFO.num_random_samples,
             replace=False,
@@ -220,7 +220,7 @@ def vectorized_acquisition_optimization(es_af_optimizer, gd_af_optimizer, pretes
     ]
     # Use a combination of points near the ES solution and random
     # ES solutions for the starting point of the gradient method
-    gd_starting_points = numpy.concatenate(
+    gd_starting_points = np.concatenate(
         (
             random_near_best_es_result,
             random_es_results,

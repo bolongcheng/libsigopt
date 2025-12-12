@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import numpy
+import numpy as np
 import pytest
 from testviews.zigopt_input_utils import form_random_unconstrained_categorical_domain
 
@@ -22,10 +22,10 @@ from testcompute.gaussian_process_test_case import GaussianProcessTestCase
 class TestSearch(GaussianProcessTestCase):
     def test_pi_search_grad_fail(self, domain_list, product_of_list_probabilistic_failures_list):
         for domain, prod_of_pfs in zip(domain_list, product_of_list_probabilistic_failures_list):
-            random_distance = numpy.random.random()
+            random_distance = np.random.random()
             pi_search = ProbabilityOfImprovementSearch(domain, prod_of_pfs, random_distance)
 
-            random_distance = numpy.random.random()
+            random_distance = np.random.random()
             pi_search = ProbabilityOfImprovementSearch(domain, prod_of_pfs, random_distance)
             points_to_evaluate = domain.one_hot_domain.generate_quasi_random_points_in_domain(100)
             with pytest.raises(AssertionError):
@@ -33,27 +33,27 @@ class TestSearch(GaussianProcessTestCase):
 
     def test_pi_search_no_repulsor(self, domain_list, product_of_list_probabilistic_failures_list):
         for domain, prod_of_pfs in zip(domain_list, product_of_list_probabilistic_failures_list):
-            random_distance = numpy.random.random()
+            random_distance = np.random.random()
             pi_search = ProbabilityOfImprovementSearch(domain, prod_of_pfs, random_distance)
 
             points_to_evaluate = domain.one_hot_domain.generate_quasi_random_points_in_domain(100)
             product_pv = prod_of_pfs.compute_probability_of_success(points_to_evaluate)
             pi = pi_search.evaluate_at_point_list(points_to_evaluate)
             self.assert_vector_within_relative_norm(pi, product_pv, 1e-15)
-            assert numpy.all((pi >= 0) * (pi <= 1))
+            assert np.all((pi >= 0) * (pi <= 1))
 
     def test_pi_search_with_repulsor_points(self, domain_list, product_of_list_probabilistic_failures_list):
         for domain, prod_of_pfs in zip(domain_list, product_of_list_probabilistic_failures_list):
-            random_distance = numpy.random.random()
-            gp_points = numpy.copy(prod_of_pfs.list_of_probabilistic_failures[0].predictor.points_sampled)
+            random_distance = np.random.random()
+            gp_points = np.copy(prod_of_pfs.list_of_probabilistic_failures[0].predictor.points_sampled)
             pi_search = ProbabilityOfImprovementSearch(domain, prod_of_pfs, random_distance, gp_points)
             points_to_evaluate = domain.one_hot_domain.generate_quasi_random_points_in_domain(100)
             pi = pi_search.evaluate_at_point_list(points_to_evaluate)
-            assert numpy.all((pi >= 0) * (pi <= 1))
+            assert np.all((pi >= 0) * (pi <= 1))
 
             pi_search.add_normalized_repulsor_point(points_to_evaluate)
             pi = pi_search.evaluate_at_point_list(points_to_evaluate)
-            assert numpy.all(pi == 0)
+            assert np.all(pi == 0)
 
     def test_pi_search_with_evaluate_at_point_lists(self):
         first_cat_elements = [1, 3, 5]
@@ -73,12 +73,12 @@ class TestSearch(GaussianProcessTestCase):
             num_sampled=10,
             noise_per_point=1e-5,
         )
-        threshold = 0.5 * (numpy.max(gp.points_sampled_value) - numpy.min(gp.points_sampled_value))
+        threshold = 0.5 * (np.max(gp.points_sampled_value) - np.min(gp.points_sampled_value))
         pf = ProbabilisticFailuresCDF(gp, threshold)
         distance = 0.25
         pi_search = ProbabilityOfImprovementSearch(domain, pf, distance)
-        pi_search.add_normalized_repulsor_point(numpy.array([[0, 1, 0, 0, 0]]))
-        points_to_evaluate = numpy.array(
+        pi_search.add_normalized_repulsor_point(np.array([[0, 1, 0, 0, 0]]))
+        points_to_evaluate = np.array(
             [
                 [0, 1, 0, 0, 3.6],
                 [0, 1, 0, 0, -4.9],
@@ -87,9 +87,9 @@ class TestSearch(GaussianProcessTestCase):
             ]
         )
         pi = pi_search.evaluate_at_point_list(points_to_evaluate)
-        assert numpy.all(pi == 0)
+        assert np.all(pi == 0)
 
-        points_to_evaluate = numpy.array(
+        points_to_evaluate = np.array(
             [
                 [0, 0, 0, 1, 0],
                 [0, 0, 1, 0, 0],
@@ -110,10 +110,10 @@ class TestSearch(GaussianProcessTestCase):
         one_hot_domain = domain.one_hot_domain
         one_hot_points = one_hot_domain.generate_quasi_random_points_in_domain(num_points)
         unit_points = map_non_categorical_points_to_unit_hypercube(one_hot_domain, one_hot_points)
-        assert numpy.all(numpy.logical_and(unit_points > 0, unit_points < 1))
+        assert np.all(np.logical_and(unit_points > 0, unit_points < 1))
 
         coverted_points = map_non_categorical_points_from_unit_hypercube(one_hot_domain, unit_points)
-        assert numpy.allclose(one_hot_points, coverted_points)
+        assert np.allclose(one_hot_points, coverted_points)
 
     def test_round_one_hot_points_categorical_values_to_target(self):
         first_cat_elements = [1, 2, 6, 9]
@@ -143,11 +143,11 @@ class TestSearch(GaussianProcessTestCase):
         rounded_to_target_points = round_one_hot_points_categorical_values_to_target(
             domain, one_hot_points, target_value
         )
-        sum_first_categorical = numpy.sum(rounded_to_target_points[:, first_categorical_indices], axis=1)
-        assert numpy.all(sum_first_categorical == target_value)
+        sum_first_categorical = np.sum(rounded_to_target_points[:, first_categorical_indices], axis=1)
+        assert np.all(sum_first_categorical == target_value)
 
-        sum_second_categorical = numpy.sum(rounded_to_target_points[:, second_categorical_indices], axis=1)
-        assert numpy.all(sum_second_categorical == target_value)
+        sum_second_categorical = np.sum(rounded_to_target_points[:, second_categorical_indices], axis=1)
+        assert np.all(sum_second_categorical == target_value)
 
     def test_convert_one_hot_to_search_hypercube_points_distances(self):
         first_cat_elements = [1, 2, 3]
@@ -179,11 +179,11 @@ class TestSearch(GaussianProcessTestCase):
             [-5, 10, 3, -2, -5, 50],  # 7 - min values 3 and '50'
             [-1, 20, 3, -1, 5, 100],  # 8 - max values 3 and '100'
         ]
-        one_hot_points = numpy.array([domain.map_categorical_point_to_one_hot(p) for p in points])
+        one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in points])
         search_unit_points = convert_one_hot_to_search_hypercube_points(domain, one_hot_points)
 
-        first_search_point = numpy.atleast_2d(search_unit_points[0])
-        distance = numpy.sqrt(compute_distance_matrix_squared(first_search_point, search_unit_points))[0]
+        first_search_point = np.atleast_2d(search_unit_points[0])
+        distance = np.sqrt(compute_distance_matrix_squared(first_search_point, search_unit_points))[0]
         assert distance[0] == 0
         assert distance[1] > distance[2]
         assert distance[3] > distance[1]
@@ -203,34 +203,34 @@ class TestSearch(GaussianProcessTestCase):
         categorical_indices = []
         for categorical_component_mapping in domain.get_categorical_component_mappings():
             categorical_indices.extend(list(categorical_component_mapping["input_ind_value_map"]))
-        non_categorical_indices = list(set(numpy.arange(one_hot_domain.dim)) - set(categorical_indices))
+        non_categorical_indices = list(set(np.arange(one_hot_domain.dim)) - set(categorical_indices))
         non_categorical_indices.sort()
 
         def check_all_elements_are_present(domain, one_hot_points):
             categorical_component_mappings = domain.get_categorical_component_mappings()
             for categorical_component_mapping in categorical_component_mappings:
                 cat_indices = list(categorical_component_mapping["input_ind_value_map"])
-                best_categories = numpy.argmax(one_hot_points[:, cat_indices], axis=1)
-                unique_categories = numpy.unique(best_categories)
+                best_categories = np.argmax(one_hot_points[:, cat_indices], axis=1)
+                unique_categories = np.unique(best_categories)
                 if not len(unique_categories) == len(cat_indices):
                     return False
             return True
 
         if check_all_elements_are_present(domain, one_hot_points):
-            is_categorical = numpy.any(search_unit_points > 1, axis=0)
-            cat_indices = numpy.arange(one_hot_domain.dim)[is_categorical]
-            non_cat_indices = numpy.arange(one_hot_domain.dim)[~is_categorical]
-            assert numpy.all(categorical_indices == cat_indices)
-            assert numpy.all(non_categorical_indices == non_cat_indices)
+            is_categorical = np.any(search_unit_points > 1, axis=0)
+            cat_indices = np.arange(one_hot_domain.dim)[is_categorical]
+            non_cat_indices = np.arange(one_hot_domain.dim)[~is_categorical]
+            assert np.all(categorical_indices == cat_indices)
+            assert np.all(non_categorical_indices == non_cat_indices)
 
-        target_value = numpy.sqrt(one_hot_domain.dim)
+        target_value = np.sqrt(one_hot_domain.dim)
         num_categories = len(domain.get_categorical_component_mappings())
 
-        sum_categorical_values = numpy.sum(search_unit_points[:, categorical_indices], axis=1)
-        assert numpy.allclose(sum_categorical_values, num_categories * target_value)
+        sum_categorical_values = np.sum(search_unit_points[:, categorical_indices], axis=1)
+        assert np.allclose(sum_categorical_values, num_categories * target_value)
 
         lower, upper = one_hot_domain.get_lower_upper_bounds()
-        search_lower = convert_one_hot_to_search_hypercube_points(domain, numpy.atleast_2d(lower))
-        search_upper = convert_one_hot_to_search_hypercube_points(domain, numpy.atleast_2d(upper))
-        assert numpy.all(search_lower[0, non_categorical_indices] == 0)
-        assert numpy.all(search_upper[0, non_categorical_indices] == 1)
+        search_lower = convert_one_hot_to_search_hypercube_points(domain, np.atleast_2d(lower))
+        search_upper = convert_one_hot_to_search_hypercube_points(domain, np.atleast_2d(upper))
+        assert np.all(search_lower[0, non_categorical_indices] == 0)
+        assert np.all(search_upper[0, non_categorical_indices] == 1)
