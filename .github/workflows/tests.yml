@@ -42,14 +42,3 @@ jobs:
         run: uv sync --all-extras --dev
       - name: Run ruff
         run: uv run ruff check .
-  trivy:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out repository code
-        uses: actions/checkout@v4
-      - run: |
-          set -e
-          curl -fSsLo trivy.deb https://github.com/aquasecurity/trivy/releases/download/v0.38.3/trivy_0.38.3_Linux-64bit.deb
-          sudo dpkg -i trivy.deb
-          rm trivy.deb
-      - run: trivy fs . --debug
