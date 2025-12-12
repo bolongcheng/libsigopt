@@ -8,7 +8,7 @@ import pytest
 from libsigopt.aux.adapter_info_containers import MetricsInfo
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.domain import CategoricalDomain
-from libsigopt.compute.misc.constant import CONSTANT_LIAR_MIN, NONZERO_MEAN_CONSTANT_MEAN_TYPE
+from libsigopt.compute.misc.constant import ConstantLiarType, NonzeroMeanType
 from libsigopt.compute.misc.data_containers import MultiMetricMidpointInfo, SingleMetricMidpointInfo
 from libsigopt.views.view import (
     GPView,
@@ -128,7 +128,7 @@ class TestView(NumericalTestCase):
 
     # pylint: disable=pointless-statement
     def check_gp_ei_fields(self, zigopt_simulator):
-        view_input = zigopt_simulator.form_gp_ei_categorical_inputs(CONSTANT_LIAR_MIN)
+        view_input = zigopt_simulator.form_gp_ei_categorical_inputs(ConstantLiarType.MIN)
         v = GPView(view_input)
         assert v.has_optimization_metrics
         assert v.polynomial_indices is not object()
@@ -160,7 +160,7 @@ class TestView(NumericalTestCase):
     @pytest.mark.parametrize("num_sampled", [19, 41])
     @pytest.mark.parametrize("num_being_sampled", [5])
     @pytest.mark.parametrize("num_to_sample", [26])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     @pytest.mark.parametrize("num_tasks", [0, 3])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
@@ -248,7 +248,7 @@ class TestView(NumericalTestCase):
     @pytest.mark.parametrize("num_sampled", [19, 41])
     @pytest.mark.parametrize("num_being_sampled", [0, 1, 5])
     @pytest.mark.parametrize("num_to_sample", [26])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     @pytest.mark.parametrize("num_tasks", [0, 3])
     @pytest.mark.parametrize("num_optimized_metrics", [0])
@@ -302,7 +302,7 @@ class TestView(NumericalTestCase):
     @pytest.mark.parametrize("num_sampled", [27])
     @pytest.mark.parametrize("num_being_sampled", [0, 5])
     @pytest.mark.parametrize("num_to_sample", [26])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     @pytest.mark.parametrize("num_tasks", [0, 3])
     @pytest.mark.parametrize("num_optimized_metrics", [0])

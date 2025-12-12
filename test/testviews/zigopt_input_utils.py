@@ -7,7 +7,7 @@ import numpy as np
 from libsigopt.aux.adapter_info_containers import DomainInfo, GPModelInfo, MetricsInfo, PointsContainer
 from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME, TASK_SELECTION_STRATEGY_A_PRIORI
 from libsigopt.compute.domain import ContinuousDomain
-from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE, NONZERO_MEAN_CUSTOM_MEAN_TYPE
+from libsigopt.compute.misc.constant import NonzeroMeanType
 
 from testaux.utils import form_random_unconstrained_categorical_domain
 
@@ -70,7 +70,7 @@ def form_model_info(
 
 
 def form_nonzero_mean_data(dim, mean_type):
-    if mean_type == NONZERO_MEAN_CUSTOM_MEAN_TYPE:
+    if mean_type == NonzeroMeanType.CUSTOM:
         raise ValueError("This will need some work to make work with tasks")
         # return {'mean_type': NONZERO_MEAN_CUSTOM_MEAN_TYPE, 'poly_indices': np.random.randint(0, 3, dim)}
     return {"mean_type": mean_type, "poly_indices": None}
@@ -161,7 +161,7 @@ class ZigoptSimulator(object):
         num_to_sample=0,
         num_being_sampled=0,
         noise_per_point=DEFAULT_NOISE_PER_POINT,
-        nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+        nonzero_mean_type=NonzeroMeanType.CONSTANT,
         use_tikhonov=False,
         num_tasks=0,
         failure_prob=TEST_FAILURE_PROB,

@@ -4,12 +4,7 @@
 import numpy as np
 
 from libsigopt.aux.constant import MINIMUM_VALUE_VAR
-from libsigopt.compute.misc.constant import (
-    CONSTANT_LIAR_MAX,
-    CONSTANT_LIAR_MEAN,
-    CONSTANT_LIAR_MIN,
-    DEFAULT_CONSTANT_LIAR_VALUE,
-)
+from libsigopt.compute.misc.constant import DEFAULT_CONSTANT_LIAR_VALUE, ConstantLiarType
 
 
 DEFAULT_VALUE_VAR = 0.0
@@ -140,15 +135,14 @@ class SingleMetricMidpointInfo(MetricMidpointInfo):
             return DEFAULT_CONSTANT_LIAR_VALUE
 
         maximizing = bool(self.negate == -1)
-        if lie_method == CONSTANT_LIAR_MIN:
+        if lie_method == ConstantLiarType.MIN:
             return np.min(self.non_fail_values) if maximizing else np.max(self.non_fail_values)
-        elif lie_method == CONSTANT_LIAR_MAX:
+        elif lie_method == ConstantLiarType.MAX:
             return np.max(self.non_fail_values) if maximizing else np.min(self.non_fail_values)
-        elif lie_method == CONSTANT_LIAR_MEAN:
+        elif lie_method == ConstantLiarType.MEAN:
             return np.mean(self.non_fail_values)
 
-        assert lie_method in (CONSTANT_LIAR_MAX, CONSTANT_LIAR_MIN, CONSTANT_LIAR_MEAN)
-        return None
+        assert lie_method in ConstantLiarType
 
 
 class HistoricalData(object):

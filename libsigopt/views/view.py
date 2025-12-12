@@ -21,10 +21,10 @@ from libsigopt.compute.expected_improvement import (
 from libsigopt.compute.gaussian_process import GaussianProcess
 from libsigopt.compute.gaussian_process_sum import GaussianProcessSum
 from libsigopt.compute.misc.constant import (
-    CONSTANT_LIAR_MIN,
     DEFAULT_CONSTANT_LIAR_LIE_NOISE_VARIANCE,
     DEFAULT_COVARIANCE_KERNEL,
     DEFAULT_TASK_COVARIANCE_KERNEL,
+    ConstantLiarType,
 )
 from libsigopt.compute.misc.data_containers import HistoricalData, MultiMetricMidpointInfo, SingleMetricMidpointInfo
 from libsigopt.compute.misc.multimetric import (
@@ -196,7 +196,7 @@ class View(object):
         # invert and scale points_sampled_value and points_sampled_value_vars
         assert self._mmi is not None
         self.scaled_optimized_lie_values = self._mmi.relative_objective_value(
-            self._mmi.compute_lie_value(CONSTANT_LIAR_MIN)
+            self._mmi.compute_lie_value(ConstantLiarType.MIN)
         )
         self.points_sampled_for_af_values = self._mmi.relative_objective_value(self.points_sampled_for_af_values)
         self.points_sampled_for_af_values[self.points_sampled_failures] = self.scaled_optimized_lie_values
@@ -224,7 +224,7 @@ class View(object):
             self.constraint_metrics_objectives,
         )
         self.scaled_constraint_lie_values = self._constraint_mmi.relative_objective_value(
-            self._constraint_mmi.compute_lie_value(CONSTANT_LIAR_MIN)
+            self._constraint_mmi.compute_lie_value(ConstantLiarType.MIN)
         )
         self.points_sampled_for_pf_values = self._constraint_mmi.relative_objective_value(
             self.points_sampled_for_pf_values
@@ -462,10 +462,7 @@ class GPView(View):
 
         threshold_0 = threshold_1 = None
         assert self.optimized_metrics_thresholds is not None
-        if (
-            not np.any(np.isnan(self.optimized_metrics_thresholds))
-            and len(self.optimized_metrics_thresholds) == 2
-        ):
+        if not np.any(np.isnan(self.optimized_metrics_thresholds)) and len(self.optimized_metrics_thresholds) == 2:
             threshold_0, threshold_1 = self.optimized_metrics_thresholds
         if constraint_metrics_index == 0:
             threshold_0 = constraint_threshold

@@ -15,7 +15,7 @@ from libsigopt.compute.domain import (
     IntervalDomainComponent,
     SequentialDomainComponent,
 )
-from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE
+from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.compute.misc.data_containers import HistoricalData
 from libsigopt.compute.multitask_acquisition_function import MultitaskAcquisitionFunction
 from libsigopt.views.rest.gp_next_points_categorical import (
@@ -82,7 +82,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
     @pytest.mark.parametrize("num_to_sample", [2])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     @pytest.mark.parametrize("num_being_sampled", [0, 3])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [False])
     def test_constant_liar_base(
         self,
@@ -111,7 +111,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
     @pytest.mark.parametrize("num_to_sample", [2])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     @pytest.mark.parametrize("num_being_sampled", [4])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True])
     def test_constant_liar_multitask(
         self,
@@ -144,7 +144,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             num_optimized_metrics=1,
             num_to_sample=1,
             num_being_sampled=4,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             use_tikhonov=False,
             num_tasks=0,
         )
@@ -154,7 +154,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
     @pytest.mark.parametrize("num_to_sample", [2])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     @pytest.mark.parametrize("num_being_sampled", [3])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [False])
     @pytest.mark.parametrize("num_tasks", [0, 2])
     def test_constant_liar_constraints(
@@ -203,7 +203,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
     @pytest.mark.parametrize("num_sampled", [32])
     @pytest.mark.parametrize("num_to_sample", [2])
     @pytest.mark.parametrize("num_being_sampled", [1])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [False])
     @pytest.mark.parametrize("optimized_metric_thresholds", [[None, None], [None, -0.01234], [0.1234, 0.05678]])
     def test_constant_liar_metric_thresholds(
@@ -258,7 +258,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=2,
             num_being_sampled=2,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=optimized_metric_thresholds,
             constraint_metric_thresholds=constraint_metric_thresholds,
@@ -284,7 +284,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=1,
             num_being_sampled=2,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             constraint_metric_thresholds=constraint_metric_thresholds,
         )
         self.assert_call_successful(zs, PARALLEL_QEI)
@@ -310,7 +310,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=2,
             num_being_sampled=2,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             constraint_metric_thresholds=constraint_metric_thresholds,
         )

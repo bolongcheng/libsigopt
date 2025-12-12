@@ -18,7 +18,7 @@ from flaky import flaky
 
 from libsigopt.compute import covariance
 from libsigopt.compute.covariance_base import DifferentiableCovariance, HyperparameterInvalidError
-from libsigopt.compute.misc.constant import COVARIANCE_TYPES, TASK_LENGTH_LOWER_BOUND
+from libsigopt.compute.misc.constant import TASK_LENGTH_LOWER_BOUND, CovarianceType
 from libsigopt.compute.multitask_covariance import MultitaskTensorCovariance
 
 from testaux.numerical_test_case import NumericalTestCase
@@ -435,4 +435,4 @@ class TestLinkers(object):
 
     def test_covariance_links_have_all_covariance_types(self):
         """Test each covariance type is in a linker, and every linker key is a covariance type."""
-        assert set(COVARIANCE_TYPES) == set(covariance.COVARIANCE_TYPES_TO_CLASSES.keys())
+        assert set(CovarianceType) == set(covariance.COVARIANCE_TYPES_TO_CLASSES.keys())

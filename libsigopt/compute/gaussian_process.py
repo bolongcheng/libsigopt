@@ -8,12 +8,7 @@ import numpy as np
 from scipy.linalg import cho_factor, cho_solve, solve_triangular
 
 from libsigopt.compute.covariance_base import CovarianceBase, DifferentiableCovariance
-from libsigopt.compute.misc.constant import (
-    CONSTANT_LIAR_MAX,
-    CONSTANT_LIAR_MEAN,
-    CONSTANT_LIAR_MIN,
-    DEFAULT_CONSTANT_LIAR_LIE_NOISE_VARIANCE,
-)
+from libsigopt.compute.misc.constant import DEFAULT_CONSTANT_LIAR_LIE_NOISE_VARIANCE, ConstantLiarType
 from libsigopt.compute.misc.data_containers import HistoricalData
 from libsigopt.compute.predictor import Predictor
 from libsigopt.compute.python_utils import (
@@ -318,11 +313,11 @@ class GaussianProcess(Predictor):
     def draw_posterior_samples(self, num_samples):
         return self.draw_posterior_samples_of_points(num_samples, self.points_sampled)
 
-    def append_lie_data(self, lie_locations, lie_method=CONSTANT_LIAR_MIN):
-        assert lie_method in (CONSTANT_LIAR_MAX, CONSTANT_LIAR_MIN, CONSTANT_LIAR_MEAN)
-        if lie_method == CONSTANT_LIAR_MIN:
+    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN):
+        assert lie_method in ConstantLiarType
+        if lie_method == ConstantLiarType.MIN:
             lie_value = np.max(self.historical_data.points_sampled_value)
-        elif lie_method == CONSTANT_LIAR_MAX:
+        elif lie_method == ConstantLiarType.MAX:
             lie_value = np.min(self.historical_data.points_sampled_value)
         else:
             lie_value = np.mean(self.historical_data.points_sampled_value)
