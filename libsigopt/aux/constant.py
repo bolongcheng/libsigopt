@@ -25,18 +25,18 @@ PARALLEL_QEI = "qei"
 
 
 class ParameterPriorNames(object):
-  NORMAL = "normal"
-  BETA = "beta"
+    NORMAL = "normal"
+    BETA = "beta"
 
 
 class ParameterTransformationNames(object):
-  NONE = "none"
-  LOG = "log"
+    NONE = "none"
+    LOG = "log"
 
 
 class ConstraintType(object):
-  greater_than = "greater_than"
-  less_than = "less_than"
+    greater_than = "greater_than"
+    less_than = "less_than"
 
 
 # Threshold for number of observations beyond which we use SPE rather than GP to compute next points
