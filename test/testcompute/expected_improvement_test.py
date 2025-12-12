@@ -149,9 +149,7 @@ class TestExpectedImprovement(GaussianProcessTestCase):
                 num_points_to_sample,
                 points_being_sampled=points_being_sampled,
             )
-            # pylint: disable=protected-access
             true_result = ei_eval._compute_expected_improvement_qd_analytic(points_to_sample)
-            # pylint: enable=protected-access
 
             std_results = []
             for num_mc_iterations in mc_iterations_values:

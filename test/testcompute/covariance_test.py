@@ -423,9 +423,7 @@ def test_scale_difference_matrix2(dim, num_points):
         return scale, difference_matrix
 
     scale, difference_matrix = _generate_random_scale_and_difference_matrix(dim, num_points)
-    # pylint: disable=protected-access
     scaled = covariance._scale_difference_matrix(scale, difference_matrix)
-    # pylint: enable=protected-access
     for i in range(dim):
         np.testing.assert_array_equal(scaled[:, :, i], scale * difference_matrix[:, :, i])
 

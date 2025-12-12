@@ -1,7 +1,6 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-# pylint: disable=too-many-positional-arguments
 import numpy as np
 import pytest
 
@@ -126,7 +125,6 @@ class TestView(NumericalTestCase):
         assert (one_hot_points_with_no_task_costs == one_hot_points_with_task_costs[:, :-1]).all()
         assert (ps.task_costs == one_hot_points_with_task_costs[:, -1]).all()
 
-    # pylint: disable=pointless-statement
     def check_gp_ei_fields(self, zigopt_simulator):
         view_input = zigopt_simulator.form_gp_ei_categorical_inputs(ConstantLiarType.MIN)
         v = GPView(view_input)
@@ -154,7 +152,6 @@ class TestView(NumericalTestCase):
         with pytest.raises(KeyError):
             v.one_hot_points_to_evaluate_points
 
-    # pylint: enable=pointless-statement
 
     @pytest.mark.parametrize("dim", [3, 7])
     @pytest.mark.parametrize("num_sampled", [19, 41])

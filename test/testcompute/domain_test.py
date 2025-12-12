@@ -1078,9 +1078,7 @@ class TestCategoricalDomain(object):
         assert len(all_unique_points) >= len(unique_random_points)
         assert len(domain.identify_unique_points(all_unique_points)) == len(all_unique_points)
         with pytest.raises(ValueError):
-            # pylint: disable=protected-access
             domain._analyze_discrete_elements(discrete_elements, total_unique_points + 1, 0, 0)
-            # pylint: enable=protected-access
         only_unique_points = domain.generate_distinct_random_points(total_unique_points + 1)
         assert len(all_unique_points) == len(only_unique_points) == total_unique_points
 
@@ -1098,14 +1096,12 @@ class TestCategoricalDomain(object):
         assert len(all_unique_points) >= len(remaining_unique_points)
         assert len(domain.identify_unique_points(remaining_unique_points)) == len(remaining_unique_points)
         with pytest.raises(ValueError):
-            # pylint: disable=protected-access
             domain._analyze_discrete_elements(
                 discrete_elements,
                 total_unique_points - len(points_already_sampled) + 1,
                 len(points_already_sampled),
                 0,
             )
-            # pylint: enable=protected-access
 
         # Confirm that having points outside the domain doesn't break this computation
         points_including_outside_domain = domain.generate_quasi_random_points_in_domain(6)

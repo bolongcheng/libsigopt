@@ -152,12 +152,10 @@ def compute_cholesky_for_gp_sampling(covariance_matrix):
     is used to sample from a Gaussian process by computing m + Lz, where m is the mean of the GP and
     z is distributed according to the unit normal N(0, I)
     """
-    # pylint: disable=unexpected-keyword-arg
     try:
         chol_cov = scipy.linalg.cholesky(covariance_matrix, lower=True, overwrite_a=True, check_finite=False)
     except scipy.linalg.LinAlgError:
         U, E, _ = scipy.linalg.svd(covariance_matrix, overwrite_a=True, check_finite=False)
         chol_cov = U * np.sqrt(E)[None, :]
         chol_cov = scipy.linalg.qr(chol_cov.T, mode="r", overwrite_a=True, check_finite=False)[0].T
-    # pylint: enable=unexpected-keyword-arg
     return chol_cov
