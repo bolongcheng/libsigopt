@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.aux.adapter_info_containers import MetricsInfo
 from libsigopt.compute.domain import BetaPrior, CategoricalDomain, DomainComponent, DomainConstraint, NormalPrior
@@ -448,7 +447,7 @@ class TestSPENextPointsViews(object):
         assert len(points_to_sample) == view_input["num_to_sample"]
         assert len(points_to_sample[0]) == view_input["domain_info"].dim
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_spe_with_priors_initialization_phase(
         self,
     ):  # Check that priors are used in spe_next_points initialization

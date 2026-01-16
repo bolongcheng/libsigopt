@@ -6,7 +6,6 @@ from collections import namedtuple
 
 import numpy as np
 import pytest
-from flaky import flaky
 from scipy.stats import norm
 
 from libsigopt.compute.covariance import C2RadialMatern
@@ -209,7 +208,7 @@ class TestGaussianProcessSum(NumericalTestCase):
             self.assert_scalar_within_relative(best_value, expected_best_value, 1e-12)
             self.assert_vector_within_relative(best_location, expected_best_location, 1e-12)
 
-    @flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=2)
     def test_gp_sum_by_sampling(self):
         n_samples = 2111
         num_points = 55
@@ -234,7 +233,7 @@ class TestGaussianProcessSum(NumericalTestCase):
             self.assert_vector_within_relative_norm(mean, samples_mean, 0.1)
             self.assert_vector_within_relative_norm(var, samples_var, 0.1)
 
-    @flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=2)
     def test_gp_sum_draw_posterior_samples_of_points(self):
         n_samples = 2212
         num_points = 65

@@ -5,7 +5,6 @@ from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.domain import (
@@ -420,7 +419,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
         option = get_discrete_conversion_option(small_int_small_cat_big_product_domain)
         assert option == "int"
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_convert_from_one_hot(self):
         class dummy_acquisition_function(object):
             def evaluate_at_point_list(self, x):

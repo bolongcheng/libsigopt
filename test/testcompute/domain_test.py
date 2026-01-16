@@ -5,7 +5,6 @@ import copy
 
 import numpy as np
 import pytest
-from flaky import flaky
 from scipy.stats import beta, kstest, truncnorm
 
 from libsigopt.aux.constant import ParameterPriorNames
@@ -969,7 +968,7 @@ class TestCategoricalDomain(object):
         quant_rounded_points = domain.round_one_hot_points_quantized_values(one_hot_points)
         assert np.all(quant_rounded_points == quant_rounded_answers)
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_snapping_points_with_temperature(self):
         num_conversions = 1000
         all_cats = [1, 2, 6, 9]
@@ -1453,7 +1452,7 @@ class TestPriorSamplers(object):
         for sample in samples:
             assert domain.check_point_inside(sample)
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     @pytest.mark.parametrize(
         "mean, scale, domain_elements",
         [
@@ -1477,7 +1476,7 @@ class TestPriorSamplers(object):
         samples = domain.generate_random_points_according_to_priors(n_samples)
         assert samples_satisfy_kolmogorov_smirnov_test(samples[:, 0], domain_components[0], priors[0])
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     @pytest.mark.parametrize(
         "shape_a, shape_b, domain_elements",
         [
