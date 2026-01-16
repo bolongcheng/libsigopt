@@ -13,96 +13,99 @@ from libsigopt.compute.probabilistic_failures import (
     ProductOfListOfProbabilisticFailures,
 )
 
-from testcompute.gaussian_process_test_case import GaussianProcessTestCase
+from testaux.numerical_test_case import (
+    assert_scalar_within_relative,
+    assert_vector_within_relative,
+    check_gradient_with_finite_difference,
+)
 
 
-class TestProbabilisticFailures(GaussianProcessTestCase):
-    def test_probability_value_bounded(self, one_hot_domain_list, gaussian_process_list):
-        for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = np.random.randn() * 0.05
-            pf = ProbabilisticFailures(gp, threshold)
-            pfcdf = ProbabilisticFailuresCDF(gp, threshold)
+def test_probability_value_bounded(one_hot_domain_list, gaussian_process_list):
+    for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
+        threshold = np.random.randn() * 0.05
+        pf = ProbabilisticFailures(gp, threshold)
+        pfcdf = ProbabilisticFailuresCDF(gp, threshold)
 
-            num_to_evaluate = 10
-            points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
-            probability_values = pf.compute_probability_of_success(points_to_evaluate)
-            assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
+        num_to_evaluate = 10
+        points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
+        probability_values = pf.compute_probability_of_success(points_to_evaluate)
+        assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
 
-            probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
-            assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
-
-    def test_probability_values(self, one_hot_domain_list, gaussian_process_list):
-        for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = np.random.randn() * 0.05
-            pf = ProbabilisticFailures(gp, threshold)
-            pfcdf = ProbabilisticFailuresCDF(gp, threshold)
-
-            num_to_evaluate = 10
-            points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
-            probability_values = pf.compute_probability_of_success(points_to_evaluate)
-
-            means = pf.predictor.compute_mean_of_points(points_to_evaluate)
-            exponent = pf.kappa * (means - threshold)
-            exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
-            prob_of_success = 1.0 / (1.0 + np.exp(exponent))
-
-            for p, q in zip(probability_values, prob_of_success):
-                self.assert_scalar_within_relative(p, q, 1.0e-14)
-
-            probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
-            means = pfcdf.predictor.compute_mean_of_points(points_to_evaluate)
-            variances = pfcdf.predictor.compute_variance_of_points(points_to_evaluate)
-            prob_of_success = norm.cdf((threshold - means) / np.sqrt(variances))
-
-            for p, q in zip(probability_values, prob_of_success):
-                self.assert_scalar_within_relative(p, q, 1.0e-14)
-
-    def test_grad_probability_values(self, one_hot_domain_list, gaussian_process_list):
-        for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = np.random.randn() * 0.05
-            pf = ProbabilisticFailures(gp, threshold)
-
-            num_to_evaluate = 10
-            points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
-            grad_probability_from_pf = pf.compute_grad_probability_of_success(points_to_evaluate)
-
-            means = pf.predictor.compute_mean_of_points(points_to_evaluate)
-            exponent = pf.kappa * (means - threshold)
-            exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
-            grad_logistic = pf.kappa * np.exp(exponent) / (1.0 + np.exp(exponent)) ** 2
-
-            grad_prob_of_success = -grad_logistic[:, None] * pf.predictor.compute_grad_mean_of_points(
-                points_to_evaluate
-            )
-
-            for grad_p_from_pf, grad_p in zip(grad_probability_from_pf, grad_prob_of_success):
-                self.assert_vector_within_relative(grad_p_from_pf, grad_p, 1.0e-14)
-
-    def test_grad_against_finite_difference(self, one_hot_domain_list, gaussian_process_list):
-        h = 1e-7
-        n_test = 50
-        for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
-            threshold = np.random.randn() * 0.05
-            pf = ProbabilisticFailuresCDF(gp, threshold)
-            pts = domain.generate_quasi_random_points_in_domain(n_test)
-            self.check_gradient_with_finite_difference(
-                pts,
-                pf.compute_probability_of_success,
-                pf.compute_grad_probability_of_success,
-                tol=domain.dim * 1e-6,
-                fd_step=h * np.ones(domain.dim),
-                use_complex=True,
-            )
+        probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
+        assert (np.array(probability_values) >= 0).all() and (np.array(probability_values) <= 1).all()
 
 
-class TestProductOfListOfProbabilisticFailures(GaussianProcessTestCase):
-    def test_probability_values(self, one_hot_domain_list, list_probabilistic_failures_list):
-        for domain, list_of_pfs in zip(one_hot_domain_list, list_probabilistic_failures_list):
-            ppf = ProductOfListOfProbabilisticFailures(list_of_pfs)
-            points_to_evaluate = domain.generate_quasi_random_points_in_domain(100)
-            product_pv = ppf.compute_probability_of_success(points_to_evaluate)
-            product = 1
-            for pf in list_of_pfs:
-                product *= pf.compute_probability_of_success(points_to_evaluate)
-            self.assert_vector_within_relative(product_pv, product, 1.0e-15)
-            assert np.all((product_pv >= 0) * (product_pv <= 1))
+def test_probability_values(one_hot_domain_list, gaussian_process_list):
+    for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
+        threshold = np.random.randn() * 0.05
+        pf = ProbabilisticFailures(gp, threshold)
+        pfcdf = ProbabilisticFailuresCDF(gp, threshold)
+
+        num_to_evaluate = 10
+        points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
+        probability_values = pf.compute_probability_of_success(points_to_evaluate)
+
+        means = pf.predictor.compute_mean_of_points(points_to_evaluate)
+        exponent = pf.kappa * (means - threshold)
+        exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
+        prob_of_success = 1.0 / (1.0 + np.exp(exponent))
+
+        for p, q in zip(probability_values, prob_of_success):
+            assert_scalar_within_relative(p, q, 1.0e-14)
+
+        probability_values = pfcdf.compute_probability_of_success(points_to_evaluate)
+        means = pfcdf.predictor.compute_mean_of_points(points_to_evaluate)
+        variances = pfcdf.predictor.compute_variance_of_points(points_to_evaluate)
+        prob_of_success = norm.cdf((threshold - means) / np.sqrt(variances))
+
+        for p, q in zip(probability_values, prob_of_success):
+            assert_scalar_within_relative(p, q, 1.0e-14)
+
+
+def test_grad_probability_values(one_hot_domain_list, gaussian_process_list):
+    for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
+        threshold = np.random.randn() * 0.05
+        pf = ProbabilisticFailures(gp, threshold)
+
+        num_to_evaluate = 10
+        points_to_evaluate = domain.generate_quasi_random_points_in_domain(num_to_evaluate)
+        grad_probability_from_pf = pf.compute_grad_probability_of_success(points_to_evaluate)
+
+        means = pf.predictor.compute_mean_of_points(points_to_evaluate)
+        exponent = pf.kappa * (means - threshold)
+        exponent[exponent > POSITIVE_EXPONENT_CAP] = POSITIVE_EXPONENT_CAP
+        grad_logistic = pf.kappa * np.exp(exponent) / (1.0 + np.exp(exponent)) ** 2
+
+        grad_prob_of_success = -grad_logistic[:, None] * pf.predictor.compute_grad_mean_of_points(points_to_evaluate)
+
+        for grad_p_from_pf, grad_p in zip(grad_probability_from_pf, grad_prob_of_success):
+            assert_vector_within_relative(grad_p_from_pf, grad_p, 1.0e-14)
+
+
+def test_grad_against_finite_difference(one_hot_domain_list, gaussian_process_list):
+    h = 1e-7
+    n_test = 50
+    for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
+        threshold = np.random.randn() * 0.05
+        pf = ProbabilisticFailuresCDF(gp, threshold)
+        pts = domain.generate_quasi_random_points_in_domain(n_test)
+        check_gradient_with_finite_difference(
+            pts,
+            pf.compute_probability_of_success,
+            pf.compute_grad_probability_of_success,
+            tol=domain.dim * 1e-6,
+            fd_step=h * np.ones(domain.dim),
+            use_complex=True,
+        )
+
+
+def test_product_probability_values(one_hot_domain_list, list_probabilistic_failures_list):
+    for domain, list_of_pfs in zip(one_hot_domain_list, list_probabilistic_failures_list):
+        ppf = ProductOfListOfProbabilisticFailures(list_of_pfs)
+        points_to_evaluate = domain.generate_quasi_random_points_in_domain(100)
+        product_pv = ppf.compute_probability_of_success(points_to_evaluate)
+        product = 1
+        for pf in list_of_pfs:
+            product *= pf.compute_probability_of_success(points_to_evaluate)
+        assert_vector_within_relative(product_pv, product, 1.0e-15)
+        assert np.all((product_pv >= 0) * (product_pv <= 1))
