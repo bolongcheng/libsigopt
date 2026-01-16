@@ -14,7 +14,6 @@ from typing import Callable
 
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.compute import covariance
 from libsigopt.compute.covariance_base import DifferentiableCovariance, HyperparameterInvalidError
@@ -33,8 +32,7 @@ class CovariancesTestBase(NumericalTestCase):
     test_hparams: list[np.ndarray]
 
     @classmethod
-    @pytest.fixture(autouse=True, scope="class")
-    def base_setup(cls):
+    def setup_class(cls):
         cls._base_setup()
 
     @classmethod
@@ -87,7 +85,7 @@ class TestCovariances(CovariancesTestBase):
                     1e-8,
                 )
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_kernel_matrix_evaluation(self):
         for x, z, hparams in zip(self.test_x, self.test_z, self.test_hparams):
             xn, d = x.shape

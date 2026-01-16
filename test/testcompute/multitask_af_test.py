@@ -4,7 +4,6 @@
 
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.compute.covariance import SquareExponential
 from libsigopt.compute.domain import CategoricalDomain
@@ -33,8 +32,7 @@ class TestMultitaskAcquisitionFunction(NumericalTestCase):
     qei: ExpectedParallelImprovement
 
     @classmethod
-    @pytest.fixture(autouse=True, scope="class")
-    def base_setup(cls):
+    def setup_class(cls):
         return cls._base_setup()
 
     @classmethod
@@ -109,7 +107,7 @@ class TestMultitaskAcquisitionFunction(NumericalTestCase):
         assert np.all(np.diff(mtei_vals_points_per_task, axis=1) < upper_bound_on_mtei_diff)
 
     # NOTE: This test implicitly tests the joint_function_gradient_eval in all the other AFs
-    @flaky(max_runs=3)
+    @pytest.mark.flaky(reruns=2)
     def test_joint_function_gradient_eval(self):
         test_points = self.domain.generate_quasi_random_points_in_domain(4)
         for af in (self.ei, self.eif, self.aei, self.qei):

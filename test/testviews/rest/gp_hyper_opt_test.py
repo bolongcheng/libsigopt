@@ -2,10 +2,10 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from unittest.mock import Mock
 
 import numpy as np
 import pytest
-from mock import Mock
 
 from libsigopt.compute.domain import CategoricalDomain
 from libsigopt.compute.misc.constant import QUANTIZED_LENGTH_SCALE_LOWER_FACTOR, NonzeroMeanType

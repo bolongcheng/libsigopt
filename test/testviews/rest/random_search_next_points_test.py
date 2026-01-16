@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.compute.domain import AnyPrior, CategoricalDomain, DomainComponent, DomainConstraint
 from libsigopt.views.rest.random_search_next_points import RandomSearchNextPoints
@@ -115,7 +114,7 @@ class TestRandomSearchNextPoints(object):
         )
         self.assert_call_successful(zs, domain=domain)
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_prior_samples_distribution(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (-5, -2)},

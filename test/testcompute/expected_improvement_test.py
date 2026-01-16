@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
-from flaky import flaky
+import pytest
 
 from libsigopt.compute.covariance import SquareExponential
 from libsigopt.compute.domain import ContinuousDomain
@@ -131,7 +131,7 @@ class TestExpectedImprovement(GaussianProcessTestCase):
             ei_vals = ei_eval.evaluate_at_point_list(points_to_sample)
             assert all(ei_vals >= 0)
 
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_qei_accuracy(self, one_hot_domain_list, gaussian_process_list):
         num_points_to_sample = 3
         num_points_being_sampled = 4

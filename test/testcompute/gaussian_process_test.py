@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
-from flaky import flaky
+import pytest
 
 from libsigopt.compute.misc.constant import ConstantLiarType
 
@@ -10,7 +10,7 @@ from testcompute.gaussian_process_test_case import GaussianProcessTestCase
 
 
 class TestGaussianProcess(GaussianProcessTestCase):
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_core_functionality(self, one_hot_domain_list, gaussian_process_list):
         for domain, gp in zip(one_hot_domain_list, gaussian_process_list):
             xt = domain.generate_quasi_random_points_in_domain(888)

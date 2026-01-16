@@ -9,7 +9,6 @@ It also tests the functions build_polynomial_matrix and build_grad_polynomial_te
 
 import numpy as np
 import pytest
-from flaky import flaky
 
 from libsigopt.aux.samplers import generate_latin_hypercube_points
 from libsigopt.compute.covariance import C4RadialMatern, SquareExponential
@@ -182,7 +181,7 @@ class TestNonzeroMean(NumericalTestCase):
             self.constant_mean_components_test(n, d)
 
     # The failure rate seems to be less than 1/1000
-    @flaky(max_runs=2)
+    @pytest.mark.flaky(reruns=1)
     def test_nonzero_mean_reproduction(self):
         """Confirm that our generalized least squares implementation works.
 
