@@ -14,11 +14,11 @@ from libsigopt.compute.multitask_acquisition_function import MultitaskAcquisitio
 from libsigopt.compute.multitask_covariance import MultitaskTensorCovariance
 from libsigopt.compute.vectorized_optimizers import AdamOptimizer, DEOptimizer
 
-from testaux.numerical_test_case import NumericalTestCase
+from testaux.numerical_test_case import assert_vector_within_relative
 from testcompute.vectorized_optimizers_test import QuadraticFunction
 
 
-class TestVectorizedOptimizersWithFixedParameters(NumericalTestCase):
+class TestVectorizedOptimizersWithFixedParameters:
     def test_basic_optimization(self):
         cat_domain = CategoricalDomain([{"var_type": "double", "elements": (-2, 2)}] * 5)
         fixed_indices = {0: 1, 3: -1}
@@ -30,7 +30,7 @@ class TestVectorizedOptimizersWithFixedParameters(NumericalTestCase):
         best_solution, _ = optimizer.optimize(np.atleast_2d(true_sol))
 
         fixed_sol_full = np.array([1, 0, 0, -1, 0])
-        self.assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
+        assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
 
     def test_constrained_optimization(self):
         cat_domain = CategoricalDomain(
@@ -53,24 +53,13 @@ class TestVectorizedOptimizersWithFixedParameters(NumericalTestCase):
         best_solution, _ = optimizer.optimize(np.atleast_2d(true_sol))
 
         fixed_sol_full = np.array([1, 0.5, 0.5, -1, 0.5])
-        self.assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
+        assert_vector_within_relative(best_solution, fixed_sol_full, 1e-7)
 
 
-class TestAcquisitionFunctionWithFixedParameters(NumericalTestCase):
-    domain: CategoricalDomain
-    cov: SquareExponential
-    mtcov: MultitaskTensorCovariance
-    data: HistoricalData
-    mpi: list
-    gp: GaussianProcess
-
-    @classmethod
-    def setup_class(cls):
-        return cls._base_setup()
-
-    @classmethod
-    def _base_setup(cls):
-        cls.domain = CategoricalDomain(
+class TestAcquisitionFunctionWithFixedParameters:
+    @pytest.fixture(scope="class")
+    def setup_data(self):
+        domain = CategoricalDomain(
             [
                 {"var_type": "double", "elements": (-2, 3)},
                 {"var_type": "double", "elements": (-1, 1)},
@@ -79,31 +68,43 @@ class TestAcquisitionFunctionWithFixedParameters(NumericalTestCase):
         ).one_hot_domain
 
         list_hyps = [1.0, 0.3, 0.3, 0.4]
-        cls.cov = SquareExponential(list_hyps)
-        cls.mtcov = MultitaskTensorCovariance(list_hyps, C2RadialMatern, SquareExponential)
+        cov = SquareExponential(list_hyps)
+        mtcov = MultitaskTensorCovariance(list_hyps, C2RadialMatern, SquareExponential)
 
-        x = cls.domain.generate_quasi_random_points_in_domain(14)
+        x = domain.generate_quasi_random_points_in_domain(14)
         y = np.sum(x**2, axis=1)
         v = np.full_like(y, 1e-3)
-        cls.data = HistoricalData(cls.domain.dim)
-        cls.data.append_historical_data(x, y, v)
+        data = HistoricalData(domain.dim)
+        data.append_historical_data(x, y, v)
 
-        cls.mpi = [[0] * cls.domain.dim]
-        cls.gp = GaussianProcess(cls.cov, cls.data, cls.mpi)
+        mpi = [[0] * domain.dim]
+        gp = GaussianProcess(cov, data, mpi)
+        return {
+            "domain": domain,
+            "cov": cov,
+            "mtcov": mtcov,
+            "data": data,
+            "mpi": mpi,
+            "gp": gp,
+        }
 
     @pytest.mark.parametrize("acquisition_function", [ExpectedImprovement, AugmentedExpectedImprovement])
     @pytest.mark.parametrize("optimizer_class", [DEOptimizer, AdamOptimizer])
-    def test_fixed_parameter_af_evaluation(self, acquisition_function, optimizer_class):
-        fixed_values = self.domain.generate_quasi_random_points_in_domain(1)[0]
-        fixed_indices = {self.domain.dim - 1: fixed_values[-1]}
-        domain = FixedIndicesOnContinuousDomain(self.domain, fixed_indices)
-        mtaf = MultitaskAcquisitionFunction(acquisition_function(GaussianProcess(self.mtcov, self.data, self.mpi)))
+    def test_fixed_parameter_af_evaluation(self, setup_data, acquisition_function, optimizer_class):
+        domain = setup_data["domain"]
+        data = setup_data["data"]
+        mtcov = setup_data["mtcov"]
+        mpi = setup_data["mpi"]
+        fixed_values = domain.generate_quasi_random_points_in_domain(1)[0]
+        fixed_indices = {domain.dim - 1: fixed_values[-1]}
+        fixed_domain = FixedIndicesOnContinuousDomain(domain, fixed_indices)
+        mtaf = MultitaskAcquisitionFunction(acquisition_function(GaussianProcess(mtcov, data, mpi)))
         opt = optimizer_class(
             acquisition_function=mtaf,
-            domain=domain,
+            domain=fixed_domain,
             num_multistarts=50,
             maxiter=100,
         )
         best_location, _ = opt.optimize()
-        assert self.domain.check_point_acceptable(best_location)
+        assert domain.check_point_acceptable(best_location)
         assert best_location[-1] == fixed_values[-1]

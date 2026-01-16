@@ -24,10 +24,15 @@ from libsigopt.compute.python_utils import (
     polynomial_index_point_check,
 )
 
-from testaux.numerical_test_case import DEFAULT_ABS_TOL, NumericalTestCase
+from testaux.numerical_test_case import (
+    DEFAULT_ABS_TOL,
+    assert_scalar_within_relative,
+    assert_vector_within_relative,
+    assert_vector_within_relative_norm,
+)
 
 
-class TestNonzeroMean(NumericalTestCase):
+class TestNonzeroMean:
     num_points_list = (11, 14, 19, 22, 39, 50)
     num_poly_indices_list = (1, 1, 2, 3, 5, 8)
     num_dim_list = (5, 7, 4, 3, 2, 2)
@@ -72,7 +77,7 @@ class TestNonzeroMean(NumericalTestCase):
         p = build_polynomial_matrix(indices_list, points)
         p_prod = np.prod([pow(points[:, d][:, None], indices_list[:, d]) for d in range(dim)], 0)
 
-        self.assert_vector_within_relative(p_prod, p, np.linalg.norm(p) * np.finfo(float).eps)
+        assert_vector_within_relative(p_prod, p, np.linalg.norm(p) * np.finfo(float).eps)
 
     def gradient_polynomial_tensor_test(self, num_points, poly_length, dim):
         """Testing the accuracy of the gradient polynomial tensor construction function.
@@ -113,20 +118,20 @@ class TestNonzeroMean(NumericalTestCase):
                     )
         gpt_prod = np.prod(gpt_each_dim, 3)
 
-        self.assert_vector_within_relative(gpt_prod, gpt, np.linalg.norm(gpt) * np.finfo(float).eps)
+        assert_vector_within_relative(gpt_prod, gpt, np.linalg.norm(gpt) * np.finfo(float).eps)
 
     # Constant mean gets its own set of tests because it's our standard workflow for right now
     def constant_mean_components_test(self, num_points, dim):
         constant_indices = np.zeros((1, dim))
-        self.assert_vector_within_relative(constant_indices, polynomial_index_point_check(constant_indices, dim), 0)
+        assert_vector_within_relative(constant_indices, polynomial_index_point_check(constant_indices, dim), 0)
         assert indices_represent_constant_mean(constant_indices, dim)
         test_points = np.random.random((num_points, dim))
-        self.assert_vector_within_relative(
+        assert_vector_within_relative(
             np.ones((num_points, 1)),
             build_polynomial_matrix(constant_indices, test_points),
             0,
         )
-        self.assert_vector_within_relative(
+        assert_vector_within_relative(
             np.zeros((num_points, 1, dim)),
             build_grad_polynomial_tensor(constant_indices, test_points),
             0,
@@ -141,7 +146,7 @@ class TestNonzeroMean(NumericalTestCase):
         cov = C4RadialMatern(np.random.gamma(1, 0.1, dim + 1))
         gp = GaussianProcess(cov, data, constant_indices)
         new_points = np.random.random((2 * num_points, dim))
-        self.assert_vector_within_relative(
+        assert_vector_within_relative(
             np.full(len(new_points), const_val),
             gp.compute_mean_of_points(new_points),
             1e-13,
@@ -218,12 +223,12 @@ class TestNonzeroMean(NumericalTestCase):
 
             gp_linear_mean = GaussianProcess(kernel, historical_data, mean_indices)
             test_coef = np.concatenate((test_const_coef, test_lin_coef), axis=0)
-            self.assert_vector_within_relative_norm(gp_linear_mean.poly_coef, test_coef, 10 * dim * n * true_var)
+            assert_vector_within_relative_norm(gp_linear_mean.poly_coef, test_coef, 10 * dim * n * true_var)
 
 
-class TestCholeskyFactorization(NumericalTestCase):
+class TestCholeskyFactorization:
     def assert_cholesky_is_accurate(self, cholesky_factor, original_matrix):
-        self.assert_vector_within_relative_norm(
+        assert_vector_within_relative_norm(
             np.dot(cholesky_factor, cholesky_factor.T),
             original_matrix,
             DEFAULT_ABS_TOL,
