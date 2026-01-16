@@ -30,26 +30,31 @@ class TestMultimetricFiltering(NumericalTestCase):
     def _form_multimetric_info(method_name):
         method = method_name
         if method == MultimetricMethod.CONVEX_COMBINATION:
-            phase = random.choice([CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL])
+            phase = random.choice(
+                [
+                    MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD,
+                    MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL,
+                ]
+            )
             phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
         elif method in (MultimetricMethod.EPSILON_CONSTRAINT, MultimetricMethod.PROBABILISTIC_FAILURES):
             phase = random.choice(
                 [
-                    EPSILON_CONSTRAINT_OPTIMIZE_0,
-                    EPSILON_CONSTRAINT_OPTIMIZE_1,
+                    MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0,
+                    MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1,
                 ]
             )
             phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
         elif method == MultimetricMethod.OPTIMIZING_ONE_METRIC:
             phase = random.choice(
                 [
-                    OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
-                    OPTIMIZING_ONE_METRIC_OPTIMIZE_1,
+                    MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
+                    MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1,
                 ]
             )
             phase_kwargs = {}
         else:
-            phase = NOT_MULTIMETRIC
+            phase = MultimetricOptPhase.NOT_MULTIMETRIC
             phase_kwargs = {}
         return form_multimetric_info_from_phase(phase, phase_kwargs)
 
@@ -57,11 +62,19 @@ class TestMultimetricFiltering(NumericalTestCase):
         budget = np.random.randint(50, 100)
         max_points = np.random.randint(10, 50) + budget
         assert all(
-            all(0 <= w <= 1 for w in form_convex_combination_weights(CONVEX_COMBINATION_RANDOM_SPREAD, n / budget))
+            all(
+                0 <= w <= 1
+                for w in form_convex_combination_weights(
+                    MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD, n / budget
+                )
+            )
             for n in range(max_points)
         )
         assert all(
-            all(0 <= w <= 1 for w in form_convex_combination_weights(CONVEX_COMBINATION_SEQUENTIAL, n / budget))
+            all(
+                0 <= w <= 1
+                for w in form_convex_combination_weights(MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL, n / budget)
+            )
             for n in range(max_points)
         )
 
@@ -605,7 +618,7 @@ class TestMultimetricFiltering(NumericalTestCase):
                 222,
             ),
             (
-                NOT_MULTIMETRIC,
+                MultimetricOptPhase.NOT_MULTIMETRIC,
                 "libsigopt.compute.misc.multimetric.filter_not_multimetric",
                 333,
             ),
@@ -618,7 +631,7 @@ class TestMultimetricFiltering(NumericalTestCase):
             domain=self.mixed_domain,
             num_sampled=5,
             noise_per_point=1e-5,
-            num_metrics=1 if phase == NOT_MULTIMETRIC else 2,
+            num_metrics=1 if phase == MultimetricOptPhase.NOT_MULTIMETRIC else 2,
             task_options=np.array([]),
             failure_prob=0,
         )

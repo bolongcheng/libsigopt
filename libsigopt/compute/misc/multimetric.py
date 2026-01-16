@@ -59,16 +59,18 @@ MULTIMETRIC_INFO_NOT_MULTIMETRIC = MultimetricInfo(method=None, params=None)
 
 BORDER_BUFFER = 0.1
 
+
 # These labels help segment the code, but could be removed if desired
-NOT_MULTIMETRIC = object()
-INITIALIZATION = object()
-OPTIMIZING_ONE_METRIC_OPTIMIZE_0 = object()
-OPTIMIZING_ONE_METRIC_OPTIMIZE_1 = object()
-CONVEX_COMBINATION_RANDOM_SPREAD = object()
-CONVEX_COMBINATION_SEQUENTIAL = object()
-EPSILON_CONSTRAINT_OPTIMIZE_0 = object()
-EPSILON_CONSTRAINT_OPTIMIZE_1 = object()
-COMPLETION = object()
+class MultimetricOptPhase(StrEnum):
+    NOT_MULTIMETRIC = auto()
+    INITIALIZATION = auto()
+    OPTIMIZING_ONE_METRIC_OPTIMIZE_0 = auto()
+    OPTIMIZING_ONE_METRIC_OPTIMIZE_1 = auto()
+    CONVEX_COMBINATION_RANDOM_SPREAD = auto()
+    CONVEX_COMBINATION_SEQUENTIAL = auto()
+    EPSILON_CONSTRAINT_OPTIMIZE_0 = auto()
+    EPSILON_CONSTRAINT_OPTIMIZE_1 = auto()
+    COMPLETION = auto()
 
 
 # NOTE: There will be somewhat degenerate behavior in the event that a massive number of failures are present.
@@ -93,34 +95,40 @@ def identify_multimetric_phase(
     fraction_served = (observation_count + num_open_suggestions) / adjusted_budget
     fraction_completed = observation_count / adjusted_budget
     if fraction_served <= INITIALIZE_FRAC or fraction_completed <= 0.1:
-        return INITIALIZATION, {}
+        return MultimetricOptPhase.INITIALIZATION, {}
     elif fraction_served <= OPTIMIZE_ONE_METRIC_FRAC:
         return (
-            OPTIMIZING_ONE_METRIC_OPTIMIZE_1 if observation_count % 2 else OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
+            MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1
+            if observation_count % 2
+            else MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
             {},
         )
     elif fraction_served <= CONVEX_RANDOM_FRAC:
         completed_frac = (fraction_served - OPTIMIZE_ONE_METRIC_FRAC) / (CONVEX_RANDOM_FRAC - OPTIMIZE_ONE_METRIC_FRAC)
         kwargs = {"fraction_of_phase_completed": completed_frac}
-        return CONVEX_COMBINATION_RANDOM_SPREAD, kwargs
+        return MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD, kwargs
     elif fraction_served <= CONVEX_SPREAD_FRAC:
         completed_frac = (fraction_served - CONVEX_RANDOM_FRAC) / (CONVEX_SPREAD_FRAC - CONVEX_RANDOM_FRAC)
         kwargs = {"fraction_of_phase_completed": completed_frac}
-        return CONVEX_COMBINATION_SEQUENTIAL, kwargs
+        return MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL, kwargs
     elif fraction_served <= POLISH_ONE_METRIC_FRAC:
         return (
-            OPTIMIZING_ONE_METRIC_OPTIMIZE_1 if observation_count % 2 else OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
+            MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1
+            if observation_count % 2
+            else MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
             {},
         )
     elif fraction_served <= EPSILON_CONSTRAINT_FRAC:
         completed_frac = (fraction_served - POLISH_ONE_METRIC_FRAC) / (EPSILON_CONSTRAINT_FRAC - POLISH_ONE_METRIC_FRAC)
         kwargs = {"fraction_of_phase_completed": completed_frac}
         return (
-            EPSILON_CONSTRAINT_OPTIMIZE_1 if observation_count % 2 else EPSILON_CONSTRAINT_OPTIMIZE_0,
+            MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1
+            if observation_count % 2
+            else MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0,
             kwargs,
         )
     else:
-        return COMPLETION, {}
+        return MultimetricOptPhase.COMPLETION, {}
 
 
 # The structure of this is intentionally imprecise to simplify the weight decision structure
@@ -129,11 +137,14 @@ def form_convex_combination_weights(phase, fraction_of_phase_completed):
     if not (0 <= fraction_of_phase_completed <= 1):  # Shouldn't be an issue, but just in case
         fraction_of_phase_completed = np.random.random()
 
-    assert phase in (CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL)
+    assert phase in (
+        MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD,
+        MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL,
+    )
     interval = np.array([[BORDER_BUFFER, 1 - BORDER_BUFFER]])
     weight_index = int(100 * fraction_of_phase_completed)
 
-    if phase == CONVEX_COMBINATION_RANDOM_SPREAD:
+    if phase == MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD:
         all_weights = generate_halton_points(101, interval, skip=1)[:, 0]
     else:
         all_weights = generate_grid_points(101, interval)[:, 0]
@@ -154,32 +165,45 @@ def form_epsilon_constraint_epsilon(fraction_of_phase_completed):
 
 def form_multimetric_info_from_phase(phase, phase_kwargs):
     params: AnyParams
-    if phase == NOT_MULTIMETRIC:
+    if phase == MultimetricOptPhase.NOT_MULTIMETRIC:
         multimetric_info = MULTIMETRIC_INFO_NOT_MULTIMETRIC
-    elif phase == INITIALIZATION:
-        initialization_phase = secrets.choice((OPTIMIZING_ONE_METRIC_OPTIMIZE_0, OPTIMIZING_ONE_METRIC_OPTIMIZE_1))
+    elif phase == MultimetricOptPhase.INITIALIZATION:
+        initialization_phase = secrets.choice(
+            (MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0, MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1)
+        )
         multimetric_info = form_multimetric_info_from_phase(initialization_phase, {})
-    elif phase in (OPTIMIZING_ONE_METRIC_OPTIMIZE_0, OPTIMIZING_ONE_METRIC_OPTIMIZE_1):
-        if phase == OPTIMIZING_ONE_METRIC_OPTIMIZE_0:
+    elif phase in (
+        MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
+        MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1,
+    ):
+        if phase == MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0:
             params = OptimizeOneMetricParams(optimizing_metric=0, constraint_metric=1)
         else:
             params = OptimizeOneMetricParams(optimizing_metric=1, constraint_metric=0)
         multimetric_info = MultimetricInfo(method=MultimetricMethod.OPTIMIZING_ONE_METRIC, params=params)
-    elif phase in (CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL):
+    elif phase in (
+        MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD,
+        MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL,
+    ):
         params = ConvexCombinationParams(
             weights=form_convex_combination_weights(phase, phase_kwargs["fraction_of_phase_completed"])
         )
         multimetric_info = MultimetricInfo(method=MultimetricMethod.CONVEX_COMBINATION, params=params)
-    elif phase in (EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1):
+    elif phase in (
+        MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0,
+        MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1,
+    ):
         epsilon = form_epsilon_constraint_epsilon(phase_kwargs["fraction_of_phase_completed"])
-        if phase == EPSILON_CONSTRAINT_OPTIMIZE_0:
+        if phase == MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0:
             params = ProbabilisticFailuresParams(optimizing_metric=0, constraint_metric=1, epsilon=epsilon)
         else:
             params = ProbabilisticFailuresParams(optimizing_metric=1, constraint_metric=0, epsilon=epsilon)
         multimetric_info = MultimetricInfo(method=MultimetricMethod.EPSILON_CONSTRAINT, params=params)
     else:
-        assert phase == COMPLETION
-        completion_phase = secrets.choice((EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1))
+        assert phase == MultimetricOptPhase.COMPLETION
+        completion_phase = secrets.choice(
+            (MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0, MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1)
+        )
         phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
         multimetric_info = form_multimetric_info_from_phase(completion_phase, phase_kwargs)
 
