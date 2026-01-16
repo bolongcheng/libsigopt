@@ -10,10 +10,8 @@ from libsigopt.compute.misc.constant import (
 )
 from libsigopt.compute.misc.data_containers import MultiMetricMidpointInfo, SingleMetricMidpointInfo
 
-from testaux.numerical_test_case import NumericalTestCase
 
-
-class TestSingleMetricMidpointInfo(NumericalTestCase):
+class TestSingleMetricMidpointInfo:
     def test_creation_skip(self):
         mmi = SingleMetricMidpointInfo(np.array([]), np.array([], dtype=bool))
         assert mmi.skip
@@ -171,7 +169,7 @@ class TestSingleMetricMidpointInfo(NumericalTestCase):
             assert mmi.compute_lie_value(lie_method) == lie_value
 
 
-class TestMultiMetricMidpointInfo(NumericalTestCase):
+class TestMultiMetricMidpointInfo:
     def test_creation_skip(self):
         with pytest.raises(AssertionError):
             MultiMetricMidpointInfo(np.array([]), np.array([], dtype=bool))
