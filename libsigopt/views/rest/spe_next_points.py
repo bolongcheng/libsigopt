@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from enum import StrEnum, auto
 
 import numpy as np
 
@@ -19,9 +20,11 @@ from libsigopt.views.view import View, identify_scaled_values_exceeding_scaled_u
 
 
 # SPE Phases
-INITIALIZATION_PHASE = object()
-SKO_PHASE = object()
-COMPLETION_PHASE = object()
+class SPEPhase(StrEnum):
+    INITIALIZATION = auto()
+    SKO = auto()
+    COMPLETION = auto()
+
 
 # When a customer did not give a budget, this times the dimension will be used as the budget for the SPE method
 SPE_PHANTOM_BUDGET_FACTOR = 50
@@ -63,16 +66,16 @@ def get_experiment_phase(budget, observation_count, failure_count):
     if success_progress < INITIALIZATION_PHASE_LIMIT and not (
         total_progress > 2 * INITIALIZATION_PHASE_LIMIT and success_proportion > MINIMUM_SUCCESS_THRESHOLD
     ):
-        phase = INITIALIZATION_PHASE
+        phase = SPEPhase.INITIALIZATION
     elif success_progress < SKO_PHASE_LIMIT:
-        phase = SKO_PHASE
+        phase = SPEPhase.SKO
     else:
-        phase = COMPLETION_PHASE
+        phase = SPEPhase.COMPLETION
     return phase, success_progress
 
 
 def get_solver_options(phase, progress):
-    if phase == SKO_PHASE:
+    if phase == SPEPhase.SKO:
         progress_step = (progress - INITIALIZATION_PHASE_LIMIT) / (SKO_PHASE_LIMIT - INITIALIZATION_PHASE_LIMIT)
         gamma = TOP_GAMMA - progress_step * (TOP_GAMMA - BOTTOM_GAMMA)
         proposal_factor = SPE_PROPOSAL_FACTOR
@@ -361,7 +364,7 @@ class SPENextPoints(View):
         )
         self.tag.update({"spe_phase": phase})
 
-        if phase == INITIALIZATION_PHASE:
+        if phase == SPEPhase.INITIALIZATION:
             return self.create_random_suggestions(num_to_sample)
 
         return self.create_spe_suggestions(num_to_sample, phase, progress)
