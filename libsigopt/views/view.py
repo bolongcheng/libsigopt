@@ -28,12 +28,10 @@ from libsigopt.compute.misc.constant import (
 )
 from libsigopt.compute.misc.data_containers import HistoricalData, MultiMetricMidpointInfo, SingleMetricMidpointInfo
 from libsigopt.compute.misc.multimetric import (
-    CONVEX_COMBINATION,
-    EPSILON_CONSTRAINT,
     MULTIMETRIC_INFO_NOT_MULTIMETRIC,
-    PROBABILISTIC_FAILURES,
     ConvexCombinationParams,
     MultimetricInfo,
+    MultimetricMethod,
     OptimizingMetricParams,
     ProbabilisticFailuresParams,
     filter_multimetric_points_sampled,
@@ -387,7 +385,7 @@ class GPView(View):
         )
         num_models = filtered_points_sampled_values.ndim
         assert self.optimized_metrics_index is not None
-        if self.multimetric_info.method == CONVEX_COMBINATION:
+        if self.multimetric_info.method == MultimetricMethod.CONVEX_COMBINATION:
             gaussian_process_list = []
             for i, metric_index in enumerate(self.optimized_metrics_index):
                 gp = self.form_single_gaussian_process(
@@ -447,7 +445,10 @@ class GPView(View):
     # TODO(RTL-85): I think a lot of this workflow can be cleanup up with find_epsilon_constraint_value better now
     def _form_probabilistic_failures_for_pareto_frontier_optimization(self):
         multimetric_info = self.multimetric_info
-        if multimetric_info.method not in (PROBABILISTIC_FAILURES, EPSILON_CONSTRAINT):
+        if multimetric_info.method not in (
+            MultimetricMethod.PROBABILISTIC_FAILURES,
+            MultimetricMethod.EPSILON_CONSTRAINT,
+        ):
             return []
 
         assert isinstance(multimetric_info.params, ProbabilisticFailuresParams)
@@ -499,7 +500,9 @@ class GPView(View):
 
     def form_probabilistic_failures_model(self):
         if not (
-            self.multimetric_info.method in (PROBABILISTIC_FAILURES, EPSILON_CONSTRAINT) or self.has_constraint_metrics
+            self.multimetric_info.method
+            in (MultimetricMethod.PROBABILISTIC_FAILURES, MultimetricMethod.EPSILON_CONSTRAINT)
+            or self.has_constraint_metrics
         ):
             return None
 

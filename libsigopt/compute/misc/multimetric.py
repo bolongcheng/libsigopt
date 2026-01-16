@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 import secrets
 from dataclasses import dataclass
+from enum import StrEnum, auto
 
 import numpy as np
 
@@ -12,11 +13,12 @@ from libsigopt.compute.misc.constant import MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS
 
 
 # These are the names of the multimetric optimization methods
-CONVEX_COMBINATION = "convex_combination"
-EPSILON_CONSTRAINT = "epsilon_constraint"
-PROBABILISTIC_FAILURES = "probabilistic_failures"
-OPTIMIZING_ONE_METRIC = "optimizing_one_metric"
-MULTIMETRIC_INITIALIZATION = "initialization"
+class MultimetricMethod(StrEnum):
+    CONVEX_COMBINATION = auto()
+    EPSILON_CONSTRAINT = auto()
+    PROBABILISTIC_FAILURES = auto()
+    OPTIMIZING_ONE_METRIC = auto()
+    MULTIMETRIC_INITIALIZATION = auto()
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,7 +51,7 @@ AnyParams = ConvexCombinationParams | OptimizeOneMetricParams | ProbabilisticFai
 
 @dataclass(frozen=True, slots=True)
 class MultimetricInfo:
-    method: str | None
+    method: MultimetricMethod | None
     params: AnyParams | None
 
 
@@ -162,19 +164,19 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
             params = OptimizeOneMetricParams(optimizing_metric=0, constraint_metric=1)
         else:
             params = OptimizeOneMetricParams(optimizing_metric=1, constraint_metric=0)
-        multimetric_info = MultimetricInfo(method=OPTIMIZING_ONE_METRIC, params=params)
+        multimetric_info = MultimetricInfo(method=MultimetricMethod.OPTIMIZING_ONE_METRIC, params=params)
     elif phase in (CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL):
         params = ConvexCombinationParams(
             weights=form_convex_combination_weights(phase, phase_kwargs["fraction_of_phase_completed"])
         )
-        multimetric_info = MultimetricInfo(method=CONVEX_COMBINATION, params=params)
+        multimetric_info = MultimetricInfo(method=MultimetricMethod.CONVEX_COMBINATION, params=params)
     elif phase in (EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1):
         epsilon = form_epsilon_constraint_epsilon(phase_kwargs["fraction_of_phase_completed"])
         if phase == EPSILON_CONSTRAINT_OPTIMIZE_0:
             params = ProbabilisticFailuresParams(optimizing_metric=0, constraint_metric=1, epsilon=epsilon)
         else:
             params = ProbabilisticFailuresParams(optimizing_metric=1, constraint_metric=0, epsilon=epsilon)
-        multimetric_info = MultimetricInfo(method=EPSILON_CONSTRAINT, params=params)
+        multimetric_info = MultimetricInfo(method=MultimetricMethod.EPSILON_CONSTRAINT, params=params)
     else:
         assert phase == COMPLETION
         completion_phase = secrets.choice((EPSILON_CONSTRAINT_OPTIMIZE_0, EPSILON_CONSTRAINT_OPTIMIZE_1))
@@ -514,15 +516,15 @@ def filter_multimetric_points_sampled(
 ):
     # NOTE that EPSILON_CONSTRAINT here runs filter_probabilistic_failure
     assert multimetric_info.method is None or multimetric_info.method in (
-        CONVEX_COMBINATION,
-        EPSILON_CONSTRAINT,
-        OPTIMIZING_ONE_METRIC,
+        MultimetricMethod.CONVEX_COMBINATION,
+        MultimetricMethod.EPSILON_CONSTRAINT,
+        MultimetricMethod.OPTIMIZING_ONE_METRIC,
     ), f"{multimetric_info.method} method does not exist"
-    if multimetric_info.method == CONVEX_COMBINATION:
+    if multimetric_info.method == MultimetricMethod.CONVEX_COMBINATION:
         filter_function = filter_convex_combination_sum_of_gps
-    elif multimetric_info.method == EPSILON_CONSTRAINT:
+    elif multimetric_info.method == MultimetricMethod.EPSILON_CONSTRAINT:
         filter_function = filter_probabilistic_failure
-    elif multimetric_info.method == OPTIMIZING_ONE_METRIC:
+    elif multimetric_info.method == MultimetricMethod.OPTIMIZING_ONE_METRIC:
         filter_function = filter_optimizing_one_metric
     else:
         filter_function = filter_not_multimetric
@@ -544,15 +546,15 @@ def filter_multimetric_points_sampled_spe(
     lie_values,
 ):
     assert multimetric_info.method is None or multimetric_info.method in (
-        CONVEX_COMBINATION,
-        EPSILON_CONSTRAINT,
-        OPTIMIZING_ONE_METRIC,
+        MultimetricMethod.CONVEX_COMBINATION,
+        MultimetricMethod.EPSILON_CONSTRAINT,
+        MultimetricMethod.OPTIMIZING_ONE_METRIC,
     ), f"{multimetric_info.method} method does not exist"
-    if multimetric_info.method == CONVEX_COMBINATION:
+    if multimetric_info.method == MultimetricMethod.CONVEX_COMBINATION:
         filter_function = filter_convex_combination
-    elif multimetric_info.method == EPSILON_CONSTRAINT:
+    elif multimetric_info.method == MultimetricMethod.EPSILON_CONSTRAINT:
         filter_function = filter_epsilon_contraint
-    elif multimetric_info.method == OPTIMIZING_ONE_METRIC:
+    elif multimetric_info.method == MultimetricMethod.OPTIMIZING_ONE_METRIC:
         filter_function = filter_optimizing_one_metric
     else:
         filter_function = filter_not_multimetric
@@ -569,6 +571,6 @@ def filter_multimetric_points_sampled_spe(
         points_sampled_failures,
         lie_values,
     )
-    if multimetric_info.method != EPSILON_CONSTRAINT:
+    if multimetric_info.method != MultimetricMethod.EPSILON_CONSTRAINT:
         modified_points_sampled_values[points_sampled_failures] = modified_lie_value
     return modified_points_sampled_points, modified_points_sampled_values

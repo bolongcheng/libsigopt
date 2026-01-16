@@ -1,15 +1,15 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-from enum import StrEnum
+from enum import StrEnum, auto
 
 
 # Covariance type names
 class CovarianceType(StrEnum):
-    SQUARE_EXPONENTIAL = "square_exponential"
-    C4_RADIAL_MATERN = "c4_radial_matern"
-    C2_RADIAL_MATERN = "c2_radial_matern"
-    C0_RADIAL_MATERN = "c0_radial_matern"
+    SQUARE_EXPONENTIAL = auto()
+    C4_RADIAL_MATERN = auto()
+    C2_RADIAL_MATERN = auto()
+    C0_RADIAL_MATERN = auto()
 
 
 DEFAULT_COVARIANCE_KERNEL = CovarianceType.C4_RADIAL_MATERN
@@ -18,10 +18,10 @@ DEFAULT_TASK_COVARIANCE_KERNEL = CovarianceType.SQUARE_EXPONENTIAL
 
 # Nonzero mean names (yes, zero is an acceptable nonzero mean)
 class NonzeroMeanType(StrEnum):
-    ZERO = "zero"
-    CONSTANT = "constant"
-    LINEAR = "linear"
-    CUSTOM = "custom"
+    ZERO = auto()
+    CONSTANT = auto()
+    LINEAR = auto()
+    CUSTOM = auto()
 
 
 # Optimizer constants
@@ -44,9 +44,9 @@ EVOLUTIONARY_STRATEGY_OPTIMIZERS = [
 
 # Constant Liar constants
 class ConstantLiarType(StrEnum):
-    MIN = "constant_liar_min"
-    MAX = "constant_liar_max"
-    MEAN = "constant_liar_mean"
+    MIN = auto()
+    MAX = auto()
+    MEAN = auto()
 
 
 DEFAULT_CONSTANT_LIAR_VALUE = -0.0123456789  # In the event there is no data (should crash maybe??)

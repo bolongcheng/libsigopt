@@ -28,10 +28,10 @@ class TestSigoptParzenEstimator(NumericalTestCase):
     @pytest.fixture(scope="class")
     def form_multimetric_info(self):
         def _form_multimetric_info(method_name):
-            if method_name == CONVEX_COMBINATION:
+            if method_name == MultimetricMethod.CONVEX_COMBINATION:
                 phase = random.choice([CONVEX_COMBINATION_RANDOM_SPREAD, CONVEX_COMBINATION_SEQUENTIAL])
                 phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
-            elif method_name == EPSILON_CONSTRAINT:
+            elif method_name == MultimetricMethod.EPSILON_CONSTRAINT:
                 phase = random.choice(
                     [
                         EPSILON_CONSTRAINT_OPTIMIZE_0,
@@ -39,7 +39,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
                     ]
                 )
                 phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
-            elif method_name == OPTIMIZING_ONE_METRIC:
+            elif method_name == MultimetricMethod.OPTIMIZING_ONE_METRIC:
                 phase = random.choice(
                     [
                         OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
@@ -56,7 +56,12 @@ class TestSigoptParzenEstimator(NumericalTestCase):
 
     @pytest.mark.parametrize(
         "phase",
-        [CONVEX_COMBINATION, EPSILON_CONSTRAINT, OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC],
+        [
+            MultimetricMethod.CONVEX_COMBINATION,
+            MultimetricMethod.EPSILON_CONSTRAINT,
+            MultimetricMethod.OPTIMIZING_ONE_METRIC,
+            NOT_MULTIMETRIC,
+        ],
     )
     def test_form_multimetric_info_fixture(self, form_multimetric_info, phase):
         multimetric_info = form_multimetric_info(phase)
@@ -67,7 +72,12 @@ class TestSigoptParzenEstimator(NumericalTestCase):
 
     @pytest.mark.parametrize(
         "phase",
-        [CONVEX_COMBINATION, EPSILON_CONSTRAINT, OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC],
+        [
+            MultimetricMethod.CONVEX_COMBINATION,
+            MultimetricMethod.EPSILON_CONSTRAINT,
+            MultimetricMethod.OPTIMIZING_ONE_METRIC,
+            NOT_MULTIMETRIC,
+        ],
     )
     def test_default(self, form_multimetric_info, phase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
@@ -94,7 +104,7 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         )
 
         if len(points_sampled.values) < SPE_MINIMUM_UNFORGOTTEN_POINT_TOTAL:
-            assert phase == EPSILON_CONSTRAINT
+            assert phase == MultimetricMethod.EPSILON_CONSTRAINT
             with pytest.raises(SPEInsufficientDataError):
                 SigOptParzenEstimator(
                     lower_covariance=C0RadialMatern(hparams),
@@ -129,7 +139,9 @@ class TestSigoptParzenEstimator(NumericalTestCase):
         ei_grad = spe.evaluate_grad_expected_improvement(points_to_sample)
         assert ei_grad.shape == points_to_sample.shape
 
-    @pytest.mark.parametrize("phase", [CONVEX_COMBINATION, OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC])
+    @pytest.mark.parametrize(
+        "phase", [MultimetricMethod.CONVEX_COMBINATION, MultimetricMethod.OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC]
+    )
     def test_greater_lower_split(self, form_multimetric_info, phase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
         points_sampled = form_points_sampled(
@@ -174,7 +186,12 @@ class TestSigoptParzenEstimator(NumericalTestCase):
 
     @pytest.mark.parametrize(
         "phase",
-        [CONVEX_COMBINATION, EPSILON_CONSTRAINT, OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC],
+        [
+            MultimetricMethod.CONVEX_COMBINATION,
+            MultimetricMethod.EPSILON_CONSTRAINT,
+            MultimetricMethod.OPTIMIZING_ONE_METRIC,
+            NOT_MULTIMETRIC,
+        ],
     )
     def test_insufficient_data(self, form_multimetric_info, phase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
@@ -208,7 +225,12 @@ class TestSigoptParzenEstimator(NumericalTestCase):
 
     @pytest.mark.parametrize(
         "phase",
-        [CONVEX_COMBINATION, EPSILON_CONSTRAINT, OPTIMIZING_ONE_METRIC, NOT_MULTIMETRIC],
+        [
+            MultimetricMethod.CONVEX_COMBINATION,
+            MultimetricMethod.EPSILON_CONSTRAINT,
+            MultimetricMethod.OPTIMIZING_ONE_METRIC,
+            NOT_MULTIMETRIC,
+        ],
     )
     def test_insufficient_data_with_forget_factor(self, form_multimetric_info, phase):
         num_metrics = 1 if phase == NOT_MULTIMETRIC else 2
