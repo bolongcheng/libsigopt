@@ -4,7 +4,7 @@
 import numpy as np
 
 from libsigopt.compute.gaussian_process import GaussianProcess
-from libsigopt.compute.misc.constant import CONSTANT_LIAR_MIN
+from libsigopt.compute.misc.constant import ConstantLiarType
 from libsigopt.compute.predictor import Predictor
 
 
@@ -93,7 +93,7 @@ class GaussianProcessSum(Predictor):
             points_sampled_noise_variance = points_sampled_noise_variance + (w**2) * gp.points_sampled_noise_variance
         return points_sampled_noise_variance
 
-    def append_lie_data(self, lie_locations, lie_method=CONSTANT_LIAR_MIN):
+    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN):
         for gp in self.gaussian_process_list:
             gp.append_lie_data(lie_locations, lie_method)
 

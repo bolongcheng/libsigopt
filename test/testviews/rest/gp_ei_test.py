@@ -1,11 +1,10 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-# pylint: disable=too-many-positional-arguments
 import pytest
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
-from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE
+from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.views.rest.gp_ei_categorical import GpEiCategoricalView
 from testviews.zigopt_input_utils import ZigoptSimulator
 
@@ -34,7 +33,7 @@ class TestCategoricalConstantLiar(AcquisitionFunctionTestBase):
     )
     @pytest.mark.parametrize("num_stored_metrics", [0, 1])
     @pytest.mark.parametrize("num_being_sampled", [0, 3])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     def test_constant_liar_base(
         self,
@@ -69,7 +68,7 @@ class TestCategoricalConstantLiar(AcquisitionFunctionTestBase):
     @pytest.mark.parametrize("num_to_sample", [126])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     @pytest.mark.parametrize("num_being_sampled", [0, 7])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     def test_constant_liar_multitask(
         self,
@@ -107,7 +106,7 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
         ],
     )
     @pytest.mark.parametrize("num_being_sampled", [0, 3])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [True, False])
     def test_qei_base(
         self,
@@ -140,7 +139,7 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
     @pytest.mark.parametrize("num_to_sample", [222])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     @pytest.mark.parametrize("num_being_sampled", [0, 4])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [False])
     def test_qei_multitask(
         self,
@@ -168,7 +167,7 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
     @pytest.mark.parametrize("num_sampled", [12, 43])
     @pytest.mark.parametrize("num_to_sample", [111])
     @pytest.mark.parametrize("num_being_sampled", [0, 2])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("use_tikhonov", [False])
     @pytest.mark.parametrize("parallelism_method", [PARALLEL_QEI, PARALLEL_CONSTANT_LIAR])
     def test_ei_no_optimized_metrics(

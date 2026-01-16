@@ -56,9 +56,7 @@ class TestMultisolutionBestAssignments(object):
         assert len(centers_indices) == k
         assert centers_indices[0] < num_points_a  # indices of points a
         assert centers_indices[1] >= num_points_a  # indices of points b
-        assert np.all(
-            points[centers_indices[0], :] == points[first_center_index, :]
-        )  # must be the first center index
+        assert np.all(points[centers_indices[0], :] == points[first_center_index, :])  # must be the first center index
         assert np.all(partition[:num_points_a] == 0)
         assert np.all(partition[num_points_a:] == 1)
 

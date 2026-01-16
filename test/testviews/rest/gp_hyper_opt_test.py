@@ -1,7 +1,6 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-# pylint: disable=too-many-positional-arguments
 from copy import deepcopy
 
 import numpy as np
@@ -9,7 +8,7 @@ import pytest
 from mock import Mock
 
 from libsigopt.compute.domain import CategoricalDomain
-from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE, QUANTIZED_LENGTH_SCALE_LOWER_FACTOR
+from libsigopt.compute.misc.constant import QUANTIZED_LENGTH_SCALE_LOWER_FACTOR, NonzeroMeanType
 from libsigopt.views.rest.gp_hyper_opt_multimetric import (
     DEFAULT_HYPER_OPT_OPTIMIZER_INFO,
     GpHyperOptMultimetricView,
@@ -112,7 +111,7 @@ class TestCategoricalTools(NumericalTestCase):
             num_sampled=29,
             num_optimized_metrics=1,
             num_to_sample=None,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             use_tikhonov=False,
             num_tasks=0,
         )
@@ -123,7 +122,7 @@ class TestCategoricalTools(NumericalTestCase):
 
     @pytest.mark.parametrize("dim", [2, 5])
     @pytest.mark.parametrize("num_sampled", [21, 37])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     def test_acceptable_responses_base(
         self,
@@ -170,7 +169,7 @@ class TestCategoricalTools(NumericalTestCase):
             num_constraint_metrics=num_constraint_metrics,
             num_stored_metrics=num_stored_metrics,
             num_to_sample=None,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             use_tikhonov=False,
             num_tasks=0,
         )
@@ -194,7 +193,7 @@ class TestCategoricalTools(NumericalTestCase):
 
     @pytest.mark.parametrize("dim", [7])
     @pytest.mark.parametrize("num_sampled", [53])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     def test_acceptable_responses_tikhonov(
         self,
@@ -226,7 +225,7 @@ class TestCategoricalTools(NumericalTestCase):
 
     @pytest.mark.parametrize("dim", [5])
     @pytest.mark.parametrize("num_sampled", [38])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2])
     def test_acceptable_responses_multitask(
         self,
@@ -258,7 +257,7 @@ class TestCategoricalTools(NumericalTestCase):
 
     @pytest.mark.parametrize("dim", [6])
     @pytest.mark.parametrize("num_sampled", [27])
-    @pytest.mark.parametrize("nonzero_mean_type", [NONZERO_MEAN_CONSTANT_MEAN_TYPE])
+    @pytest.mark.parametrize("nonzero_mean_type", [NonzeroMeanType.CONSTANT])
     @pytest.mark.parametrize("num_optimized_metrics", [0, 1])
     @pytest.mark.parametrize("num_constraint_metrics", [0, 1])
     @pytest.mark.parametrize("num_stored_metrics", [1])
@@ -323,7 +322,7 @@ class TestCategoricalTools(NumericalTestCase):
             num_optimized_metrics=num_optimized_metrics,
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=None,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             use_tikhonov=False,
             num_tasks=0,
         )

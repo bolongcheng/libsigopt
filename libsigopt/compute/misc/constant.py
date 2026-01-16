@@ -1,38 +1,28 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from enum import StrEnum, auto
+
 
 # Covariance type names
-SQUARE_EXPONENTIAL_COVARIANCE_TYPE = "square_exponential"
-C4_RADIAL_MATERN_COVARIANCE_TYPE = "c4_radial_matern"
-C2_RADIAL_MATERN_COVARIANCE_TYPE = "c2_radial_matern"
-C0_RADIAL_MATERN_COVARIANCE_TYPE = "c0_radial_matern"
+class CovarianceType(StrEnum):
+    SQUARE_EXPONENTIAL = auto()
+    C4_RADIAL_MATERN = auto()
+    C2_RADIAL_MATERN = auto()
+    C0_RADIAL_MATERN = auto()
 
-#: Covariance types supported
-COVARIANCE_TYPES = [
-    SQUARE_EXPONENTIAL_COVARIANCE_TYPE,
-    C4_RADIAL_MATERN_COVARIANCE_TYPE,
-    C2_RADIAL_MATERN_COVARIANCE_TYPE,
-    C0_RADIAL_MATERN_COVARIANCE_TYPE,
-]
 
-DEFAULT_COVARIANCE_KERNEL = C4_RADIAL_MATERN_COVARIANCE_TYPE
-DEFAULT_TASK_COVARIANCE_KERNEL = SQUARE_EXPONENTIAL_COVARIANCE_TYPE
+DEFAULT_COVARIANCE_KERNEL = CovarianceType.C4_RADIAL_MATERN
+DEFAULT_TASK_COVARIANCE_KERNEL = CovarianceType.SQUARE_EXPONENTIAL
+
 
 # Nonzero mean names (yes, zero is an acceptable nonzero mean)
-NONZERO_MEAN_ZERO_MEAN_TYPE = "zero"
-NONZERO_MEAN_CONSTANT_MEAN_TYPE = "constant"
-NONZERO_MEAN_LINEAR_MEAN_TYPE = "linear"
-NONZERO_MEAN_CUSTOM_MEAN_TYPE = "custom"
+class NonzeroMeanType(StrEnum):
+    ZERO = auto()
+    CONSTANT = auto()
+    LINEAR = auto()
+    CUSTOM = auto()
 
-#: Nonzero mean types which can be passed by SigOpt
-#   A more diverse selection is available within libsigopt.compute itself, but we restrict this to strings only
-NONZERO_MEAN_TYPES = [
-    NONZERO_MEAN_ZERO_MEAN_TYPE,
-    NONZERO_MEAN_CONSTANT_MEAN_TYPE,
-    NONZERO_MEAN_LINEAR_MEAN_TYPE,
-    NONZERO_MEAN_CUSTOM_MEAN_TYPE,
-]
 
 # Optimizer constants
 L_BFGS_B_OPTIMIZER = "l_bfgs_b_optimizer"
@@ -51,10 +41,13 @@ EVOLUTIONARY_STRATEGY_OPTIMIZERS = [
     DE_OPTIMIZER,
 ]
 
+
 # Constant Liar constants
-CONSTANT_LIAR_MIN = "constant_liar_min"
-CONSTANT_LIAR_MAX = "constant_liar_max"
-CONSTANT_LIAR_MEAN = "constant_liar_mean"
+class ConstantLiarType(StrEnum):
+    MIN = auto()
+    MAX = auto()
+    MEAN = auto()
+
 
 DEFAULT_CONSTANT_LIAR_VALUE = -0.0123456789  # In the event there is no data (should crash maybe??)
 
@@ -68,10 +61,10 @@ DEFAULT_MAX_SIMULTANEOUS_QEI_POINTS = 100
 
 CATEGORICAL_POINT_UNIQUENESS_TOLERANCE = 1e-2
 DISCRETE_UNIQUENESS_LENGTH_SCALE_MIN_BOUND = {
-    SQUARE_EXPONENTIAL_COVARIANCE_TYPE: 0.5,
-    C4_RADIAL_MATERN_COVARIANCE_TYPE: 0.14,
-    C2_RADIAL_MATERN_COVARIANCE_TYPE: 0.18,
-    C0_RADIAL_MATERN_COVARIANCE_TYPE: 0.25,
+    CovarianceType.SQUARE_EXPONENTIAL: 0.5,
+    CovarianceType.C4_RADIAL_MATERN: 0.14,
+    CovarianceType.C2_RADIAL_MATERN: 0.18,
+    CovarianceType.C0_RADIAL_MATERN: 0.25,
 }
 TASK_LENGTH_LOWER_BOUND = 0.43
 QUANTIZED_LENGTH_SCALE_LOWER_FACTOR = 0.25

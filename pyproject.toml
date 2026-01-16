@@ -8,18 +8,10 @@ version = "1.0.0"
 description = "SigOpt computation libraries"
 readme = "README.md"
 requires-python = ">=3.13"
-license = {text = "Apache-2.0"}
-authors = [
-  {name = "SigOpt", email = "support@sigopt.com"}
-]
-classifiers = [
-  "Development Status :: 5 - Production/Stable"
-]
-dependencies = [
-  "jsonschema>=3.0.1,<4",
-  "numpy>=2.1",
-  "scipy>=1.14",
-]
+license = { text = "Apache-2.0" }
+authors = [{ name = "SigOpt", email = "support@sigopt.com" }]
+classifiers = ["Development Status :: 5 - Production/Stable"]
+dependencies = ["jsonschema>=3.0.1,<4", "numpy>=2.1", "scipy>=1.14"]
 
 [project.urls]
 Homepage = "https://sigopt.org"
@@ -54,17 +46,20 @@ target-version = "py313"
 # I: isort
 # W: pycodestyle warnings
 select = ["E", "F", "I", "W"]
-ignore = [
-  "E402", "E501", "E731", "E741",
-  "F401", "F403", "F405",
-]
+ignore = ["E402", "E501", "E731", "E741", "F401", "F403", "F405"]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true
 known-first-party = ["libsigopt"]
-known-third-party = ["numpy"]
 lines-after-imports = 2
-section-order = ["future", "standard-library", "third-party", "first-party", "local-folder", "tests"]
+section-order = [
+  "future",
+  "standard-library",
+  "third-party",
+  "first-party",
+  "local-folder",
+  "tests",
+]
 
 [tool.ruff.lint.isort.sections]
 tests = ["testaux", "testcompute"]

@@ -14,12 +14,7 @@ incorporate that into the check_hyperparameters function.
 import numpy as np
 
 from libsigopt.compute.covariance_base import DifferentiableRadialCovariance, RadialCovariance
-from libsigopt.compute.misc.constant import (
-    C0_RADIAL_MATERN_COVARIANCE_TYPE,
-    C2_RADIAL_MATERN_COVARIANCE_TYPE,
-    C4_RADIAL_MATERN_COVARIANCE_TYPE,
-    SQUARE_EXPONENTIAL_COVARIANCE_TYPE,
-)
+from libsigopt.compute.misc.constant import CovarianceType
 
 
 def _scale_difference_matrix(scale, difference_matrix):
@@ -38,7 +33,7 @@ class SquareExponential(DifferentiableRadialCovariance):
 
     """
 
-    covariance_type = SQUARE_EXPONENTIAL_COVARIANCE_TYPE
+    covariance_type = CovarianceType.SQUARE_EXPONENTIAL
 
     def __init__(self, hyperparameters):
         super().__init__(hyperparameters)
@@ -91,7 +86,7 @@ class C0RadialMatern(RadialCovariance):
 
     """
 
-    covariance_type = C0_RADIAL_MATERN_COVARIANCE_TYPE
+    covariance_type = CovarianceType.C0_RADIAL_MATERN
 
     def __init__(self, hyperparameters):
         super().__init__(hyperparameters)
@@ -117,7 +112,7 @@ class C2RadialMatern(DifferentiableRadialCovariance):
 
     """
 
-    covariance_type = C2_RADIAL_MATERN_COVARIANCE_TYPE
+    covariance_type = CovarianceType.C2_RADIAL_MATERN
 
     def __init__(self, hyperparameters):
         super().__init__(hyperparameters)
@@ -161,7 +156,7 @@ class C4RadialMatern(DifferentiableRadialCovariance):
 
     """
 
-    covariance_type = C4_RADIAL_MATERN_COVARIANCE_TYPE
+    covariance_type = CovarianceType.C4_RADIAL_MATERN
 
     def __init__(self, hyperparameters):
         super().__init__(hyperparameters)
@@ -206,8 +201,8 @@ class C4RadialMatern(DifferentiableRadialCovariance):
 
 
 COVARIANCE_TYPES_TO_CLASSES = {
-    SQUARE_EXPONENTIAL_COVARIANCE_TYPE: SquareExponential,
-    C4_RADIAL_MATERN_COVARIANCE_TYPE: C4RadialMatern,
-    C2_RADIAL_MATERN_COVARIANCE_TYPE: C2RadialMatern,
-    C0_RADIAL_MATERN_COVARIANCE_TYPE: C0RadialMatern,
+    CovarianceType.SQUARE_EXPONENTIAL: SquareExponential,
+    CovarianceType.C4_RADIAL_MATERN: C4RadialMatern,
+    CovarianceType.C2_RADIAL_MATERN: C2RadialMatern,
+    CovarianceType.C0_RADIAL_MATERN: C0RadialMatern,
 }

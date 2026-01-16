@@ -21,9 +21,7 @@ class MultitaskAcquisitionFunction(AcquisitionFunction):
         return self.underlying.differentiable
 
     def _evaluate_at_point_list(self, points_to_evaluate):
-        # pylint: disable=protected-access
         af_vals = self.underlying._evaluate_at_point_list(points_to_evaluate)
-        # pylint: enable=protected-access
         task_costs = points_to_evaluate[:, -1]
         return af_vals / task_costs
 

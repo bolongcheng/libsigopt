@@ -94,7 +94,6 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
     hyperparameters = property(get_hyperparameters, set_hyperparameters)
 
-    # pylint: disable=protected-access
     def _covariance(self, x, z):
         x_phys, x_task, z_phys, z_task = self.separate_physical_task_components(x, z)
         physical_component = self.physical_covariance._covariance(x_phys, z_phys)
@@ -158,5 +157,3 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         kg_tensor[:, :, :-1] = phys_kgt * task_matrix[:, :, None]
         kg_tensor[:, :, -1:] = task_kgt * phys_matrix[:, :, None]
         return kg_tensor
-
-    # pylint: disable=protected-access

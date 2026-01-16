@@ -4,7 +4,7 @@
 import numpy as np
 from flaky import flaky
 
-from libsigopt.compute.misc.constant import CONSTANT_LIAR_MAX, CONSTANT_LIAR_MEAN
+from libsigopt.compute.misc.constant import ConstantLiarType
 
 from testcompute.gaussian_process_test_case import GaussianProcessTestCase
 
@@ -70,9 +70,7 @@ class TestGaussianProcess(GaussianProcessTestCase):
             # which is likely to not be satisfied when as the number of points (where you draw posterior) increase.
             count_in_interval = 0
             for s in samples:
-                count_in_interval += sum(
-                    np.logical_and(s < mean + stddev * conf_times, s > mean - stddev * conf_times)
-                )
+                count_in_interval += sum(np.logical_and(s < mean + stddev * conf_times, s > mean - stddev * conf_times))
             estimated = count_in_interval / float(num_posterior_samples * num_points)
 
             assert estimated >= confidence_interval
@@ -86,12 +84,12 @@ class TestGaussianProcess(GaussianProcessTestCase):
             assert np.all(gp.points_sampled_value[-7:] == max(gp.points_sampled_value))
 
             x_append = domain.generate_quasi_random_points_in_domain(5)
-            gp.append_lie_data(x_append, CONSTANT_LIAR_MAX)
+            gp.append_lie_data(x_append, ConstantLiarType.MAX)
             assert gp.num_sampled == num_sampled + 7 + 5
             assert np.all(gp.points_sampled_value[-5:] == min(gp.points_sampled_value))
 
             mean_value = np.mean(gp.points_sampled_value)
             x_append = domain.generate_quasi_random_points_in_domain(3)
-            gp.append_lie_data(x_append, CONSTANT_LIAR_MEAN)
+            gp.append_lie_data(x_append, ConstantLiarType.MEAN)
             assert gp.num_sampled == num_sampled + 7 + 5 + 3
             assert np.all(gp.points_sampled_value[-3:] == mean_value)

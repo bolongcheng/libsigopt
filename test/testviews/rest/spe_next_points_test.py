@@ -1,7 +1,6 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-# pylint: disable=too-many-positional-arguments
 import numpy as np
 import pytest
 from flaky import flaky
@@ -10,11 +9,9 @@ from libsigopt.aux.adapter_info_containers import MetricsInfo
 from libsigopt.compute.domain import BetaPrior, CategoricalDomain, DomainComponent, DomainConstraint, NormalPrior
 from libsigopt.compute.misc.constant import MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
 from libsigopt.views.rest.spe_next_points import (
-    COMPLETION_PHASE,
-    INITIALIZATION_PHASE,
-    SKO_PHASE,
     SPE_PHANTOM_BUDGET_FACTOR,
     SPENextPoints,
+    SPEPhase,
     get_experiment_phase,
 )
 from testviews.zigopt_input_utils import ZigoptSimulator
@@ -23,21 +20,21 @@ from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 
 
 PHASE_LIST = [
-    (1, 0, INITIALIZATION_PHASE),
-    (10, 0, INITIALIZATION_PHASE),
-    (10, 10, INITIALIZATION_PHASE),
-    (20, 0, SKO_PHASE),
-    (20, 10, INITIALIZATION_PHASE),
-    (20, 20, INITIALIZATION_PHASE),
-    (50, 0, SKO_PHASE),
-    (50, 45, SKO_PHASE),
-    (50, 46, INITIALIZATION_PHASE),
-    (50, 50, INITIALIZATION_PHASE),
-    (75, 0, COMPLETION_PHASE),
-    (75, 1, SKO_PHASE),
-    (99, 9, COMPLETION_PHASE),
-    (99, 25, SKO_PHASE),
-    (99, 92, INITIALIZATION_PHASE),
+    (1, 0, SPEPhase.INITIALIZATION),
+    (10, 0, SPEPhase.INITIALIZATION),
+    (10, 10, SPEPhase.INITIALIZATION),
+    (20, 0, SPEPhase.SKO),
+    (20, 10, SPEPhase.INITIALIZATION),
+    (20, 20, SPEPhase.INITIALIZATION),
+    (50, 0, SPEPhase.SKO),
+    (50, 45, SPEPhase.SKO),
+    (50, 46, SPEPhase.INITIALIZATION),
+    (50, 50, SPEPhase.INITIALIZATION),
+    (75, 0, SPEPhase.COMPLETION),
+    (75, 1, SPEPhase.SKO),
+    (99, 9, SPEPhase.COMPLETION),
+    (99, 25, SPEPhase.SKO),
+    (99, 92, SPEPhase.INITIALIZATION),
 ]
 
 
@@ -283,9 +280,7 @@ class TestSPENextPointsViews(object):
             ),
             axis=0,
         )
-        expected_bounds_violations = np.concatenate(
-            (np.ones(n - num_natural_fails), np.zeros(num_natural_fails))
-        )
+        expected_bounds_violations = np.concatenate((np.ones(n - num_natural_fails), np.zeros(num_natural_fails)))
         view = SPENextPoints(view_input)
         augmented_points_sampled_failures = view.augment_failures_with_user_specified_thresholds_violations()
         assert np.array_equiv(augmented_points_sampled_failures, expected_bounds_violations)

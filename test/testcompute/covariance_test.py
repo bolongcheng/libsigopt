@@ -18,7 +18,7 @@ from flaky import flaky
 
 from libsigopt.compute import covariance
 from libsigopt.compute.covariance_base import DifferentiableCovariance, HyperparameterInvalidError
-from libsigopt.compute.misc.constant import COVARIANCE_TYPES, TASK_LENGTH_LOWER_BOUND
+from libsigopt.compute.misc.constant import TASK_LENGTH_LOWER_BOUND, CovarianceType
 from libsigopt.compute.multitask_covariance import MultitaskTensorCovariance
 
 from testaux.numerical_test_case import NumericalTestCase
@@ -423,9 +423,7 @@ def test_scale_difference_matrix2(dim, num_points):
         return scale, difference_matrix
 
     scale, difference_matrix = _generate_random_scale_and_difference_matrix(dim, num_points)
-    # pylint: disable=protected-access
     scaled = covariance._scale_difference_matrix(scale, difference_matrix)
-    # pylint: enable=protected-access
     for i in range(dim):
         np.testing.assert_array_equal(scaled[:, :, i], scale * difference_matrix[:, :, i])
 
@@ -435,4 +433,4 @@ class TestLinkers(object):
 
     def test_covariance_links_have_all_covariance_types(self):
         """Test each covariance type is in a linker, and every linker key is a covariance type."""
-        assert set(COVARIANCE_TYPES) == set(covariance.COVARIANCE_TYPES_TO_CLASSES.keys())
+        assert set(CovarianceType) == set(covariance.COVARIANCE_TYPES_TO_CLASSES.keys())

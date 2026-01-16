@@ -34,13 +34,11 @@ class VectorizedOptimizer(Optimizer):
         self.maxiter = maxiter if maxiter is not None else DEFAULT_VECOPT_MAXITER
 
         optimizer_parameters = optimizer_parameters or self.optimizer_parameters_type()
-        # pylint: disable=isinstance-second-argument-not-valid-type
         if not isinstance(optimizer_parameters, self.optimizer_parameters_type):
             raise TypeError(
                 f"optimizer_parameters_type is of type: {optimizer_parameters.__class__}",
                 f"expecting {self.optimizer_parameters_type}",
             )
-        # pylint: enable=isinstance-second-argument-not-valid-type
         self.optimizer_parameters = optimizer_parameters
 
         # This is information for monitoring progress during the optimization

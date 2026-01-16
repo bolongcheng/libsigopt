@@ -1,13 +1,12 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-# pylint: disable=too-many-positional-arguments
 import numpy as np
 import pytest
 from mock import patch
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR
-from libsigopt.compute.misc.constant import NONZERO_MEAN_CONSTANT_MEAN_TYPE
+from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.views.rest.search_next_points import SearchNextPoints
 from testviews.zigopt_input_utils import ZigoptSimulator
 
@@ -69,7 +68,7 @@ class TestSearchNextPoints(object):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=num_to_sample,
             num_being_sampled=num_being_sampled,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=optimized_metric_thresholds,
             constraint_metric_thresholds=constraint_metric_thresholds,
@@ -112,7 +111,7 @@ class TestSearchNextPoints(object):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=num_to_sample,
             num_being_sampled=num_being_sampled,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=optimized_metric_thresholds,
             constraint_metric_thresholds=constraint_metric_thresholds,
@@ -175,7 +174,7 @@ class TestSearchNextPoints(object):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=num_to_sample,
             num_being_sampled=num_being_sampled,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=optimized_metric_thresholds,
             constraint_metric_thresholds=constraint_metric_thresholds,
@@ -211,7 +210,7 @@ class TestSearchNextPoints(object):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=25,
             num_being_sampled=5,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=[0.5] * num_optimized_metrics,
             constraint_metric_thresholds=[0.95] * num_constraint_metrics,
@@ -230,7 +229,7 @@ class TestSearchNextPoints(object):
             num_constraint_metrics=num_constraint_metrics,
             num_to_sample=25,
             num_being_sampled=5,
-            nonzero_mean_type=NONZERO_MEAN_CONSTANT_MEAN_TYPE,
+            nonzero_mean_type=NonzeroMeanType.CONSTANT,
             num_tasks=0,
             optimized_metric_thresholds=[0.5],
             constraint_metric_thresholds=[0.95] * num_constraint_metrics,

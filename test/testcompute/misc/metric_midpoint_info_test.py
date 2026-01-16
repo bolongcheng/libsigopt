@@ -5,10 +5,8 @@ import numpy as np
 import pytest
 
 from libsigopt.compute.misc.constant import (
-    CONSTANT_LIAR_MAX,
-    CONSTANT_LIAR_MEAN,
-    CONSTANT_LIAR_MIN,
     DEFAULT_CONSTANT_LIAR_VALUE,
+    ConstantLiarType,
 )
 from libsigopt.compute.misc.data_containers import MultiMetricMidpointInfo, SingleMetricMidpointInfo
 
@@ -135,17 +133,17 @@ class TestSingleMetricMidpointInfo(NumericalTestCase):
             mmi.compute_lie_value("fake_lie_method")
 
         mmi = SingleMetricMidpointInfo(values=np.array([]), failures=np.array([]))
-        assert mmi.compute_lie_value(CONSTANT_LIAR_MEAN) == DEFAULT_CONSTANT_LIAR_VALUE
+        assert mmi.compute_lie_value(ConstantLiarType.MEAN) == DEFAULT_CONSTANT_LIAR_VALUE
 
         mmi = SingleMetricMidpointInfo(values=np.array([1]), failures=np.array([True]))
-        assert mmi.compute_lie_value(CONSTANT_LIAR_MAX) == DEFAULT_CONSTANT_LIAR_VALUE
+        assert mmi.compute_lie_value(ConstantLiarType.MAX) == DEFAULT_CONSTANT_LIAR_VALUE
 
         values = np.array([0.1, 0.3, -0.8, -0.2, 0.25])
         failures = np.array([False, True, False, True, False], dtype=bool)
         outputs = {
-            CONSTANT_LIAR_MIN: -0.8,
-            CONSTANT_LIAR_MAX: 0.25,
-            CONSTANT_LIAR_MEAN: (0.1 - 0.8 + 0.25) / 3.0,
+            ConstantLiarType.MIN: -0.8,
+            ConstantLiarType.MAX: 0.25,
+            ConstantLiarType.MEAN: (0.1 - 0.8 + 0.25) / 3.0,
         }
 
         mmi = SingleMetricMidpointInfo(values=values, failures=failures)
@@ -154,9 +152,9 @@ class TestSingleMetricMidpointInfo(NumericalTestCase):
 
         failures = np.full_like(values, False, dtype=bool)
         outputs = {
-            CONSTANT_LIAR_MIN: -0.8,
-            CONSTANT_LIAR_MAX: 0.3,
-            CONSTANT_LIAR_MEAN: (0.1 + 0.3 - 0.8 - 0.2 + 0.25) / 5.0,
+            ConstantLiarType.MIN: -0.8,
+            ConstantLiarType.MAX: 0.3,
+            ConstantLiarType.MEAN: (0.1 + 0.3 - 0.8 - 0.2 + 0.25) / 5.0,
         }
 
         mmi = SingleMetricMidpointInfo(values=values, failures=failures)
@@ -164,9 +162,9 @@ class TestSingleMetricMidpointInfo(NumericalTestCase):
             assert mmi.compute_lie_value(lie_method) == lie_value
 
         outputs = {
-            CONSTANT_LIAR_MIN: 0.3,
-            CONSTANT_LIAR_MAX: -0.8,
-            CONSTANT_LIAR_MEAN: (0.1 + 0.3 - 0.8 - 0.2 + 0.25) / 5.0,
+            ConstantLiarType.MIN: 0.3,
+            ConstantLiarType.MAX: -0.8,
+            ConstantLiarType.MEAN: (0.1 + 0.3 - 0.8 - 0.2 + 0.25) / 5.0,
         }
         mmi = SingleMetricMidpointInfo(values=values, failures=failures, objective="minimize")
         for lie_method, lie_value in outputs.items():
@@ -201,8 +199,7 @@ class TestMultiMetricMidpointInfo(NumericalTestCase):
 
         unscaled_values = mmi.undo_scaling(np.array([[1.3, 5.3], [2.1, 2.2]]))
         assert (
-            isinstance(unscaled_values, np.ndarray)
-            and (unscaled_values == -np.array([[1.3, 5.3], [2.1, 2.2]])).all()
+            isinstance(unscaled_values, np.ndarray) and (unscaled_values == -np.array([[1.3, 5.3], [2.1, 2.2]])).all()
         )
 
     def test_one_metric_all_same(self):
@@ -270,17 +267,17 @@ class TestMultiMetricMidpointInfo(NumericalTestCase):
             mmi.compute_lie_value("fake_lie_method")
 
         mmi = MultiMetricMidpointInfo(values=np.array([[]]), failures=np.array([]))
-        assert (mmi.compute_lie_value(CONSTANT_LIAR_MEAN) == DEFAULT_CONSTANT_LIAR_VALUE).all()
+        assert (mmi.compute_lie_value(ConstantLiarType.MEAN) == DEFAULT_CONSTANT_LIAR_VALUE).all()
 
         mmi = MultiMetricMidpointInfo(values=np.array([[]]), failures=np.array([]))
-        assert (mmi.compute_lie_value(CONSTANT_LIAR_MIN) == DEFAULT_CONSTANT_LIAR_VALUE).all()
+        assert (mmi.compute_lie_value(ConstantLiarType.MIN) == DEFAULT_CONSTANT_LIAR_VALUE).all()
 
         values = np.array([[0.2, 0.5], [0.1, -0.2], [0.7, 0.4], [-0.5, 0.9], [0.8, -0.3]])
         failures = np.array([False, True, False, True, False], dtype=bool)
         outputs = {
-            CONSTANT_LIAR_MIN: np.array([0.2, -0.3]),
-            CONSTANT_LIAR_MAX: np.array([0.8, 0.5]),
-            CONSTANT_LIAR_MEAN: np.array([(0.2 + 0.7 + 0.8) / 3, (0.5 + 0.4 - 0.3) / 3]),
+            ConstantLiarType.MIN: np.array([0.2, -0.3]),
+            ConstantLiarType.MAX: np.array([0.8, 0.5]),
+            ConstantLiarType.MEAN: np.array([(0.2 + 0.7 + 0.8) / 3, (0.5 + 0.4 - 0.3) / 3]),
         }
 
         mmi = MultiMetricMidpointInfo(values=values, failures=failures)
