@@ -1,10 +1,11 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from unittest.mock import Mock
+
 import numpy as np
 import pytest
 from flaky import flaky
-from mock import Mock
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.domain import (

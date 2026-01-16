@@ -1,9 +1,10 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from unittest.mock import patch
+
 import numpy as np
 import pytest
-from mock import patch
 
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR
 from libsigopt.compute.misc.constant import NonzeroMeanType
