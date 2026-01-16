@@ -32,8 +32,7 @@ class TestMultitaskAcquisitionFunction(NumericalTestCase):
     qei: ExpectedParallelImprovement
 
     @classmethod
-    @pytest.fixture(autouse=True, scope="class")
-    def base_setup(cls):
+    def setup_class(cls):
         return cls._base_setup()
 
     @classmethod

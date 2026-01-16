@@ -32,8 +32,7 @@ class CovariancesTestBase(NumericalTestCase):
     test_hparams: list[np.ndarray]
 
     @classmethod
-    @pytest.fixture(autouse=True, scope="class")
-    def base_setup(cls):
+    def setup_class(cls):
         cls._base_setup()
 
     @classmethod
