@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 import pytest
+from testviews.zigopt_input_utils import form_points_sampled, form_random_hyperparameter_dict
 
 from libsigopt.compute.covariance import SquareExponential
 from libsigopt.compute.domain import CategoricalDomain
 from libsigopt.compute.gaussian_process import GaussianProcess
 from libsigopt.compute.misc.data_containers import HistoricalData, SingleMetricMidpointInfo
-
 from libsigopt.compute.probabilistic_failures import (
     ProbabilisticFailures,
     ProbabilisticFailuresCDF,
@@ -21,7 +21,6 @@ from testcompute.gp_test_utils import (
     form_gaussian_process_and_data,
     form_list_of_probabilistic_failures,
 )
-from testviews.zigopt_input_utils import form_points_sampled, form_random_hyperparameter_dict
 
 
 @pytest.fixture(scope="module")
@@ -90,7 +89,6 @@ def gaussian_process_list(domain_list):
 
 @pytest.fixture(scope="module")
 def probabilistic_failures_list(gaussian_process_list):
-    from libsigopt.compute.probabilistic_failures import ProbabilisticFailures
 
     pf_list = []
     for gp in gaussian_process_list:

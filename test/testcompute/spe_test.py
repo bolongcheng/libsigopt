@@ -20,6 +20,7 @@ from libsigopt.compute.sigopt_parzen_estimator import (
     SPEInsufficientDataError,
 )
 
+
 # NumericalTestCase import removed as it's no longer needed for this file
 
 
