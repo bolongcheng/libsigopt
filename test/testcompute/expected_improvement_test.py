@@ -1,6 +1,8 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+"""Test cases for the expected improvement acquisition function and any potential gradients."""
+
 import numpy as np
 import pytest
 
@@ -20,10 +22,7 @@ from testaux.numerical_test_case import (
     assert_vector_within_relative,
     check_gradient_with_finite_difference,
 )
-from testcompute.gp_test_utils import (
-    form_continous_and_uniform_domain,
-    form_gaussian_process_and_data,
-)
+from testcompute.gp_test_utils import form_continous_and_uniform_domain, form_gaussian_process_and_data
 
 
 def _check_ei_symmetry(ei_eval, point_to_sample, shifts):
@@ -77,15 +76,17 @@ def test_1d_analytic_ei_edge_cases():
     assert_vector_within_relative(grad_ei, np.zeros(grad_ei.shape), 1.0e-15)
 
 
-def test_best_value_and_location(gaussian_process_list):
-    for gaussian_process in gaussian_process_list:
-        ei = ExpectedImprovement(gaussian_process)
-        assert_scalar_within_relative(ei.best_value, gaussian_process.best_observed_value, 1.0e-14)
-        assert_vector_within_relative(ei.best_location, gaussian_process.best_observed_location, 1.0e-14)
+@pytest.mark.parametrize("idx", range(4))
+def test_best_value_and_location(gaussian_process_list, idx):
+    gaussian_process = gaussian_process_list[idx]
+    ei = ExpectedImprovement(gaussian_process)
+    assert_scalar_within_relative(ei.best_value, gaussian_process.best_observed_value, 1.0e-14)
+    assert_vector_within_relative(ei.best_location, gaussian_process.best_observed_location, 1.0e-14)
 
 
-def test_evaluate_ei_at_points_for_base_ei(one_hot_domain_list, gaussian_process_list):
-    domain, gaussian_process = one_hot_domain_list[-1], gaussian_process_list[-1]
+@pytest.mark.parametrize("idx", range(4))
+def test_evaluate_ei_at_points_for_base_ei(one_hot_domain_list, gaussian_process_list, idx):
+    domain, gaussian_process = one_hot_domain_list[idx], gaussian_process_list[idx]
 
     ei_eval = ExpectedImprovement(gaussian_process)
 
@@ -100,83 +101,83 @@ def test_evaluate_ei_at_points_for_base_ei(one_hot_domain_list, gaussian_process
         assert_scalar_within_relative(value, truth, 1.0e-8)
 
 
-def test_qei_working(one_hot_domain_list, gaussian_process_list):
-    for domain, gaussian_process in zip(one_hot_domain_list, gaussian_process_list):
-        all_points = domain.generate_quasi_random_points_in_domain(9)
+@pytest.mark.parametrize("idx", range(4))
+def test_qei_working(one_hot_domain_list, gaussian_process_list, idx):
+    domain, gaussian_process = one_hot_domain_list[idx], gaussian_process_list[idx]
+    all_points = domain.generate_quasi_random_points_in_domain(9)
 
-        for i in range(2, len(all_points)):
-            points_to_sample = all_points[:i]
-            ei_eval = ExpectedParallelImprovement(
-                gaussian_process,
-                len(points_to_sample),
-                num_mc_iterations=10000,
-            )
-            assert (
-                ei_eval.evaluate_at_point_list(
-                    np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
-                )[0]
-                >= 0
-            )
-
-        num_points_to_sample = 3
-        num_points_to_evaluate = 6
-        points_being_sampled = all_points[:4]
-        points_to_sample = domain.generate_quasi_random_points_in_domain(num_points_to_sample * num_points_to_evaluate)
-        points_to_sample = points_to_sample.reshape(num_points_to_evaluate, num_points_to_sample, domain.dim)
+    for i in range(2, len(all_points)):
+        points_to_sample = all_points[:i]
         ei_eval = ExpectedParallelImprovement(
             gaussian_process,
-            num_points_to_sample,
-            points_being_sampled=points_being_sampled,
+            len(points_to_sample),
             num_mc_iterations=10000,
         )
-        ei_vals = ei_eval.evaluate_at_point_list(points_to_sample)
-        assert all(ei_vals >= 0)
+        assert (
+            ei_eval.evaluate_at_point_list(
+                np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+            )[0]
+            >= 0
+        )
+
+    num_points_to_sample = 3
+    num_points_to_evaluate = 6
+    points_being_sampled = all_points[:4]
+    points_to_sample = domain.generate_quasi_random_points_in_domain(num_points_to_sample * num_points_to_evaluate)
+    points_to_sample = points_to_sample.reshape(num_points_to_evaluate, num_points_to_sample, domain.dim)
+    ei_eval = ExpectedParallelImprovement(
+        gaussian_process,
+        num_points_to_sample,
+        points_being_sampled=points_being_sampled,
+        num_mc_iterations=10000,
+    )
+    ei_vals = ei_eval.evaluate_at_point_list(points_to_sample)
+    assert all(ei_vals >= 0)
 
 
 @pytest.mark.flaky(reruns=1)
-def test_qei_accuracy(one_hot_domain_list, gaussian_process_list):
+@pytest.mark.parametrize("idx", [0])
+def test_qei_accuracy(one_hot_domain_list, gaussian_process_list, idx):
     num_points_to_sample = 3
     num_points_being_sampled = 4
     num_random_tests = 30
     mc_iterations_values = [100, 1000, 10000]
 
-    for domain, gaussian_process in zip(
-        one_hot_domain_list[:1], gaussian_process_list[:1]
-    ):  # Can do more, time permitting
-        points_being_sampled = domain.generate_quasi_random_points_in_domain(num_points_being_sampled)
-        points_to_sample = domain.generate_quasi_random_points_in_domain(num_points_to_sample)
+    domain, gaussian_process = one_hot_domain_list[idx], gaussian_process_list[idx]
+    points_being_sampled = domain.generate_quasi_random_points_in_domain(num_points_being_sampled)
+    points_to_sample = domain.generate_quasi_random_points_in_domain(num_points_to_sample)
 
-        ei_eval = ExpectedParallelImprovement(
-            gaussian_process,
-            num_points_to_sample,
-            points_being_sampled=points_being_sampled,
-        )
-        true_result = ei_eval._compute_expected_improvement_qd_analytic(points_to_sample)
+    ei_eval = ExpectedParallelImprovement(
+        gaussian_process,
+        num_points_to_sample,
+        points_being_sampled=points_being_sampled,
+    )
+    true_result = ei_eval._compute_expected_improvement_qd_analytic(points_to_sample)
 
-        std_results = []
-        for num_mc_iterations in mc_iterations_values:
-            ei_eval.num_mc_iterations = num_mc_iterations
+    std_results = []
+    for num_mc_iterations in mc_iterations_values:
+        ei_eval.num_mc_iterations = num_mc_iterations
 
-            mc_results = [
-                ei_eval.evaluate_at_point_list(
-                    np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
-                )[0]
-                for _ in range(num_random_tests)
-            ]
-            ei_mean_eapl, ei_std_eapl = np.mean(mc_results), np.std(mc_results)
+        mc_results = [
+            ei_eval.evaluate_at_point_list(
+                np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+            )[0]
+            for _ in range(num_random_tests)
+        ]
+        ei_mean_eapl, ei_std_eapl = np.mean(mc_results), np.std(mc_results)
 
-            mc_results = [
-                ei_eval.evaluate_at_point_list(
-                    np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
-                )[0]
-                for _ in range(num_random_tests)
-            ]
-            ei_mean_caf, ei_std_caf = np.mean(mc_results), np.std(mc_results)
+        mc_results = [
+            ei_eval.evaluate_at_point_list(
+                np.reshape(points_to_sample, (1, ei_eval.num_points_to_sample, ei_eval.dim))
+            )[0]
+            for _ in range(num_random_tests)
+        ]
+        ei_mean_caf, ei_std_caf = np.mean(mc_results), np.std(mc_results)
 
-            assert abs(ei_mean_eapl - true_result) < 2 * ei_std_eapl
-            assert abs(ei_mean_caf - true_result) < 2 * ei_std_caf
-            std_results.append(ei_std_eapl)
-        assert all(np.diff(std_results) < 0) or any(np.array(std_results) == 0)
+        assert abs(ei_mean_eapl - true_result) < 2 * ei_std_eapl
+        assert abs(ei_mean_caf - true_result) < 2 * ei_std_caf
+        std_results.append(ei_std_eapl)
+    assert all(np.diff(std_results) < 0) or any(np.array(std_results) == 0)
 
 
 def test_multistart_analytic_expected_improvement_optimization():
@@ -212,77 +213,85 @@ def test_multistart_analytic_expected_improvement_optimization():
     assert expanded_domain.check_point_acceptable(best_point) is True
 
 
+@pytest.mark.parametrize("idx", range(4))
 def test_evaluation_probabilistic_failures(
     one_hot_domain_list,
     gaussian_process_list,
     probabilistic_failures_list,
+    idx,
 ):
-    for domain, gp, pf in zip(one_hot_domain_list, gaussian_process_list, probabilistic_failures_list):
-        ei = ExpectedImprovement(gp)
-        eif = ExpectedImprovementWithFailures(gp, pf)
-        pts = domain.generate_quasi_random_points_in_domain(50)
-        ei_vals = ei.evaluate_at_point_list(pts)
-        pf_vals = pf.compute_probability_of_success(pts)
-        eif_vals = eif.evaluate_at_point_list(pts)
-        assert_vector_within_relative(ei_vals * pf_vals, eif_vals, 1e-13)
+    domain, gp, pf = one_hot_domain_list[idx], gaussian_process_list[idx], probabilistic_failures_list[idx]
+    ei = ExpectedImprovement(gp)
+    eif = ExpectedImprovementWithFailures(gp, pf)
+    pts = domain.generate_quasi_random_points_in_domain(50)
+    ei_vals = ei.evaluate_at_point_list(pts)
+    pf_vals = pf.compute_probability_of_success(pts)
+    eif_vals = eif.evaluate_at_point_list(pts)
+    assert_vector_within_relative(ei_vals * pf_vals, eif_vals, 1e-13)
 
 
+@pytest.mark.parametrize("idx", range(4))
 def test_grad_against_finite_difference(
     one_hot_domain_list,
     gaussian_process_list,
     probabilistic_failures_list,
+    idx,
 ):
     h = 1e-6
     n_test = 50
-    for domain, gp, pf in zip(one_hot_domain_list, gaussian_process_list, probabilistic_failures_list):
-        eif = ExpectedImprovementWithFailures(gp, pf)
-        pts = domain.generate_quasi_random_points_in_domain(n_test)
-        check_gradient_with_finite_difference(
-            pts,
-            eif.evaluate_at_point_list,
-            eif.evaluate_grad_at_point_list,
-            tol=domain.dim * 1e-6,
-            fd_step=h * np.ones(domain.dim),
-        )
+    domain, gp, pf = one_hot_domain_list[idx], gaussian_process_list[idx], probabilistic_failures_list[idx]
+    eif = ExpectedImprovementWithFailures(gp, pf)
+    pts = domain.generate_quasi_random_points_in_domain(n_test)
+    check_gradient_with_finite_difference(
+        pts,
+        eif.evaluate_at_point_list,
+        eif.evaluate_grad_at_point_list,
+        tol=domain.dim * 1e-6,
+        fd_step=h * np.ones(domain.dim),
+    )
 
 
+@pytest.mark.parametrize("idx", range(4))
 def test_evaluation_product_probabilistic_failures(
     one_hot_domain_list,
     gaussian_process_list,
     product_of_list_probabilistic_failures_list,
+    idx,
 ):
-    for domain, gp, ppf in zip(
-        one_hot_domain_list,
-        gaussian_process_list,
-        product_of_list_probabilistic_failures_list,
-    ):
-        ei = ExpectedImprovement(gp)
-        eif = ExpectedImprovementWithFailures(gp, ppf)
-        pts = domain.generate_quasi_random_points_in_domain(50)
-        ei_vals = ei.evaluate_at_point_list(pts)
-        pf_vals = ppf.compute_probability_of_success(pts)
-        eif_vals = eif.evaluate_at_point_list(pts)
-        assert_vector_within_relative(ei_vals * pf_vals, eif_vals, 1e-13)
+    domain, gp, ppf = (
+        one_hot_domain_list[idx],
+        gaussian_process_list[idx],
+        product_of_list_probabilistic_failures_list[idx],
+    )
+    ei = ExpectedImprovement(gp)
+    eif = ExpectedImprovementWithFailures(gp, ppf)
+    pts = domain.generate_quasi_random_points_in_domain(50)
+    ei_vals = ei.evaluate_at_point_list(pts)
+    pf_vals = ppf.compute_probability_of_success(pts)
+    eif_vals = eif.evaluate_at_point_list(pts)
+    assert_vector_within_relative(ei_vals * pf_vals, eif_vals, 1e-13)
 
 
+@pytest.mark.parametrize("idx", range(4))
 def test_grad_product_against_finite_difference(
     one_hot_domain_list,
     gaussian_process_list,
     product_of_list_probabilistic_failures_list,
+    idx,
 ):
     h = 1e-6
     n_test = 50
-    for domain, gp, ppf in zip(
-        one_hot_domain_list,
-        gaussian_process_list,
-        product_of_list_probabilistic_failures_list,
-    ):
-        eif = ExpectedImprovementWithFailures(gp, ppf)
-        pts = domain.generate_quasi_random_points_in_domain(n_test)
-        check_gradient_with_finite_difference(
-            pts,
-            eif.evaluate_at_point_list,
-            eif.evaluate_grad_at_point_list,
-            tol=domain.dim * 1e-6,
-            fd_step=h * np.ones(domain.dim),
-        )
+    domain, gp, ppf = (
+        one_hot_domain_list[idx],
+        gaussian_process_list[idx],
+        product_of_list_probabilistic_failures_list[idx],
+    )
+    eif = ExpectedImprovementWithFailures(gp, ppf)
+    pts = domain.generate_quasi_random_points_in_domain(n_test)
+    check_gradient_with_finite_difference(
+        pts,
+        eif.evaluate_at_point_list,
+        eif.evaluate_grad_at_point_list,
+        tol=domain.dim * 1e-6,
+        fd_step=h * np.ones(domain.dim),
+    )

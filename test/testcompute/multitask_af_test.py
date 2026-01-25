@@ -21,7 +21,7 @@ from libsigopt.compute.probabilistic_failures import ProbabilisticFailuresCDF
 from testaux.numerical_test_case import assert_scalar_within_relative, assert_vector_within_relative
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def multitask_af_setup():
     domain = CategoricalDomain(
         [
@@ -59,26 +59,20 @@ def multitask_af_setup():
     }
 
 
-def test_creation(multitask_af_setup):
-    ei = multitask_af_setup["ei"]
-    eif = multitask_af_setup["eif"]
-    aei = multitask_af_setup["aei"]
-    qei = multitask_af_setup["qei"]
+@pytest.mark.parametrize("af_name", ["ei", "eif", "aei", "qei"])
+def test_creation(multitask_af_setup, af_name):
+    af = multitask_af_setup[af_name]
     domain = multitask_af_setup["domain"]
-    for af in (ei, eif, aei, qei):
-        multitask_af = MultitaskAcquisitionFunction(af)
-        new_point = domain.generate_quasi_random_points_in_domain(1)
+    multitask_af = MultitaskAcquisitionFunction(af)
+    new_point = domain.generate_quasi_random_points_in_domain(1)
 
-        af_val = multitask_af.evaluate_at_point_list(new_point)[0]
-        assert not (np.isnan(af_val) or np.isinf(af_val))
+    af_val = multitask_af.evaluate_at_point_list(new_point)[0]
+    assert not (np.isnan(af_val) or np.isinf(af_val))
 
-        if multitask_af.differentiable:
-            af_grad = multitask_af.evaluate_grad_at_point_list(new_point)[0]
-            assert af_grad.shape == (multitask_af.dim,)
-            assert not np.any(np.isnan(af_grad)) or np.any(np.isinf(af_grad))
-
-    # In this test we give the same function values at the same locations for all the costs
-    # Then we confirm that the MTEI prefers lower costs if the predictions are the same for all tasks
+    if multitask_af.differentiable:
+        af_grad = multitask_af.evaluate_grad_at_point_list(new_point)[0]
+        assert af_grad.shape == (multitask_af.dim,)
+        assert not np.any(np.isnan(af_grad)) or np.any(np.isinf(af_grad))
 
 
 def test_lower_cost_preferred(multitask_af_setup):
@@ -117,29 +111,24 @@ def test_lower_cost_preferred(multitask_af_setup):
 
 
 @pytest.mark.flaky(reruns=2)
-def test_joint_function_gradient_eval(multitask_af_setup):
-    ei = multitask_af_setup["ei"]
-    eif = multitask_af_setup["eif"]
-    aei = multitask_af_setup["aei"]
-    qei = multitask_af_setup["qei"]
+@pytest.mark.parametrize("af_name", ["ei", "eif", "aei", "qei"])
+def test_joint_function_gradient_eval(multitask_af_setup, af_name):
+    af = multitask_af_setup[af_name]
     domain = multitask_af_setup["domain"]
     test_points = domain.generate_quasi_random_points_in_domain(4)
-    for af in (ei, eif, aei, qei):
-        multitask_af = MultitaskAcquisitionFunction(af)
-        if multitask_af.differentiable:
-            vals, grad_vals = multitask_af.joint_function_gradient_eval(test_points)
-            for test_point, val, grad_val in zip(test_points, vals, grad_vals):
-                val_compare = multitask_af.evaluate_at_point_list(np.atleast_2d(test_point))[0]
-                grad_val_compare = multitask_af.evaluate_grad_at_point_list(np.atleast_2d(test_point))[0]
-                assert_scalar_within_relative(val, val_compare, 1e-13)
-                assert_vector_within_relative(grad_val, grad_val_compare, 1e-12)
-        else:
-            with pytest.raises(NotImplementedError):
-                multitask_af.joint_function_gradient_eval(test_points)
-            vals = multitask_af.evaluate_at_point_list(test_points)
-            # This test incorporates the stochastic nature of AF that have no gradient
-            for test_point, val in zip(test_points, vals):
-                val_compare_list = [
-                    multitask_af.evaluate_at_point_list(np.atleast_2d(test_point))[0] for _ in range(50)
-                ]
-                assert abs(val - np.mean(val_compare_list)) < 3 * np.std(val_compare_list)
+    multitask_af = MultitaskAcquisitionFunction(af)
+    if multitask_af.differentiable:
+        vals, grad_vals = multitask_af.joint_function_gradient_eval(test_points)
+        for test_point, val, grad_val in zip(test_points, vals, grad_vals):
+            val_compare = multitask_af.evaluate_at_point_list(np.atleast_2d(test_point))[0]
+            grad_val_compare = multitask_af.evaluate_grad_at_point_list(np.atleast_2d(test_point))[0]
+            assert_scalar_within_relative(val, val_compare, 1e-13)
+            assert_vector_within_relative(grad_val, grad_val_compare, 1e-12)
+    else:
+        with pytest.raises(NotImplementedError):
+            multitask_af.joint_function_gradient_eval(test_points)
+        vals = multitask_af.evaluate_at_point_list(test_points)
+        # This test incorporates the stochastic nature of AF that have no gradient
+        for test_point, val in zip(test_points, vals):
+            val_compare_list = [multitask_af.evaluate_at_point_list(np.atleast_2d(test_point))[0] for _ in range(50)]
+            assert abs(val - np.mean(val_compare_list)) < 3 * np.std(val_compare_list)
