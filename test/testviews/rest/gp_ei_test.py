@@ -6,7 +6,6 @@ import pytest
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.views.rest.gp_ei_categorical import GpEiCategoricalView
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testaux.numerical_test_case import NumericalTestCase
 
@@ -47,8 +46,9 @@ class TestCategoricalConstantLiar(AcquisitionFunctionTestBase):
         nonzero_mean_type,
         use_tikhonov,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -79,8 +79,9 @@ class TestCategoricalConstantLiar(AcquisitionFunctionTestBase):
         num_being_sampled,
         nonzero_mean_type,
         use_tikhonov,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -119,8 +120,9 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
         nonzero_mean_type,
         use_tikhonov,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -150,8 +152,9 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
         num_being_sampled,
         nonzero_mean_type,
         use_tikhonov,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -179,8 +182,9 @@ class TestCategoricalQEI(AcquisitionFunctionTestBase):
         nonzero_mean_type,
         use_tikhonov,
         parallelism_method,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=0,

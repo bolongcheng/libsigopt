@@ -2,41 +2,21 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
+import pytest
 
-from libsigopt.aux.adapter_info_containers import DomainInfo, GPModelInfo, MetricsInfo, PointsContainer
-from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME, TASK_SELECTION_STRATEGY_A_PRIORI
-from libsigopt.compute.domain import ContinuousDomain
+from libsigopt.aux.adapter_info_containers import DomainInfo, GPModelInfo, MetricsInfo
+from libsigopt.aux.constant import TASK_SELECTION_STRATEGY_A_PRIORI
 from libsigopt.compute.misc.constant import NonzeroMeanType
 
-from testaux.utils import form_random_unconstrained_categorical_domain
-
-
-DEFAULT_NOISE_PER_POINT = 1e-10
-TEST_FAILURE_PROB = 0.1
-
-
-# TODO(RTL-96): Clean this up to have a minimum number of points in the domain
-def form_random_hyperparameter_dict(domain, use_tikhonov=False, add_task_length=False, num_metrics=1):
-    list_of_hyperparameter_dict = []
-    for _ in range(num_metrics):
-        alpha = np.random.gamma(1, 0.1)
-        tikhonov = np.random.gamma(1, 0.1) if use_tikhonov else None
-        task_length = 0.19 if add_task_length else None
-        length_scales = []
-        for dc in domain:
-            if dc["var_type"] == CATEGORICAL_EXPERIMENT_PARAMETER_NAME:
-                length_scales.append(np.random.uniform(0.5, 2.0, len(dc["elements"])).tolist())
-            else:
-                length_scales.append([np.random.gamma(1, 0.1) * (dc["elements"][1] - dc["elements"][0])])
-        list_of_hyperparameter_dict.append(
-            {
-                "alpha": alpha,
-                "length_scales": length_scales,
-                "tikhonov": tikhonov,
-                "task_length": task_length,
-            }
-        )
-    return list_of_hyperparameter_dict
+from testaux.utils import (
+    DEFAULT_NOISE_PER_POINT,
+    TEST_FAILURE_PROB,
+    form_points_being_sampled,
+    form_points_sampled,
+    form_points_to_evaluate,
+    form_random_hyperparameter_dict,
+    form_random_unconstrained_categorical_domain,
+)
 
 
 def form_domain_info(domain):
@@ -71,45 +51,7 @@ def form_model_info(
 def form_nonzero_mean_data(dim, mean_type):
     if mean_type == NonzeroMeanType.CUSTOM:
         raise ValueError("This will need some work to make work with tasks")
-        # return {'mean_type': NONZERO_MEAN_CUSTOM_MEAN_TYPE, 'poly_indices': np.random.randint(0, 3, dim)}
     return {"mean_type": mean_type, "poly_indices": None}
-
-
-# NOTE: Some potential issues with snap_cats as this is currently constructed
-def form_points_sampled(
-    domain,
-    num_sampled,
-    noise_per_point,
-    num_metrics,
-    task_options,
-    snap_cats=False,
-    failure_prob=TEST_FAILURE_PROB,
-):
-    points = domain.generate_quasi_random_points_in_domain(num_sampled)
-    if isinstance(domain, ContinuousDomain) and snap_cats:
-        for k, this_closed_interval in enumerate(domain.domain_bounds):
-            if np.all(this_closed_interval == np.array([0, 1])):
-                points[:, k] = np.round(points[:, k])
-    values = np.random.uniform(-0.1, 0.1, (num_sampled, num_metrics))
-    failures = np.random.random(num_sampled) < failure_prob
-
-    return PointsContainer(
-        points=points,
-        values=values,
-        value_vars=np.full_like(values, noise_per_point),
-        failures=failures,
-        task_costs=np.random.choice(task_options, size=failures.shape) if task_options.size else None,
-    )
-
-
-def form_points_being_sampled(domain, num_points_being_sampled, task_options=None):
-    return PointsContainer(
-        points=domain.generate_quasi_random_points_in_domain(num_points_being_sampled),
-        task_costs=np.random.choice(task_options, size=num_points_being_sampled) if task_options.size else None,
-    )
-
-
-form_points_to_evaluate = form_points_being_sampled
 
 
 def form_metrics_info(
@@ -386,3 +328,43 @@ class ZigoptSimulator(object):
         domain = form_random_unconstrained_categorical_domain(self.dim)
         view_input = self.form_random_search_view_input_from_domain(domain)
         return view_input, domain
+
+
+@pytest.fixture
+def zigopt_simulator_factory():
+    def _make_simulator(
+        dim,
+        num_sampled,
+        num_optimized_metrics=1,
+        num_constraint_metrics=0,
+        num_stored_metrics=0,
+        num_to_sample=0,
+        num_being_sampled=0,
+        noise_per_point=DEFAULT_NOISE_PER_POINT,
+        nonzero_mean_type=NonzeroMeanType.CONSTANT,
+        use_tikhonov=False,
+        num_tasks=0,
+        failure_prob=TEST_FAILURE_PROB,
+        metric_objectives=None,
+        optimized_metric_thresholds=None,
+        constraint_metric_thresholds=None,
+    ):
+        return ZigoptSimulator(
+            dim=dim,
+            num_sampled=num_sampled,
+            num_optimized_metrics=num_optimized_metrics,
+            num_constraint_metrics=num_constraint_metrics,
+            num_stored_metrics=num_stored_metrics,
+            num_to_sample=num_to_sample,
+            num_being_sampled=num_being_sampled,
+            noise_per_point=noise_per_point,
+            nonzero_mean_type=nonzero_mean_type,
+            use_tikhonov=use_tikhonov,
+            num_tasks=num_tasks,
+            failure_prob=failure_prob,
+            metric_objectives=metric_objectives,
+            optimized_metric_thresholds=optimized_metric_thresholds,
+            constraint_metric_thresholds=constraint_metric_thresholds,
+        )
+
+    return _make_simulator

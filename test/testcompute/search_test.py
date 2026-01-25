@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 import pytest
-from testviews.zigopt_input_utils import form_random_unconstrained_categorical_domain
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
 from libsigopt.compute.domain import CategoricalDomain
@@ -17,6 +16,7 @@ from libsigopt.compute.search import (
 )
 
 from testaux.numerical_test_case import assert_vector_within_relative_norm
+from testaux.utils import form_random_unconstrained_categorical_domain
 from testcompute.gp_test_utils import form_gaussian_process_and_data
 
 

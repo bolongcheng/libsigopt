@@ -2,7 +2,6 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
-from testviews.zigopt_input_utils import form_points_sampled, form_random_hyperparameter_dict
 
 from libsigopt.compute.covariance import SquareExponential
 from libsigopt.compute.domain import CategoricalDomain, ContinuousDomain
@@ -13,6 +12,8 @@ from libsigopt.compute.probabilistic_failures import (
     ProbabilisticFailuresCDF,
     ProductOfListOfProbabilisticFailures,
 )
+
+from testaux.utils import form_points_sampled, form_random_hyperparameter_dict
 
 
 def fill_random_covariance_hyperparameters(interval, num_hyperparameters, covariance_type):

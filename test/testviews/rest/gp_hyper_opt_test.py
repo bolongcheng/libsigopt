@@ -14,7 +14,6 @@ from libsigopt.views.rest.gp_hyper_opt_multimetric import (
     GpHyperOptMultimetricView,
     form_one_hot_hyperparameter_domain,
 )
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testaux.numerical_test_case import NumericalTestCase
 
@@ -105,8 +104,8 @@ class TestCategoricalTools(NumericalTestCase):
         db_tt = hp_domain_tikhonov_task.domain_bounds[-1]
         assert db_tik[0] == db_tt[0] and db_tik[1] == db_tt[1]
 
-    def test_optimizer_info(self):
-        zs = ZigoptSimulator(
+    def test_optimizer_info(self, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(
             dim=5,
             num_sampled=29,
             num_optimized_metrics=1,
@@ -130,8 +129,9 @@ class TestCategoricalTools(NumericalTestCase):
         num_sampled,
         nonzero_mean_type,
         num_optimized_metrics,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -160,9 +160,10 @@ class TestCategoricalTools(NumericalTestCase):
         num_optimized_metrics,
         num_constraint_metrics,
         num_stored_metrics,
+        zigopt_simulator_factory,
     ):
         num_metrics = num_optimized_metrics + num_constraint_metrics + num_stored_metrics
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=23,
             num_optimized_metrics=num_optimized_metrics,
@@ -201,8 +202,9 @@ class TestCategoricalTools(NumericalTestCase):
         num_sampled,
         nonzero_mean_type,
         num_optimized_metrics,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -233,8 +235,9 @@ class TestCategoricalTools(NumericalTestCase):
         num_sampled,
         nonzero_mean_type,
         num_optimized_metrics,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -269,8 +272,9 @@ class TestCategoricalTools(NumericalTestCase):
         num_optimized_metrics,
         num_constraint_metrics,
         num_stored_metrics,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -314,9 +318,10 @@ class TestCategoricalTools(NumericalTestCase):
         self,
         num_optimized_metrics,
         num_constraint_metrics,
+        zigopt_simulator_factory,
     ):
         num_metrics = num_optimized_metrics + num_constraint_metrics
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=23,
             num_optimized_metrics=num_optimized_metrics,

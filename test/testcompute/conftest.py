@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 import pytest
-from testviews.zigopt_input_utils import form_points_sampled, form_random_hyperparameter_dict
 
 from libsigopt.compute.covariance import SquareExponential
 from libsigopt.compute.domain import CategoricalDomain
@@ -15,6 +14,7 @@ from libsigopt.compute.probabilistic_failures import (
     ProductOfListOfProbabilisticFailures,
 )
 
+from testaux.utils import form_points_sampled, form_random_hyperparameter_dict
 from testcompute.gp_test_utils import (
     form_continous_and_uniform_domain,
     form_deterministic_gaussian_process,

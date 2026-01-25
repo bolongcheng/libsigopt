@@ -5,7 +5,6 @@ import random
 
 import numpy as np
 import pytest
-from testviews.zigopt_input_utils import form_points_sampled, form_random_unconstrained_categorical_domain
 
 from libsigopt.compute.covariance import C0RadialMatern, C4RadialMatern
 from libsigopt.compute.misc.multimetric import (
@@ -19,6 +18,8 @@ from libsigopt.compute.sigopt_parzen_estimator import (
     SigOptParzenEstimator,
     SPEInsufficientDataError,
 )
+
+from testaux.utils import form_points_sampled, form_random_unconstrained_categorical_domain
 
 
 # NumericalTestCase import removed as it's no longer needed for this file

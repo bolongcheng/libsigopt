@@ -6,11 +6,12 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from testviews.zigopt_input_utils import form_points_sampled
 
 from libsigopt.compute.domain import CategoricalDomain
 from libsigopt.compute.misc.constant import MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
 from libsigopt.compute.misc.multimetric import *
+
+from testaux.utils import form_points_sampled
 
 
 MIXED_DOMAIN = CategoricalDomain(
