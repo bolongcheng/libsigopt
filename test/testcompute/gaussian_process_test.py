@@ -1,7 +1,6 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import copy
 
 import numpy as np
 import pytest
@@ -84,7 +83,7 @@ def test_posterior_sampling(gaussian_process_list, idx):
 @pytest.mark.parametrize("idx", range(4))
 def test_constant_liar_update(one_hot_domain_list, gaussian_process_list, idx):
     domain = one_hot_domain_list[idx]
-    gp = copy.deepcopy(gaussian_process_list[idx])
+    gp = gaussian_process_list[idx]
     num_sampled = gp.num_sampled
     x_append = domain.generate_quasi_random_points_in_domain(7)
     gp.append_lie_data(x_append)

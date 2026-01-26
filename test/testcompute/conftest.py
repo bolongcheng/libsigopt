@@ -46,7 +46,7 @@ def one_hot_domain(continuous_domain):
     return continuous_domain.one_hot_domain
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def historical_data(one_hot_domain):
     dim = one_hot_domain.dim
     num_sampled = 14
@@ -58,7 +58,7 @@ def historical_data(one_hot_domain):
     return data
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def gaussian_process(historical_data, one_hot_domain):
     hparam_dict = form_random_hyperparameter_dict(one_hot_domain)[0]
     length_scales = np.concatenate(hparam_dict["length_scales"]).tolist()
@@ -78,7 +78,7 @@ def one_hot_domain_list(domain_list):
     return [domain.one_hot_domain for domain in domain_list]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def gaussian_process_list(domain_list):
     num_sampled_list = [4, 8, 15, 16]
     return [
@@ -87,7 +87,7 @@ def gaussian_process_list(domain_list):
     ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def probabilistic_failures_list(gaussian_process_list):
     pf_list = []
     for gp in gaussian_process_list:
@@ -99,7 +99,7 @@ def probabilistic_failures_list(gaussian_process_list):
     return pf_list
 
 
-@pytest.fixture(scope="session", params=[True, False])
+@pytest.fixture(params=[True, False])
 def list_probabilistic_failures_list(request, domain_list):
     num_gps_list = [1, 2, 4, 8]
     num_sampled_list = [8, 14, 26, 48]
@@ -109,7 +109,7 @@ def list_probabilistic_failures_list(request, domain_list):
     ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def product_of_list_probabilistic_failures_list(list_probabilistic_failures_list):
     return [ProductOfListOfProbabilisticFailures(list_of_pfs) for list_of_pfs in list_probabilistic_failures_list]
 
@@ -125,7 +125,7 @@ def any_one_hot_domain_list(any_domain_list):
     return [domain.one_hot_domain for domain in any_domain_list]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def any_gaussian_process_list(any_domain_list):
     return [
         form_gaussian_process_and_data(
@@ -136,7 +136,7 @@ def any_gaussian_process_list(any_domain_list):
     ]
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def gaussian_process_and_domain():
     dim = np.random.randint(1, 9)
     domain = form_continous_and_uniform_domain(dim)
@@ -144,6 +144,6 @@ def gaussian_process_and_domain():
     return gaussian_process, domain
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture
 def deterministic_gaussian_process():
     return form_deterministic_gaussian_process(dim=3, num_sampled=10)
