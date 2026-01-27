@@ -6,7 +6,6 @@ import pytest
 
 from libsigopt.compute.domain import AnyPrior, CategoricalDomain, DomainComponent, DomainConstraint
 from libsigopt.views.rest.random_search_next_points import RandomSearchNextPoints
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 
@@ -42,8 +41,8 @@ class TestRandomSearchNextPoints(object):
     @pytest.mark.parametrize("dim", [1, 27, 77])
     @pytest.mark.parametrize("num_to_sample", [1, 50])
     @pytest.mark.parametrize("num_tasks", [0, 3])
-    def test_basic(self, dim, num_to_sample, num_tasks):
-        zs = ZigoptSimulator(
+    def test_basic(self, dim, num_to_sample, num_tasks, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=0,
             num_to_sample=num_to_sample,
@@ -51,7 +50,7 @@ class TestRandomSearchNextPoints(object):
         )
         self.assert_call_successful(zs)
 
-    def test_constraint_samples(self):
+    def test_constraint_samples(self, zigopt_simulator_factory):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
             {"var_type": "int", "elements": (0, 5)},
@@ -72,14 +71,14 @@ class TestRandomSearchNextPoints(object):
             },
         ]
         domain = CategoricalDomain(domain_components, constraint_list)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=0,
             num_to_sample=10,
         )
         self.assert_call_successful(zs, domain=domain)
 
-    def test_discretized_samples(self):
+    def test_discretized_samples(self, zigopt_simulator_factory):
         domain_components: list[DomainComponent] = [
             {"var_type": "quantized", "elements": [0, 0.3, 1.3]},
             {"var_type": "categorical", "elements": [1, 3, 5]},
@@ -87,14 +86,14 @@ class TestRandomSearchNextPoints(object):
             {"var_type": "int", "elements": (1, 200)},
         ]
         domain = CategoricalDomain(domain_components)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=0,
             num_to_sample=10,
         )
         self.assert_call_successful(zs, domain=domain)
 
-    def test_prior_samples(self):
+    def test_prior_samples(self, zigopt_simulator_factory):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (-5, -2)},
             {"var_type": "quantized", "elements": [-2.3, -1.2, 3.4, 4.5]},
@@ -107,7 +106,7 @@ class TestRandomSearchNextPoints(object):
         ]
 
         domain = CategoricalDomain(domain_components, priors=priors)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=0,
             num_to_sample=10,
@@ -115,7 +114,7 @@ class TestRandomSearchNextPoints(object):
         self.assert_call_successful(zs, domain=domain)
 
     @pytest.mark.flaky(reruns=1)
-    def test_prior_samples_distribution(self):
+    def test_prior_samples_distribution(self, zigopt_simulator_factory):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (-5, -2)},
             {"var_type": "double", "elements": (10, 15)},
@@ -126,7 +125,7 @@ class TestRandomSearchNextPoints(object):
         ]
 
         domain = CategoricalDomain(domain_components, priors=priors)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=0,
             num_to_sample=300,

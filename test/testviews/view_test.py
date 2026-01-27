@@ -17,9 +17,9 @@ from libsigopt.views.view import (
     form_one_hot_points_with_tasks,
     identify_scaled_values_exceeding_scaled_upper_thresholds,
 )
-from testviews.zigopt_input_utils import ZigoptSimulator, form_points_sampled
 
 from testaux.numerical_test_case import NumericalTestCase
+from testaux.utils import form_points_sampled
 
 
 class TestView(NumericalTestCase):
@@ -152,7 +152,6 @@ class TestView(NumericalTestCase):
         with pytest.raises(KeyError):
             v.one_hot_points_to_evaluate_points
 
-
     @pytest.mark.parametrize("dim", [3, 7])
     @pytest.mark.parametrize("num_sampled", [19, 41])
     @pytest.mark.parametrize("num_being_sampled", [5])
@@ -182,8 +181,9 @@ class TestView(NumericalTestCase):
         use_tikhonov,
         num_tasks,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -212,8 +212,9 @@ class TestView(NumericalTestCase):
         num_sampled,
         num_optimized_metrics,
         num_stored_metrics,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(dim, num_sampled, num_optimized_metrics, num_stored_metrics, failure_prob=0)
+        zs = zigopt_simulator_factory(dim, num_sampled, num_optimized_metrics, num_stored_metrics, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].optimized_metrics_index = [0, 1]
         values = view_input["points_sampled"].values
@@ -272,8 +273,9 @@ class TestView(NumericalTestCase):
         num_tasks,
         constraint_metric_thresholds,
         parallelism_method,
+        zigopt_simulator_factory,
     ):
-        zigopt_simulator = ZigoptSimulator(
+        zigopt_simulator = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -325,8 +327,9 @@ class TestView(NumericalTestCase):
         num_tasks,
         constraint_metric_thresholds,
         parallelism_method,
+        zigopt_simulator_factory,
     ):
-        zigopt_simulator = ZigoptSimulator(
+        zigopt_simulator = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,

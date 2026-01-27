@@ -26,9 +26,9 @@ from libsigopt.views.rest.gp_next_points_categorical import (
     generate_neighboring_integer_points,
     get_discrete_conversion_option,
 )
-from testviews.zigopt_input_utils import ZigoptSimulator, form_random_unconstrained_categorical_domain
 
 from testaux.numerical_test_case import NumericalTestCase
+from testaux.utils import form_random_unconstrained_categorical_domain
 from testcompute.domain_test import domains_approximately_equal
 
 
@@ -92,8 +92,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         num_being_sampled,
         nonzero_mean_type,
         use_tikhonov,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -121,8 +122,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         num_being_sampled,
         nonzero_mean_type,
         use_tikhonov,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -135,9 +137,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         self.assert_call_successful(zs, PARALLEL_CONSTANT_LIAR)
 
     # TODO(RTL-94): Increase num_to_sample after I think about what to do about QEI int snapping
-    def test_qei_base(self):
+    def test_qei_base(self, zigopt_simulator_factory):
         domain = form_random_unconstrained_categorical_domain(4, categoricals_allowed=False)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=40,
             num_optimized_metrics=1,
@@ -165,6 +167,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
         nonzero_mean_type,
         use_tikhonov,
         num_tasks,
+        zigopt_simulator_factory,
     ):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -186,7 +189,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             },
         ]
         domain = CategoricalDomain(domain_components, constraint_list)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -214,8 +217,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         nonzero_mean_type,
         use_tikhonov,
         optimized_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=2,
@@ -249,8 +253,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         num_constraint_metrics,
         optimized_metric_thresholds,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=35,
             num_optimized_metrics=num_optimized_metrics,
@@ -275,8 +280,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         self,
         num_constraint_metrics,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=35,
             num_optimized_metrics=1,
@@ -301,8 +307,9 @@ class TestCategoricalNextPoints(NumericalTestCase):
         num_constraint_metrics,
         constraint_metric_thresholds,
         parallelism_method,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=35,
             num_optimized_metrics=0,

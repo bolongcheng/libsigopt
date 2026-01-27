@@ -13,7 +13,6 @@ from libsigopt.views.rest.spe_next_points import (
     SPEPhase,
     get_experiment_phase,
 )
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 
@@ -71,8 +70,9 @@ class TestSPENextPointsViews(object):
         num_to_sample,
         num_optimized_metrics,
         num_being_sampled,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -94,8 +94,9 @@ class TestSPENextPointsViews(object):
         num_to_sample,
         num_optimized_metrics,
         num_being_sampled,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -115,6 +116,7 @@ class TestSPENextPointsViews(object):
         num_to_sample,
         num_optimized_metrics,
         num_being_sampled,
+        zigopt_simulator_factory,
     ):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -136,7 +138,7 @@ class TestSPENextPointsViews(object):
             },
         ]
         domain = CategoricalDomain(domain_components, constraint_list)
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=domain.dim,
             num_sampled=num_sampled,
             num_optimized_metrics=num_optimized_metrics,
@@ -146,8 +148,8 @@ class TestSPENextPointsViews(object):
         )
         self.assert_call_successful(zs, domain=domain)
 
-    def test_identify_spe_failures(self):
-        zs = ZigoptSimulator(3, 22, 1, failure_prob=0)
+    def test_identify_spe_failures(self, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(3, 22, 1, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["points_sampled"].failures[0] = True
         view = SPENextPoints(view_input)
@@ -155,7 +157,7 @@ class TestSPENextPointsViews(object):
         assert augmented_points_sampled_failures[0]
         assert not np.any(augmented_points_sampled_failures[1:])
 
-        zs = ZigoptSimulator(3, 22, 2, failure_prob=0)
+        zs = zigopt_simulator_factory(3, 22, 2, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].user_specified_thresholds = (
             None,
@@ -169,8 +171,8 @@ class TestSPENextPointsViews(object):
 
     @pytest.mark.parametrize("dim", [3, 7, 56])
     @pytest.mark.parametrize("num_sampled", [106, 507, 960])
-    def test_identify_spe_failures_with_bounds_violations(self, dim, num_sampled):
-        zs = ZigoptSimulator(dim, num_sampled, 2, failure_prob=0)
+    def test_identify_spe_failures_with_bounds_violations(self, dim, num_sampled, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(dim, num_sampled, 2, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].user_specified_thresholds = (
             None,
@@ -207,7 +209,7 @@ class TestSPENextPointsViews(object):
         assert np.array_equal(augmented_points_sampled_failures, should_exclude)
 
         # Confirm this works with a small number of failures present in the data naturally
-        zs = ZigoptSimulator(dim, num_sampled, 2, failure_prob=0.2)
+        zs = zigopt_simulator_factory(dim, num_sampled, 2, failure_prob=0.2)
         view_input, _ = zs.form_spe_next_points_inputs()
         values = view_input["points_sampled"].values
         metric_1_lower_bound = metric_0_lower_bound = 0
@@ -226,8 +228,8 @@ class TestSPENextPointsViews(object):
         )
 
     @pytest.mark.parametrize("dim", [3, 56])
-    def test_identify_spe_failures_with_metric_constraints(self, dim):
-        zs = ZigoptSimulator(dim, 603, 2, failure_prob=0)
+    def test_identify_spe_failures_with_metric_constraints(self, dim, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(dim, 603, 2, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
 
         # Confirm this works with only one bound attached
@@ -255,10 +257,10 @@ class TestSPENextPointsViews(object):
         assert np.all(augmented_points_sampled_failures[:270])
         assert np.array_equal(augmented_points_sampled_failures[270:], should_exclude[270:])
 
-    def test_identify_spe_failures_with_bounds_violations_edge_cases(self):
+    def test_identify_spe_failures_with_bounds_violations_edge_cases(self, zigopt_simulator_factory):
         # Consider when none of the points satisfy the stated bounds (ignore the bounds, only deal with normal failures)
         n = 15
-        zs = ZigoptSimulator(5, n, 2, failure_prob=0)
+        zs = zigopt_simulator_factory(5, n, 2, failure_prob=0)
         view_input, _ = zs.form_spe_next_points_inputs()
         metric_1_lower_bound = metric_0_lower_bound = 0
         view_input["metrics_info"].user_specified_thresholds = [
@@ -305,8 +307,9 @@ class TestSPENextPointsViews(object):
         num_to_sample,
         num_being_sampled,
         optimized_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=2,
@@ -338,8 +341,9 @@ class TestSPENextPointsViews(object):
         num_stored_metrics,
         optimized_metric_thresholds,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=433,
             num_optimized_metrics=2,
@@ -363,8 +367,9 @@ class TestSPENextPointsViews(object):
         num_sampled,
         num_to_sample,
         num_being_sampled,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=0,
@@ -377,7 +382,7 @@ class TestSPENextPointsViews(object):
 
     @pytest.mark.parametrize("dim", [4])
     @pytest.mark.parametrize("observation_count, failure_count, phase", PHASE_LIST)
-    def test_spe_phases(self, dim, observation_count, failure_count, phase):
+    def test_spe_phases(self, dim, observation_count, failure_count, phase, zigopt_simulator_factory):
         observation_budget = 100
 
         # Check computed phase
@@ -391,7 +396,7 @@ class TestSPENextPointsViews(object):
         # Create view_input with desired observation_budget, observation_count, and failure_count
         failures = np.array([False] * observation_count)
         failures[:failure_count] = True
-        zs = ZigoptSimulator(dim=dim, num_sampled=observation_count)
+        zs = zigopt_simulator_factory(dim=dim, num_sampled=observation_count)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].observation_budget = observation_budget
         view_input["points_sampled"].failures = failures
@@ -402,7 +407,9 @@ class TestSPENextPointsViews(object):
 
     @pytest.mark.parametrize("dim", [2])
     @pytest.mark.parametrize("observation_count, failure_count, phase", PHASE_LIST)
-    def test_spe_phases_no_observation_budget(self, dim, observation_count, failure_count, phase):
+    def test_spe_phases_no_observation_budget(
+        self, dim, observation_count, failure_count, phase, zigopt_simulator_factory
+    ):
         # Check computed phase
         computed_phase, _ = get_experiment_phase(
             budget=dim * SPE_PHANTOM_BUDGET_FACTOR,
@@ -414,7 +421,7 @@ class TestSPENextPointsViews(object):
         # Create view_input with desired observation_budget, observation_count, and failure_count
         failures = np.array([False] * observation_count)
         failures[:failure_count] = True
-        zs = ZigoptSimulator(dim=dim, num_sampled=observation_count)
+        zs = zigopt_simulator_factory(dim=dim, num_sampled=observation_count)
         view_input, _ = zs.form_spe_next_points_inputs()
         view_input["metrics_info"].observation_budget = None
         view_input["points_sampled"].failures = failures
@@ -431,8 +438,9 @@ class TestSPENextPointsViews(object):
         num_sampled,
         num_to_sample,
         num_being_sampled,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=num_sampled,
             num_to_sample=num_to_sample,
@@ -450,9 +458,10 @@ class TestSPENextPointsViews(object):
     @pytest.mark.flaky(reruns=1)
     def test_spe_with_priors_initialization_phase(
         self,
+        zigopt_simulator_factory,
     ):  # Check that priors are used in spe_next_points initialization
         n_samples = 500
-        zs = ZigoptSimulator(dim=2, num_sampled=10, num_to_sample=n_samples)
+        zs = zigopt_simulator_factory(dim=2, num_sampled=10, num_to_sample=n_samples)
         peaky_normal_prior = NormalPrior(
             name="normal",
             params={"mean": -100, "scale": 0.001},

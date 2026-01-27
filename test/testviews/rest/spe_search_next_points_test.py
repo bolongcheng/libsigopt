@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from libsigopt.views.rest.spe_search_next_points import SPESearchNextPoints
-from testviews.zigopt_input_utils import ZigoptSimulator
 
 
 class TestSearchNextPoints(object):
@@ -49,8 +48,9 @@ class TestSearchNextPoints(object):
         num_to_sample,
         num_being_sampled,
         constraint_metric_thresholds,
+        zigopt_simulator_factory,
     ):
-        zs = ZigoptSimulator(
+        zs = zigopt_simulator_factory(
             dim=dim,
             num_sampled=num_sampled,
             num_optimized_metrics=0,
@@ -64,8 +64,10 @@ class TestSearchNextPoints(object):
 
     @pytest.mark.parametrize("num_optimized_metrics", [1, 2, 5])
     @pytest.mark.parametrize("num_constraint_metrics", [1, 2])
-    def test_invalid_num_optimized_metric(self, num_optimized_metrics, num_constraint_metrics):
-        zs = ZigoptSimulator(
+    def test_invalid_num_optimized_metric(
+        self, num_optimized_metrics, num_constraint_metrics, zigopt_simulator_factory
+    ):
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=15,
             num_optimized_metrics=num_optimized_metrics,
@@ -81,8 +83,8 @@ class TestSearchNextPoints(object):
             SPESearchNextPoints(view_input).call()
 
     @pytest.mark.parametrize("num_constraint_metrics", [0])
-    def test_invalid_num_constraint_metrics(self, num_constraint_metrics):
-        zs = ZigoptSimulator(
+    def test_invalid_num_constraint_metrics(self, num_constraint_metrics, zigopt_simulator_factory):
+        zs = zigopt_simulator_factory(
             dim=2,
             num_sampled=15,
             num_optimized_metrics=1,
