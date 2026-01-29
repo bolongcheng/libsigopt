@@ -11,13 +11,13 @@ requires-python = ">=3.13"
 license = { text = "Apache-2.0" }
 authors = [{ name = "SigOpt", email = "support@sigopt.com" }]
 classifiers = ["Development Status :: 5 - Production/Stable"]
-dependencies = ["jsonschema>=3.0.1,<4", "numpy>=2.1", "scipy>=1.14"]
+dependencies = ["numpy>=2.1", "scipy>=1.14"]
 
 [project.urls]
 Homepage = "https://sigopt.org"
 
 [dependency-groups]
-dev = ["pre-commit==3.2.1", "pytest", "pytest-rerunfailures", "ruff"]
+dev = ["pre-commit==3.2.1", "pytest", "pytest-rerunfailures", "ruff", "ty"]
 
 [tool.setuptools.packages.find]
 include = ["libsigopt*"]
@@ -57,3 +57,5 @@ section-order = [
 
 [tool.ruff.lint.isort.sections]
 tests = ["testaux", "testcompute"]
+[tool.ty.src]
+include = ["libsigopt/aux"]

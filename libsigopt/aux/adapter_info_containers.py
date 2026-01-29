@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
@@ -17,10 +18,10 @@ class PointsContainer:
 
 @dataclass(slots=True)
 class DomainInfo:
-    constraint_list: list
-    domain_components: list | None = None
+    constraint_list: list[Any]
+    domain_components: list[Any] | None = None
     force_hitandrun_sampling: bool = False
-    priors: list | None = None
+    priors: list[Any] | None = None
 
     @property
     def dim(self) -> int:
@@ -33,21 +34,21 @@ class DomainInfo:
 class MetricsInfo:
     requires_pareto_frontier_optimization: bool
     observation_budget: int
-    user_specified_thresholds: list
-    objectives: list
-    optimized_metrics_index: list
-    constraint_metrics_index: list
+    user_specified_thresholds: list[Any]
+    objectives: list[Any]
+    optimized_metrics_index: list[int]
+    constraint_metrics_index: list[int]
 
     @property
-    def has_optimization_metrics(self):
+    def has_optimization_metrics(self) -> bool:
         return len(self.optimized_metrics_index) > 0
 
     @property
-    def has_constraint_metrics(self):
+    def has_constraint_metrics(self) -> bool:
         return len(self.constraint_metrics_index) > 0
 
     @property
-    def has_optimized_metric_thresholds(self):
+    def has_optimized_metric_thresholds(self) -> bool:
         if len(self.optimized_metrics_index) == 0:
             return False
         return any(self.user_specified_thresholds[i] is not None for i in self.optimized_metrics_index)
@@ -55,7 +56,7 @@ class MetricsInfo:
 
 @dataclass(slots=True)
 class GPModelInfo:
-    hyperparameters: list[dict]
+    hyperparameters: list[dict[str, Any]]
     max_simultaneous_af_points: int
-    nonzero_mean_info: dict
+    nonzero_mean_info: dict[str, Any]
     task_selection_strategy: str | None = None

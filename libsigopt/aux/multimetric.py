@@ -1,6 +1,8 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any
+
 import numpy as np
 
 
@@ -19,7 +21,10 @@ For minimized metrics, the `values` must be negated before using this method.
 """
 
 
-def find_pareto_frontier_observations_for_maximization(values, observations):
+def find_pareto_frontier_observations_for_maximization(
+    values: np.ndarray | list[list[float]],
+    observations: np.ndarray | list[Any],
+) -> tuple[list[Any], list[Any]]:
     values = np.array(values)
     observations = np.array(observations)
     assert len(values) == len(observations) and len(values.shape) == 2 and len(observations.shape) == 1
