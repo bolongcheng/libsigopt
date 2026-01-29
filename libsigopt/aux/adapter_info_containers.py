@@ -5,23 +5,24 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 @dataclass(slots=True)
 class PointsContainer:
-    points: np.ndarray
-    values: np.ndarray | None = None
-    value_vars: np.ndarray | None = None
-    failures: np.ndarray | None = None
-    task_costs: np.ndarray | None = None
+    points: ArrayLike
+    values: ArrayLike | None = None
+    value_vars: ArrayLike | None = None
+    failures: ArrayLike | None = None
+    task_costs: ArrayLike | None = None
 
 
 @dataclass(slots=True)
 class DomainInfo:
-    constraint_list: list[Any]
-    domain_components: list[Any] | None = None
+    constraint_list: list[dict[str, Any]]
+    domain_components: list[dict[str, Any]] | None = None
     force_hitandrun_sampling: bool = False
-    priors: list[Any] | None = None
+    priors: list[dict[str, Any]] | None = None
 
     @property
     def dim(self) -> int:
@@ -35,7 +36,7 @@ class MetricsInfo:
     requires_pareto_frontier_optimization: bool
     observation_budget: int
     user_specified_thresholds: list[Any]
-    objectives: list[Any]
+    objectives: list[str]
     optimized_metrics_index: list[int]
     constraint_metrics_index: list[int]
 
