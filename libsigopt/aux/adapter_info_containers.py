@@ -13,7 +13,7 @@ class PointsContainer:
     points: NDArray[np.number]
     values: NDArray[np.number] | None = None
     value_vars: NDArray[np.number] | None = None
-    failures: NDArray[np.number] | None = None
+    failures: NDArray[np.bool_] | None = None
     task_costs: NDArray[np.number] | None = None
 
 
