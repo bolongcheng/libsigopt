@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-from typing import Any, Callable, Concatenate, ParamSpec
+from typing import Any, Callable, Concatenate
 
 import numpy as np
 import scipy.stats.qmc as qmc
@@ -11,10 +11,8 @@ from libsigopt.aux.errors import SigoptComputeError
 from libsigopt.aux.geometry_utils import find_interior_point
 
 
-DEFAULT_REJECTION_SAMPLING_TRIALS: int = 1000000
-REJECTION_SAMPLING_BLOCK_SIZE: int = 10000
-
-P = ParamSpec("P")
+DEFAULT_REJECTION_SAMPLING_TRIALS: int = 1_000_000
+REJECTION_SAMPLING_BLOCK_SIZE: int = 10_000
 
 
 def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
@@ -23,7 +21,7 @@ def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
     )
 
 
-def unit_cube_sampler_transform_decorator(
+def unit_cube_sampler_transform_decorator[**P](
     unit_cube_generator: Callable[Concatenate[int, int, P], NDArray[np.number]],
 ) -> Callable[Concatenate[int, NDArray[np.number], P], NDArray[np.number]]:
     def wrapper(
@@ -45,7 +43,7 @@ def unit_cube_sampler_transform_decorator(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_uniform_random_points(
+def generate_uniform_random_points[**P](
     num_points: int,
     dimension: int,
     *args: P.args,
@@ -178,7 +176,7 @@ def generate_hitandrun_random_points(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_latin_hypercube_points(
+def generate_latin_hypercube_points[**P](
     num_points: int,
     dimension: int,
     *args: P.args,
@@ -192,7 +190,7 @@ def generate_latin_hypercube_points(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_halton_points(
+def generate_halton_points[**P](
     num_points: int,
     dimension: int,
     skip: int,
@@ -205,7 +203,7 @@ def generate_halton_points(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_sobol_points(
+def generate_sobol_points[**P](
     num_points: int,
     dimension: int,
     skip: int,

@@ -28,7 +28,7 @@ from libsigopt.views.rest.gp_next_points_categorical import (
 )
 
 from testaux.numerical_test_case import assert_vector_within_relative
-from testaux.utils import form_random_unconstrained_categorical_domainqq
+from testaux.utils import form_random_unconstrained_categorical_domain
 from testcompute.domain_test import domains_approximately_equal
 
 
