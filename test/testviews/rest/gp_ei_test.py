@@ -7,10 +7,8 @@ from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR, PARALLEL_QEI
 from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.views.rest.gp_ei_categorical import GpEiCategoricalView
 
-from testaux.numerical_test_case import NumericalTestCase
 
-
-class AcquisitionFunctionTestBase(NumericalTestCase):
+class AcquisitionFunctionTestBase:
     def assert_call_successful(self, zigopt_simulator, parallelism_method):
         view_input = zigopt_simulator.form_gp_ei_categorical_inputs(parallelism_method)
         response = GpEiCategoricalView(view_input).call()

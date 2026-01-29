@@ -18,11 +18,10 @@ from libsigopt.views.view import (
     identify_scaled_values_exceeding_scaled_upper_thresholds,
 )
 
-from testaux.numerical_test_case import NumericalTestCase
 from testaux.utils import form_points_sampled
 
 
-class TestView(NumericalTestCase):
+class TestView:
     mixed_domain = CategoricalDomain(
         [
             {"var_type": "categorical", "elements": [3, -1, 5]},

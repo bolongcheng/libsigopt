@@ -27,12 +27,12 @@ from libsigopt.views.rest.gp_next_points_categorical import (
     get_discrete_conversion_option,
 )
 
-from testaux.numerical_test_case import NumericalTestCase
-from testaux.utils import form_random_unconstrained_categorical_domain
+from testaux.numerical_test_case import assert_vector_within_relative
+from testaux.utils import form_random_unconstrained_categorical_domainqq
 from testcompute.domain_test import domains_approximately_equal
 
 
-class TestCategoricalNextPoints(NumericalTestCase):
+class TestCategoricalNextPoints:
     mixed_domain = CategoricalDomain(
         [
             {"var_type": "categorical", "elements": [3, -1, 5]},
@@ -324,7 +324,7 @@ class TestCategoricalNextPoints(NumericalTestCase):
             self.assert_call_successful(zs, parallelism_method)
 
 
-class TestDiscreteNextPointsConversion(NumericalTestCase):
+class TestDiscreteNextPointsConversion:
     mixed_domain = CategoricalDomain(
         [
             {"var_type": "categorical", "elements": (3, -1, 5)},
@@ -352,7 +352,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
                 [0.4, 0.5, 0.6, 3.0, -0.5, 18.0, -5.2, 0.1, 0.9, 0.5, 0.3, 2.3],
             ]
         )
-        self.assert_vector_within_relative(neighboring_integer_points, known_neighbors, 0)
+        assert_vector_within_relative(neighboring_integer_points, known_neighbors, 0)
         assert all(self.mixed_domain.one_hot_domain.check_point_acceptable(p) for p in neighboring_integer_points)
 
     def test_neighboring_categories_recognition(self):
@@ -378,7 +378,7 @@ class TestDiscreteNextPointsConversion(NumericalTestCase):
                 [0.0, 0.0, 1.0, 2.3, -0.5, 17.2, -5.2, 0.0, 0.0, 0.0, 1.0, 0.5],
             ]
         )
-        self.assert_vector_within_relative(neighboring_categorical_points, known_neighbors, 0)
+        assert_vector_within_relative(neighboring_categorical_points, known_neighbors, 0)
         assert all(self.mixed_domain.one_hot_domain.check_point_acceptable(p) for p in neighboring_categorical_points)
 
     def test_discrete_conversion_option(self):
