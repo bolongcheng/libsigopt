@@ -5,16 +5,16 @@ from dataclasses import dataclass
 from typing import Any
 
 import numpy as np
-from numpy.typing import ArrayLike
+from numpy.typing import NDArray
 
 
 @dataclass(slots=True)
 class PointsContainer:
-    points: ArrayLike
-    values: ArrayLike | None = None
-    value_vars: ArrayLike | None = None
-    failures: ArrayLike | None = None
-    task_costs: ArrayLike | None = None
+    points: NDArray[np.number]
+    values: NDArray[np.number] | None = None
+    value_vars: NDArray[np.number] | None = None
+    failures: NDArray[np.number] | None = None
+    task_costs: NDArray[np.number] | None = None
 
 
 @dataclass(slots=True)

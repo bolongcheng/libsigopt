@@ -1,10 +1,11 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 
 import numpy as np
 import scipy.stats.qmc as qmc
+from numpy.typing import NDArray
 
 from libsigopt.aux.errors import SigoptComputeError
 from libsigopt.aux.geometry_utils import find_interior_point
@@ -14,16 +15,21 @@ DEFAULT_REJECTION_SAMPLING_TRIALS: int = 1000000
 REJECTION_SAMPLING_BLOCK_SIZE: int = 10000
 
 
-def _verify_bounds(domain_bounds: np.ndarray) -> bool:
+def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
     return bool(
         len(domain_bounds.shape) == 2 and domain_bounds.shape[1] == 2 and np.all(np.diff(domain_bounds, axis=1) >= 0)
     )
 
 
 def unit_cube_sampler_transform_decorator(
-    unit_cube_generator: Callable[[int, int, int, Optional[int]], np.ndarray],
-) -> Callable[[int, np.ndarray, int, Optional[int]], np.ndarray]:
-    def wrapper(num_points: int, domain_bounds: np.ndarray, skip: int = 0, seed: Optional[int] = None) -> np.ndarray:
+    unit_cube_generator: Callable[[int, int, int, int | None], NDArray[np.number]],
+) -> Callable[[int, NDArray[np.number], int, int | None], NDArray[np.number]]:
+    def wrapper(
+        num_points: int,
+        domain_bounds: NDArray[np.number],
+        skip: int = 0,
+        seed: int | None = None,
+    ) -> NDArray[np.number]:
         assert _verify_bounds(domain_bounds)
         dimension = len(domain_bounds)
         if num_points == 0:
@@ -37,17 +43,22 @@ def unit_cube_sampler_transform_decorator(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_uniform_random_points(num_points: int, dimension: int, skip: int, seed: Optional[int]) -> np.ndarray:
+def generate_uniform_random_points(
+    num_points: int,
+    dimension: int,
+    skip: int,
+    seed: int | None,
+) -> NDArray[np.number]:
     return np.random.random((num_points, dimension))
 
 
 def generate_uniform_random_points_rejection_sampling(
     num_points: int,
-    domain_bounds: np.ndarray,
-    A: np.ndarray,
-    b: np.ndarray,
-    rejection_count: Optional[int] = None,
-) -> tuple[np.ndarray, bool]:
+    domain_bounds: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+    rejection_count: int | None = None,
+) -> tuple[NDArray[np.number], bool]:
     """Compute a set of uniform random points inside some linear constrained domain. Returns a set of feasible points and
     a bool, which is true if rejection sampling succeeded and false if it failed to find the sufficient points"""
     assert _verify_bounds(domain_bounds)
@@ -75,11 +86,11 @@ def generate_uniform_random_points_rejection_sampling(
 
 def generate_uniform_random_points_rejection_sampling_with_hitandrun_padding(
     num_points: int,
-    domain_bounds: np.ndarray,
-    A: np.ndarray,
-    b: np.ndarray,
-    x0: Optional[np.ndarray] = None,
-) -> tuple[np.ndarray, bool]:
+    domain_bounds: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+    x0: NDArray[np.number] | None = None,
+) -> tuple[NDArray[np.number], bool]:
     points, success = generate_uniform_random_points_rejection_sampling(num_points, domain_bounds, A, b)
     if not success and num_points > 0:  # fill in rest with hitandrun if rejection fails
         if x0 is None:
@@ -96,7 +107,12 @@ def generate_uniform_random_points_rejection_sampling_with_hitandrun_padding(
     return points, success
 
 
-def generate_hitandrun_random_points(num_points: int, x0: np.ndarray, A: np.ndarray, b: np.ndarray) -> np.ndarray:
+def generate_hitandrun_random_points(
+    num_points: int,
+    x0: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+) -> NDArray[np.number]:
     """Compute a set of random points inside a polytope defined as Ax <= b.
 
       # Artificial Centering Hit and run
@@ -108,7 +124,7 @@ def generate_hitandrun_random_points(num_points: int, x0: np.ndarray, A: np.ndar
     :type num_points: int > 0
     """
 
-    def _gen_random_directions(dim: int, num_points: int) -> np.ndarray:
+    def _gen_random_directions(dim: int, num_points: int) -> NDArray[np.number]:
         z = np.random.randn(num_points, dim)
         return z / np.linalg.norm(z, axis=1)[:, None]
 
@@ -160,7 +176,7 @@ def generate_hitandrun_random_points(num_points: int, x0: np.ndarray, A: np.ndar
 
 
 @unit_cube_sampler_transform_decorator
-def generate_latin_hypercube_points(num_points: int, dimension: int, skip: int, seed: Optional[int]) -> np.ndarray:
+def generate_latin_hypercube_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
     points = np.linspace(0, 1, num_points, endpoint=False)
     points = points[:, None] + np.random.uniform(0.0, 1 / num_points, size=(num_points, dimension))
     for i in range(dimension):
@@ -169,7 +185,7 @@ def generate_latin_hypercube_points(num_points: int, dimension: int, skip: int, 
 
 
 @unit_cube_sampler_transform_decorator
-def generate_halton_points(num_points: int, dimension: int, skip: int, seed: Optional[int]) -> np.ndarray:
+def generate_halton_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
     halton = qmc.Halton(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         halton.fast_forward(skip)
@@ -177,14 +193,17 @@ def generate_halton_points(num_points: int, dimension: int, skip: int, seed: Opt
 
 
 @unit_cube_sampler_transform_decorator
-def generate_sobol_points(num_points: int, dimension: int, skip: int, seed: Optional[int]) -> np.ndarray:
+def generate_sobol_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
     sobol = qmc.Sobol(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         sobol.fast_forward(skip)
     return sobol.random(n=num_points)
 
 
-def generate_grid_points(points_per_dimension: int | list[int] | np.ndarray, domain_bounds: np.ndarray) -> np.ndarray:
+def generate_grid_points(
+    points_per_dimension: int | list[int] | NDArray[np.number],
+    domain_bounds: NDArray[np.number],
+) -> NDArray[np.number]:
     assert _verify_bounds(domain_bounds)
     points_per_dimension = np.asarray(points_per_dimension)
     if points_per_dimension.size == 0 or not points_per_dimension.all():

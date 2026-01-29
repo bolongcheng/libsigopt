@@ -4,6 +4,7 @@
 from typing import Any
 
 import numpy as np
+from numpy.typing import ArrayLike
 
 
 """
@@ -22,8 +23,8 @@ For minimized metrics, the `values` must be negated before using this method.
 
 
 def find_pareto_frontier_observations_for_maximization(
-    values: np.ndarray | list[list[float]],
-    observations: np.ndarray | list[Any],
+    values: ArrayLike,
+    observations: ArrayLike,
 ) -> tuple[list[Any], list[Any]]:
     values = np.array(values)
     observations = np.array(observations)
