@@ -20,20 +20,20 @@ jobs:
       NUMEXPR_NUM_THREADS: "1"
     steps:
       - name: Setup project
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/python_setup
       - name: Run tests
         run: uv run pytest -rw --durations=5 --junitxml=junit-results.xml test/${{ matrix.test-suite }}
   lint:
     runs-on: ubuntu-latest
     steps:
       - name: Setup project
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/python_setup
       - name: Run ruff
         run: uv run ruff check .
   ty:
     runs-on: ubuntu-latest
     steps:
       - name: Setup project
-        uses: ./.github/actions/setup
+        uses: ./.github/actions/python_setup
       - name: Run ty
         run: uv run ty check .
