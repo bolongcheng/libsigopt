@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-from typing import Any, Callable
+from typing import Any, Callable, Concatenate, ParamSpec
 
 import numpy as np
 import scipy.stats.qmc as qmc
@@ -14,6 +14,8 @@ from libsigopt.aux.geometry_utils import find_interior_point
 DEFAULT_REJECTION_SAMPLING_TRIALS: int = 1000000
 REJECTION_SAMPLING_BLOCK_SIZE: int = 10000
 
+P = ParamSpec("P")
+
 
 def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
     return bool(
@@ -22,19 +24,19 @@ def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
 
 
 def unit_cube_sampler_transform_decorator(
-    unit_cube_generator: Callable[[int, int, int, int | None], NDArray[np.number]],
-) -> Callable[[int, NDArray[np.number], int, int | None], NDArray[np.number]]:
+    unit_cube_generator: Callable[Concatenate[int, int, P], NDArray[np.number]],
+) -> Callable[Concatenate[int, NDArray[np.number], P], NDArray[np.number]]:
     def wrapper(
         num_points: int,
         domain_bounds: NDArray[np.number],
-        skip: int = 0,
-        seed: int | None = None,
+        *args: P.args,
+        **kwargs: P.kwargs,
     ) -> NDArray[np.number]:
         assert _verify_bounds(domain_bounds)
         dimension = len(domain_bounds)
         if num_points == 0:
             return np.empty((0, dimension))
-        unit_cube_points = unit_cube_generator(num_points, dimension, skip, seed)
+        unit_cube_points = unit_cube_generator(num_points, dimension, *args, **kwargs)
         pts_scale = np.diff(domain_bounds, axis=1).ravel()
         pts_min = domain_bounds[:, 0]
         return pts_min + pts_scale * unit_cube_points
@@ -46,8 +48,8 @@ def unit_cube_sampler_transform_decorator(
 def generate_uniform_random_points(
     num_points: int,
     dimension: int,
-    skip: int,
-    seed: int | None,
+    *args: P.args,
+    **kwargs: P.kwargs,
 ) -> NDArray[np.number]:
     return np.random.random((num_points, dimension))
 
@@ -176,7 +178,12 @@ def generate_hitandrun_random_points(
 
 
 @unit_cube_sampler_transform_decorator
-def generate_latin_hypercube_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
+def generate_latin_hypercube_points(
+    num_points: int,
+    dimension: int,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> NDArray[np.number]:
     points = np.linspace(0, 1, num_points, endpoint=False)
     points = points[:, None] + np.random.uniform(0.0, 1 / num_points, size=(num_points, dimension))
     for i in range(dimension):
@@ -185,7 +192,12 @@ def generate_latin_hypercube_points(num_points: int, dimension: int, skip: int, 
 
 
 @unit_cube_sampler_transform_decorator
-def generate_halton_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
+def generate_halton_points(
+    num_points: int,
+    dimension: int,
+    skip: int,
+    seed: int | None = None,
+) -> NDArray[np.number]:
     halton = qmc.Halton(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         halton.fast_forward(skip)
@@ -193,7 +205,12 @@ def generate_halton_points(num_points: int, dimension: int, skip: int, seed: int
 
 
 @unit_cube_sampler_transform_decorator
-def generate_sobol_points(num_points: int, dimension: int, skip: int, seed: int | None) -> NDArray[np.number]:
+def generate_sobol_points(
+    num_points: int,
+    dimension: int,
+    skip: int,
+    seed: int | None = None,
+) -> NDArray[np.number]:
     sobol = qmc.Sobol(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         sobol.fast_forward(skip)
