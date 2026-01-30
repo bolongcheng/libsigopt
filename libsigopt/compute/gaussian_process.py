@@ -80,20 +80,20 @@ class GaussianProcess(Predictor):
         return self.points_sampled[self.best_index, :]
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Return the number of spatial dimensions."""
         return self.historical_data.dim
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         return self.historical_data.num_sampled
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return isinstance(self.covariance, DifferentiableCovariance)
 
     @property
-    def has_zero_mean(self):
+    def has_zero_mean(self) -> bool:
         """Whether or not the GaussianProcess object has indices indicative of a zero mean."""
         return indices_represent_zero_mean(self.mean_poly_indices)
 
@@ -298,7 +298,7 @@ class GaussianProcess(Predictor):
 
         return K_eval_var - np.dot(V.T, V)
 
-    def draw_posterior_samples_of_points(self, num_samples, points_to_sample):
+    def draw_posterior_samples_of_points(self, num_samples: int, points_to_sample):
         r"""Draw samples from the posterior at ``Xs`` (``point_to_sample``)) points.
 
         To draw samples we use the formula s(Xs) + (L * Z)^T, where K(Xs) = L * L^T is the covariance of ``Xs``
@@ -313,10 +313,10 @@ class GaussianProcess(Predictor):
         z_samples = np.atleast_2d(np.random.normal(size=(len(mean), num_samples)))
         return mean[None, :] + np.transpose(np.dot(L, z_samples))
 
-    def draw_posterior_samples(self, num_samples):
+    def draw_posterior_samples(self, num_samples: int):
         return self.draw_posterior_samples_of_points(num_samples, self.points_sampled)
 
-    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN):
+    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN) -> None:
         assert lie_method in ConstantLiarType
         if lie_method == ConstantLiarType.MIN:
             lie_value = np.max(self.historical_data.points_sampled_value)

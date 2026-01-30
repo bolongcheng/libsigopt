@@ -12,11 +12,11 @@ class MultitaskAcquisitionFunction(AcquisitionFunction):
         self.underlying = acquisition_function
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.underlying.dim
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.underlying.differentiable
 
     def _evaluate_at_point_list(self, points_to_evaluate):

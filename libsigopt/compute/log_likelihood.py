@@ -4,7 +4,9 @@
 import numpy as np
 import scipy.linalg
 
+from libsigopt.compute.covariance_base import CovarianceBase
 from libsigopt.compute.gaussian_process import GaussianProcess
+from libsigopt.compute.misc.data_containers import HistoricalData
 from libsigopt.compute.optimization import ScipyOptimizable
 
 
@@ -26,13 +28,13 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
 
     def __init__(
         self,
-        covariance,
-        historical_data,
+        covariance: CovarianceBase,
+        historical_data: HistoricalData,
         mean_poly_indices=None,
         *,
-        use_auto_noise=False,
-        log_domain=False,
-        scaling_factor=DEFAULT_LOG_LIKELIHOOD_SCALING_FACTOR,
+        use_auto_noise: bool = False,
+        log_domain: bool = False,
+        scaling_factor: float = DEFAULT_LOG_LIKELIHOOD_SCALING_FACTOR,
     ):
         """Construct a LogLikelihood object for selecting hyperparameters.
 
@@ -72,15 +74,15 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
   """
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         return self.covariance.num_hyperparameters + (1 if self.use_auto_noise else 0)
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.gp.differentiable
 
     @property
-    def problem_size(self):
+    def problem_size(self) -> int:
         return self.num_hyperparameters
 
     @property
@@ -130,7 +132,7 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
 
     compute_objective_function = compute_log_likelihood
 
-    def compute_grad_log_likelihood(self, include_nonzero_correction=INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION):
+    def compute_grad_log_likelihood(self, include_nonzero_correction: bool = INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION):
         r"""
         Compute the gradient (wrt hyperparameters) of the _log_likelihood_type measure at the specified hyperparameters.
 

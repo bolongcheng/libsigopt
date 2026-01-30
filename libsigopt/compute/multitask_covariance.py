@@ -28,21 +28,24 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
     physical_covariance: DifferentiableCovariance
     task_covariance: DifferentiableCovariance
 
-    def __init__(self, hyperparameters, physical_covariance_class, task_covariance_class):
+    def __init__(
+        self,
+        hyperparameters,
+        physical_covariance_class: DifferentiableCovariance,
+        task_covariance_class: DifferentiableCovariance,
+    ):
         """
         The hyperparameters in this function are organized in the following way:
             [process_variance, length_scale_1, ..., length_scale_d, length_scale_task]
         TODO(RTL-61): Consider the implications of treating tasks as categorical rather than continuous.
 
         """
-        assert issubclass(physical_covariance_class, DifferentiableCovariance)
-        assert issubclass(task_covariance_class, DifferentiableCovariance)
         self.physical_covariance_class = physical_covariance_class
         self.task_covariance_class = task_covariance_class
 
         self.hyperparameters = hyperparameters
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"Multitask[{self.process_variance}]\n"
             f"\t[{self.physical_covariance.covariance_type}({self.physical_covariance.hyperparameters[1:]})]\n"
@@ -57,17 +60,15 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         return x_phys, x_task, z_phys, z_task
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         return len(self.hyperparameters)
 
     @property
-    def dim(
-        self,
-    ):  # This is the physical dimension, which I think is probably the appropriate interpretation
+    def dim(self) -> int:  # This is the physical dimension, which I think is probably the appropriate interpretation
         return len(self.hyperparameters) - 1
 
     @property
-    def translation_invariant(self):
+    def translation_invariant(self) -> bool:
         return self.physical_covariance.translation_invariant and self.task_covariance.translation_invariant
 
     @property

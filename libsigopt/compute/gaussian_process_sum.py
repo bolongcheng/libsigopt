@@ -31,7 +31,7 @@ class GaussianProcessSum(Predictor):
         self._points_sampled_value_sum = None
         self._points_sampled_noise_variance_sum = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<{self.__class__.__module__}.{self.__class__.__name__} {hex(id(self))}>\n"
             f" weights={self.weights}\n"
@@ -53,15 +53,15 @@ class GaussianProcessSum(Predictor):
         return self.points_sampled[self.best_index, :]
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return all(gp.differentiable for gp in self.gaussian_process_list)
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.gaussian_process_list[0].dim
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         return self.gaussian_process_list[0].num_sampled
 
     @property
