@@ -36,7 +36,7 @@ from testaux.numerical_test_case import (
         (6.11198633e-07, 6.11197879e-07, 1e-6, False),
     ],
 )
-def test_assert_scalar_within_relative(value, truth, tol, expected_to_pass):
+def test_assert_scalar_within_relative(value: float, truth: float, tol: float, expected_to_pass: bool) -> None:
     if expected_to_pass:
         assert_scalar_within_relative(value, truth, tol)
     else:
@@ -69,7 +69,7 @@ def test_assert_scalar_within_relative(value, truth, tol, expected_to_pass):
         (6.11198633e-07, 6.11197879e-07, 1e-6, True),
     ],
 )
-def test_assert_scalar_is_close(value, truth, tol, expected_to_pass):
+def test_assert_scalar_is_close(value: float, truth: float, tol: float, expected_to_pass: bool) -> None:
     if expected_to_pass:
         assert_scalar_is_close(value, truth, tol)
     else:
@@ -102,11 +102,11 @@ def test_assert_scalar_is_close(value, truth, tol, expected_to_pass):
         (6.11198633e-07, 6.11197879e-07, 1e-6, True),
     ],
 )
-def test_assert_vector_row_wise_norm_is_close(value, truth, tol, expected_to_pass):
+def test_assert_vector_row_wise_norm_is_close(value: float, truth: float, tol: float, expected_to_pass: bool) -> None:
     n = 12
     dim = 5
     random_vector = np.zeros((n, dim))
-    index = np.random.choice(n)
+    index = int(np.random.choice(n))
     value_vector = np.copy(random_vector)
     truth_vector = np.copy(random_vector)
     value_vector[index, 0] = value

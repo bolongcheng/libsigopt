@@ -2,13 +2,14 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
+from numpy.typing import NDArray
 from scipy.optimize import linprog
 
 
-MINIMUM_ACCEPTABLE_RADIUS = 1e-8
+MINIMUM_ACCEPTABLE_RADIUS: float = 1e-8
 
 
-def find_interior_point(halfspaces):
+def find_interior_point(halfspaces: NDArray[np.number]) -> tuple[NDArray[np.number] | None, float, bool]:
     """Finds the Chebyshev center of a polytope defined as halfspaces.
 
     The Chebyshev center is the center of the largest hypersphere
@@ -44,7 +45,7 @@ def find_interior_point(halfspaces):
     return center, radius, feasible
 
 
-def compute_distance_matrix_squared(x, z):
+def compute_distance_matrix_squared(x: NDArray[np.number], z: NDArray[np.number]) -> NDArray[np.number]:
     assert x.shape[1] == z.shape[1]
     sum_x_sq = np.sum(x**2, axis=1)[:, None]
     sum_z_sq = np.sum(z**2, axis=1)[None, :]

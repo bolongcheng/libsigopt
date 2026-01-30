@@ -1,31 +1,40 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any, Callable, Concatenate
+
 import numpy as np
 import scipy.stats.qmc as qmc
+from numpy.typing import NDArray
 
+from libsigopt.aux.errors import SigoptComputeError
 from libsigopt.aux.geometry_utils import find_interior_point
 
 
-DEFAULT_REJECTION_SAMPLING_TRIALS = 1000000
-REJECTION_SAMPLING_BLOCK_SIZE = 10000
+DEFAULT_REJECTION_SAMPLING_TRIALS: int = 1_000_000
+REJECTION_SAMPLING_BLOCK_SIZE: int = 10_000
 
 
-def _verify_bounds(domain_bounds):
-    return (
-        len(domain_bounds.shape) == 2
-        and domain_bounds.shape[1] == 2
-        and np.all(np.diff(domain_bounds, axis=1) >= 0)
+def _verify_bounds(domain_bounds: NDArray[np.number]) -> bool:
+    return bool(
+        len(domain_bounds.shape) == 2 and domain_bounds.shape[1] == 2 and np.all(np.diff(domain_bounds, axis=1) >= 0)
     )
 
 
-def unit_cube_sampler_transform_decorator(unit_cube_generator):
-    def wrapper(num_points, domain_bounds, skip=0, seed=None):
+def unit_cube_sampler_transform_decorator[**P](
+    unit_cube_generator: Callable[Concatenate[int, int, P], NDArray[np.number]],
+) -> Callable[Concatenate[int, NDArray[np.number], P], NDArray[np.number]]:
+    def wrapper(
+        num_points: int,
+        domain_bounds: NDArray[np.number],
+        *args: P.args,
+        **kwargs: P.kwargs,
+    ) -> NDArray[np.number]:
         assert _verify_bounds(domain_bounds)
         dimension = len(domain_bounds)
         if num_points == 0:
             return np.empty((0, dimension))
-        unit_cube_points = unit_cube_generator(num_points, dimension, skip, seed)
+        unit_cube_points = unit_cube_generator(num_points, dimension, *args, **kwargs)
         pts_scale = np.diff(domain_bounds, axis=1).ravel()
         pts_min = domain_bounds[:, 0]
         return pts_min + pts_scale * unit_cube_points
@@ -34,11 +43,22 @@ def unit_cube_sampler_transform_decorator(unit_cube_generator):
 
 
 @unit_cube_sampler_transform_decorator
-def generate_uniform_random_points(num_points, dimension, skip, seed):
+def generate_uniform_random_points[**P](
+    num_points: int,
+    dimension: int,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> NDArray[np.number]:
     return np.random.random((num_points, dimension))
 
 
-def generate_uniform_random_points_rejection_sampling(num_points, domain_bounds, A, b, rejection_count=None):
+def generate_uniform_random_points_rejection_sampling(
+    num_points: int,
+    domain_bounds: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+    rejection_count: int | None = None,
+) -> tuple[NDArray[np.number], bool]:
     """Compute a set of uniform random points inside some linear constrained domain. Returns a set of feasible points and
     a bool, which is true if rejection sampling succeeded and false if it failed to find the sufficient points"""
     assert _verify_bounds(domain_bounds)
@@ -50,7 +70,7 @@ def generate_uniform_random_points_rejection_sampling(num_points, domain_bounds,
         left_points = num_points
 
         while (left_points > 0) and (rejection_count > 0):
-            test_points = generate_uniform_random_points(REJECTION_SAMPLING_BLOCK_SIZE, domain_bounds)
+            test_points = generate_uniform_random_points(REJECTION_SAMPLING_BLOCK_SIZE, domain_bounds, 0, None)
             indexes = np.all(np.dot(A, test_points.T) <= b[:, None], axis=0)
             points = np.vstack((points, test_points[indexes, :]))
             left_points -= np.sum(indexes)
@@ -64,12 +84,21 @@ def generate_uniform_random_points_rejection_sampling(num_points, domain_bounds,
         return np.empty((0, len(domain_bounds))), False
 
 
-def generate_uniform_random_points_rejection_sampling_with_hitandrun_padding(num_points, domain_bounds, A, b, x0=None):
+def generate_uniform_random_points_rejection_sampling_with_hitandrun_padding(
+    num_points: int,
+    domain_bounds: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+    x0: NDArray[np.number] | None = None,
+) -> tuple[NDArray[np.number], bool]:
     points, success = generate_uniform_random_points_rejection_sampling(num_points, domain_bounds, A, b)
     if not success and num_points > 0:  # fill in rest with hitandrun if rejection fails
         if x0 is None:
             halfspaces = np.hstack((A, -b[:, None]))
             x0, _, _ = find_interior_point(halfspaces)
+
+        if x0 is None:
+            raise SigoptComputeError("Could not find interior point for hit-and-run sampling")
 
         num_points_identified = points.shape[0]
         num_points_remaining = num_points - num_points_identified
@@ -78,7 +107,12 @@ def generate_uniform_random_points_rejection_sampling_with_hitandrun_padding(num
     return points, success
 
 
-def generate_hitandrun_random_points(num_points, x0, A, b):
+def generate_hitandrun_random_points(
+    num_points: int,
+    x0: NDArray[np.number],
+    A: NDArray[np.number],
+    b: NDArray[np.number],
+) -> NDArray[np.number]:
     """Compute a set of random points inside a polytope defined as Ax <= b.
 
       # Artificial Centering Hit and run
@@ -90,7 +124,7 @@ def generate_hitandrun_random_points(num_points, x0, A, b):
     :type num_points: int > 0
     """
 
-    def _gen_random_directions(dim, num_points):
+    def _gen_random_directions(dim: int, num_points: int) -> NDArray[np.number]:
         z = np.random.randn(num_points, dim)
         return z / np.linalg.norm(z, axis=1)[:, None]
 
@@ -142,7 +176,12 @@ def generate_hitandrun_random_points(num_points, x0, A, b):
 
 
 @unit_cube_sampler_transform_decorator
-def generate_latin_hypercube_points(num_points, dimension, skip, seed):
+def generate_latin_hypercube_points[**P](
+    num_points: int,
+    dimension: int,
+    *args: P.args,
+    **kwargs: P.kwargs,
+) -> NDArray[np.number]:
     points = np.linspace(0, 1, num_points, endpoint=False)
     points = points[:, None] + np.random.uniform(0.0, 1 / num_points, size=(num_points, dimension))
     for i in range(dimension):
@@ -151,7 +190,12 @@ def generate_latin_hypercube_points(num_points, dimension, skip, seed):
 
 
 @unit_cube_sampler_transform_decorator
-def generate_halton_points(num_points, dimension, skip, seed):
+def generate_halton_points[**P](
+    num_points: int,
+    dimension: int,
+    skip: int,
+    seed: int | None = None,
+) -> NDArray[np.number]:
     halton = qmc.Halton(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         halton.fast_forward(skip)
@@ -159,14 +203,22 @@ def generate_halton_points(num_points, dimension, skip, seed):
 
 
 @unit_cube_sampler_transform_decorator
-def generate_sobol_points(num_points, dimension, skip, seed):
+def generate_sobol_points[**P](
+    num_points: int,
+    dimension: int,
+    skip: int,
+    seed: int | None = None,
+) -> NDArray[np.number]:
     sobol = qmc.Sobol(d=dimension, scramble=True, seed=seed)
     if skip > 0:
         sobol.fast_forward(skip)
     return sobol.random(n=num_points)
 
 
-def generate_grid_points(points_per_dimension, domain_bounds):
+def generate_grid_points(
+    points_per_dimension: int | list[int] | NDArray[np.number],
+    domain_bounds: NDArray[np.number],
+) -> NDArray[np.number]:
     assert _verify_bounds(domain_bounds)
     points_per_dimension = np.asarray(points_per_dimension)
     if points_per_dimension.size == 0 or not points_per_dimension.all():

@@ -22,9 +22,6 @@ from libsigopt.compute.sigopt_parzen_estimator import (
 from testaux.utils import form_points_sampled, form_random_unconstrained_categorical_domain
 
 
-# NumericalTestCase import removed as it's no longer needed for this file
-
-
 domain = form_random_unconstrained_categorical_domain(np.random.randint(4, 12)).one_hot_domain
 hparams = [1.0] + (0.2 * np.diff(domain.get_lower_upper_bounds(), axis=0)[0]).tolist()
 greater_covariance = C4RadialMatern(hparams)

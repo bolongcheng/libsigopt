@@ -1,15 +1,25 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any, Callable
+
 import numpy as np
 import pytest
+from numpy.typing import ArrayLike, NDArray
 
-from libsigopt.aux.samplers import *
+from libsigopt.aux.geometry_utils import find_interior_point
+from libsigopt.aux.samplers import (
+    generate_grid_points,
+    generate_halton_points,
+    generate_hitandrun_random_points,
+    generate_latin_hypercube_points,
+    generate_sobol_points,
+    generate_uniform_random_points,
+    generate_uniform_random_points_rejection_sampling_with_hitandrun_padding,
+)
 
 
-def test_grid_generation():
-    points_per_dimension: list[int] | int
-
+def test_grid_generation() -> None:
     domain_bounds = np.array([[0.0, 1.0], [-2.0, 3.0], [2.71, 3.14]])
     points_per_dimension = [7, 11, 8]
 
@@ -54,9 +64,9 @@ def test_grid_generation():
     ],
 )
 @pytest.mark.parametrize("num_points", [1, 2, 5, 10, 20])
-def test_latin_hypercube_equally_spaced(domain_bounds, num_points):
+def test_latin_hypercube_equally_spaced(domain_bounds: ArrayLike, num_points: int) -> None:
     domain_bounds = np.asarray(domain_bounds)
-    points = generate_latin_hypercube_points(num_points, domain_bounds)
+    points = generate_latin_hypercube_points(num_points, domain_bounds, skip=0, seed=None)
 
     for point in points:
         assert np.all(point >= domain_bounds[:, 0]) and np.all(point <= domain_bounds[:, 1])
@@ -101,9 +111,13 @@ def test_latin_hypercube_equally_spaced(domain_bounds, num_points):
         generate_sobol_points,
     ],
 )
-def test_random_points_within_domain(domain_bounds, num_points, random_generator):
+def test_random_points_within_domain(
+    domain_bounds: ArrayLike,
+    num_points: int,
+    random_generator: Callable[[int, np.ndarray, int, int | None], np.ndarray],
+) -> None:
     domain_bounds = np.asarray(domain_bounds)
-    points = random_generator(num_points, domain_bounds)
+    points = random_generator(num_points, domain_bounds, 0, None)
 
     for point in points:
         assert np.all(point >= domain_bounds[:, 0]) and np.all(point <= domain_bounds[:, 1])
@@ -121,25 +135,26 @@ X0_CONSTR, _, _ = find_interior_point(HALFSPACES)
 DOMAIN_BOUNDS = np.array([[0, 100] for _ in range(2)])
 
 
-def check_points_satisfy_constraints(samples):
+def check_points_satisfy_constraints(samples: NDArray[np.number]) -> None:
     for s in samples:
         assert np.all(np.dot(A_CONSTR, s) <= B_CONSTR)
 
 
-def check_points_satisfy_domain_bounds(samples):
+def check_points_satisfy_domain_bounds(samples: NDArray[np.number]) -> None:
     for s in samples:
         assert np.all((s >= 0) & (s <= 100))
 
 
-def test_hitandrun_sampler():
+def test_hitandrun_sampler() -> None:
     num_points = 100
+    assert X0_CONSTR is not None
     samples = generate_hitandrun_random_points(num_points, X0_CONSTR, A_CONSTR, B_CONSTR)
     assert samples.shape[0] == num_points
     check_points_satisfy_constraints(samples)
     check_points_satisfy_domain_bounds(samples)
 
 
-def test_rejection_with_padding_sampler():
+def test_rejection_with_padding_sampler() -> None:
     num_points = 100
     (
         samples,

@@ -5,17 +5,17 @@ import math
 import numbers
 
 
-def is_integer(num):
+def is_integer(num: object) -> bool:
     if isinstance(num, bool):
         return False
     return isinstance(num, (int | numbers.Integral))
 
 
-def is_finite(x):
+def is_finite(x: float) -> bool:
     return not (math.isinf(x) or math.isnan(x))
 
 
-def is_number(x):
+def is_number(x: object) -> bool:
     if isinstance(x, bool):
         return False
     if isinstance(x, float) and not is_finite(x):

@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache License 2.0
 import math
 import sys
+from typing import Any
 
 import numpy as np
 import pytest
@@ -23,7 +24,7 @@ from libsigopt.aux.utils import is_integer, is_number
         -sys.maxsize - 1,
     ],
 )
-def test_int_is_integer_and_number(num):
+def test_int_is_integer_and_number(num: Any) -> None:
     assert is_integer(num)
     assert is_number(num)
 
@@ -42,7 +43,7 @@ def test_int_is_integer_and_number(num):
         -math.inf,
     ],
 )
-def test_not_int_or_numbers(num):
+def test_not_int_or_numbers(num: Any) -> None:
     assert is_integer(num) is False
     assert is_number(num) is False
 
@@ -59,6 +60,6 @@ def test_not_int_or_numbers(num):
         1e123,
     ],
 )
-def test_double_is_not_int(num):
+def test_double_is_not_int(num: Any) -> None:
     assert is_integer(num) is False
     assert is_number(num)

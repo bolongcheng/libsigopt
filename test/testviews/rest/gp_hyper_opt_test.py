@@ -15,10 +15,8 @@ from libsigopt.views.rest.gp_hyper_opt_multimetric import (
     form_one_hot_hyperparameter_domain,
 )
 
-from testaux.numerical_test_case import NumericalTestCase
 
-
-class TestCategoricalTools(NumericalTestCase):
+class TestCategoricalTools:
     def assert_hyperparameter_dict_keys(self, hyperparameter_dict):
         assert set(hyperparameter_dict.keys()) == {
             "alpha",

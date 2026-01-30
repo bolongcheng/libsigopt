@@ -1,8 +1,11 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any
+
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from libsigopt.aux.geometry_utils import find_interior_point
 from libsigopt.compute.domain import DEFAULT_NUM_RANDOM_NEIGHBORS, MAX_GRID_DIM, CategoricalDomain
@@ -10,7 +13,7 @@ from libsigopt.compute.domain import DEFAULT_NUM_RANDOM_NEIGHBORS, MAX_GRID_DIM,
 from testaux.numerical_test_case import assert_scalar_within_relative, assert_vector_within_relative
 
 
-def nd_simplex_halfspaces(dim):
+def nd_simplex_halfspaces(dim: int) -> NDArray[np.number]:
     # return the halfspaces of an n-dim simplex, x_1 + x_2 + ..... x_n <= 1, x_i >= 0 and x_i <=1.
     n_halfspaces = 2 * dim + 1
     halfspaces = np.zeros((n_halfspaces, dim + 1))
@@ -30,23 +33,23 @@ def nd_simplex_halfspaces(dim):
     return halfspaces
 
 
-def test_feasibly_constraint():
-    dim = np.random.randint(2, 20)
+def test_feasibly_constraint() -> None:
+    dim = int(np.random.randint(2, 20))
     halfspaces = nd_simplex_halfspaces(dim)
     _, _, feasibility = find_interior_point(halfspaces)
     assert feasibility
 
 
-def test_infeasible_equality_constraint():
-    dim = np.random.randint(2, 20)
+def test_infeasible_equality_constraint() -> None:
+    dim = int(np.random.randint(2, 20))
     halfspaces = nd_simplex_halfspaces(dim)
     halfspaces = np.vstack((-halfspaces[0], halfspaces))
     _, _, feasibility = find_interior_point(halfspaces)
     assert not feasibility
 
 
-def test_infeasible_almost_equality_constraint():
-    dim = np.random.randint(2, 20)
+def test_infeasible_almost_equality_constraint() -> None:
+    dim = int(np.random.randint(2, 20))
     halfspaces = nd_simplex_halfspaces(dim)
     halfspaces = np.vstack((-halfspaces[0], halfspaces))
     halfspaces[0, -1] -= 1e-8
@@ -55,8 +58,8 @@ def test_infeasible_almost_equality_constraint():
     assert not feasibility
 
 
-def test_infeasible_constraint():
-    dim = np.random.randint(2, 20)
+def test_infeasible_constraint() -> None:
+    dim = int(np.random.randint(2, 20))
     halfspaces = nd_simplex_halfspaces(dim)
     halfspaces = np.vstack((-halfspaces[0], halfspaces))
     halfspaces[0, -1] += 1
@@ -65,44 +68,50 @@ def test_infeasible_constraint():
     assert not feasibility
 
 
-def test_chebyshev_center_hypercube():
-    dim = np.random.randint(2, 40)
+def test_chebyshev_center_hypercube() -> None:
+    dim = int(np.random.randint(2, 40))
     halfspaces = nd_simplex_halfspaces(dim)
     halfspaces = halfspaces[1:]
     center, radius, feasibility = find_interior_point(halfspaces)
     assert feasibility
+    assert center is not None
     assert_scalar_within_relative(radius, 0.5, 1e-8)
     assert_vector_within_relative(center, np.full_like(center, 0.5), 1e-8)
 
 
-def test_chebyshev_center_simplex():
-    dim = np.random.randint(2, 40)
+def test_chebyshev_center_simplex() -> None:
+    dim = int(np.random.randint(2, 40))
     halfspaces = nd_simplex_halfspaces(dim)
     center, radius, feasibility = find_interior_point(halfspaces)
     radius_exact = 1 / (np.sqrt(dim) * (np.sqrt(dim) + 1))
     assert feasibility
+    assert center is not None
     assert_scalar_within_relative(radius, radius_exact, tol=1e-8)
     assert_vector_within_relative(center, np.full_like(center, radius_exact), 1e-8)
 
 
-def test_chebyshev_center_relaxed_hypercube():
-    dim = np.random.randint(2, 40)
+def test_chebyshev_center_relaxed_hypercube() -> None:
+    dim = int(np.random.randint(2, 40))
     halfspaces = nd_simplex_halfspaces(dim)
     halfspaces = halfspaces[1:]
     # relax the first bound to be [0, 2]
     halfspaces[1, :-1] = -2
     center, radius, feasibility = find_interior_point(halfspaces)
     assert feasibility
+    assert center is not None
     assert_scalar_within_relative(radius, 0.5, tol=1e-8)
     assert_vector_within_relative(center[1:], np.full_like(center[1:], 0.5), 1e-8)
 
 
-def map_one_hot_points_to_categorical_no_integer_snapping(domain, one_hot_points):
+def map_one_hot_points_to_categorical_no_integer_snapping(
+    domain: CategoricalDomain,
+    one_hot_points: NDArray[np.number],
+) -> NDArray[np.number]:
     unconstrained_domain_copy = CategoricalDomain(domain_components=domain.domain_components)
     return unconstrained_domain_copy.map_one_hot_points_to_categorical(one_hot_points)
 
 
-def test_generate_neighboring_points_fails_unconstrained():
+def test_generate_neighboring_points_fails_unconstrained() -> None:
     # Fails with no constraints
     domain = CategoricalDomain(
         domain_components=[
@@ -137,7 +146,7 @@ def test_generate_neighboring_points_fails_unconstrained():
         domain.generate_integer_neighbors_for_integer_constraints(one_hot_point)
 
 
-def test_generate_neighboring_integers_points_exactly_test():
+def test_generate_neighboring_integers_points_exactly_test() -> None:
     domain = CategoricalDomain(
         domain_components=[
             {"var_type": "int", "elements": (0, 10)},
@@ -187,8 +196,8 @@ def test_generate_neighboring_integers_points_exactly_test():
         assert true_neighbor in neighbors
 
 
-def test_generate_neighboring_integers_grid():
-    d = np.random.randint(1, MAX_GRID_DIM)
+def test_generate_neighboring_integers_grid() -> None:
+    d = int(np.random.randint(1, MAX_GRID_DIM))
     domain = CategoricalDomain(
         domain_components=[{"var_type": "int", "elements": (2, 3 + d)} for _ in range(d)],
         constraint_list=[
@@ -200,7 +209,7 @@ def test_generate_neighboring_integers_grid():
     assert neighbors.shape[0] == 2**d
 
 
-def test_generate_neighboring_integers_random():
+def test_generate_neighboring_integers_random() -> None:
     d = MAX_GRID_DIM + 1
     domain = CategoricalDomain(
         domain_components=[{"var_type": "int", "elements": (0, 10)} for _ in range(d)],
@@ -213,7 +222,7 @@ def test_generate_neighboring_integers_random():
     assert neighbors.shape[0] == DEFAULT_NUM_RANDOM_NEIGHBORS
 
 
-def test_snap_constrained_integer_points():
+def test_snap_constrained_integer_points() -> None:
     domain = CategoricalDomain(
         domain_components=[
             {"var_type": "int", "elements": (0, 10)},

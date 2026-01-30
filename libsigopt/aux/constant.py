@@ -1,6 +1,9 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from enum import StrEnum
+
+
 #: The minimum value_var/noise variance we are allowed to pass to libsigopt.compute.
 #: This is for numerical stability reasons--avoiding singular matrix errors
 #: by making the data "slightly wrong."
@@ -24,17 +27,17 @@ PARALLEL_CONSTANT_LIAR = "constant_liar"
 PARALLEL_QEI = "qei"
 
 
-class ParameterPriorNames(object):
+class ParameterPriorNames(StrEnum):
     NORMAL = "normal"
     BETA = "beta"
 
 
-class ParameterTransformationNames(object):
+class ParameterTransformationNames(StrEnum):
     NONE = "none"
     LOG = "log"
 
 
-class ConstraintType(object):
+class ConstraintType(StrEnum):
     greater_than = "greater_than"
     less_than = "less_than"
 

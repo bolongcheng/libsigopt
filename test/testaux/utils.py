@@ -1,14 +1,21 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any
+
 import numpy as np
+from numpy.typing import NDArray
 
 from libsigopt.aux.adapter_info_containers import PointsContainer
 from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME
 from libsigopt.compute.domain import CategoricalDomain, ContinuousDomain, DomainComponent, DomainConstraint
 
 
-def form_random_unconstrained_categorical_domain(dim, categoricals_allowed=True, quantized_allowed=True):
+def form_random_unconstrained_categorical_domain(
+    dim: int,
+    categoricals_allowed: bool = True,
+    quantized_allowed: bool = True,
+) -> CategoricalDomain:
     domain_components: list[DomainComponent] = []
     for _ in range(dim):
         if np.random.random() < 0.1 and quantized_allowed:
@@ -26,7 +33,7 @@ def form_random_unconstrained_categorical_domain(dim, categoricals_allowed=True,
                 }
             )
         elif np.random.random() < 0.5:
-            bounds = (np.random.randint(-10, 0), np.random.randint(0, 10))
+            bounds = (int(np.random.randint(-10, 0)), int(np.random.randint(0, 10)))
             domain_components.append({"var_type": "int", "elements": bounds})
         else:
             random_number = np.random.random()
@@ -40,13 +47,18 @@ def form_random_unconstrained_categorical_domain(dim, categoricals_allowed=True,
             domain_components.append(
                 {
                     "var_type": "double",
-                    "elements": (sorted_values[0], sorted_values[1]),
+                    "elements": (float(sorted_values[0]), float(sorted_values[1])),
                 }
             )
     return CategoricalDomain(domain_components)
 
 
-def form_random_constrained_categorical_domain(n_double_param=5, n_int_param=5, n_cat_param=1, n_quantized_param=1):
+def form_random_constrained_categorical_domain(
+    n_double_param: int = 5,
+    n_int_param: int = 5,
+    n_cat_param: int = 1,
+    n_quantized_param: int = 1,
+) -> CategoricalDomain:
     assert n_double_param >= 5
     assert n_int_param >= 5
     assert n_cat_param >= 1
@@ -62,13 +74,13 @@ def form_random_constrained_categorical_domain(n_double_param=5, n_int_param=5, 
     # Form domain components
     domain_components_maybe_none: list[DomainComponent | None] = [None] * dim
     for i in idx_double:
-        bounds = (0, np.random.randint(1, 5))
+        bounds = (0, int(np.random.randint(1, 5)))
         domain_components_maybe_none[i] = {
             "var_type": "double",
             "elements": bounds,
         }
     for i in idx_int:
-        bounds = (5, np.random.randint(10, 20))
+        bounds = (5, int(np.random.randint(10, 20)))
         domain_components_maybe_none[i] = {
             "var_type": "int",
             "elements": bounds,
@@ -128,7 +140,12 @@ TEST_FAILURE_PROB = 0.1
 
 
 # TODO(RTL-96): Clean this up to have a minimum number of points in the domain
-def form_random_hyperparameter_dict(domain, use_tikhonov=False, add_task_length=False, num_metrics=1):
+def form_random_hyperparameter_dict(
+    domain: CategoricalDomain,
+    use_tikhonov: bool = False,
+    add_task_length: bool = False,
+    num_metrics: int = 1,
+) -> list[dict[str, Any]]:
     list_of_hyperparameter_dict = []
     for _ in range(num_metrics):
         alpha = np.random.gamma(1, 0.1)
@@ -153,14 +170,14 @@ def form_random_hyperparameter_dict(domain, use_tikhonov=False, add_task_length=
 
 # NOTE: Some potential issues with snap_cats as this is currently constructed
 def form_points_sampled(
-    domain,
-    num_sampled,
-    noise_per_point,
-    num_metrics,
-    task_options,
-    snap_cats=False,
-    failure_prob=TEST_FAILURE_PROB,
-):
+    domain: CategoricalDomain,
+    num_sampled: int,
+    noise_per_point: float,
+    num_metrics: int,
+    task_options: NDArray[np.number],
+    snap_cats: bool = False,
+    failure_prob: float = TEST_FAILURE_PROB,
+) -> PointsContainer:
     points = domain.generate_quasi_random_points_in_domain(num_sampled)
     if isinstance(domain, ContinuousDomain) and snap_cats:
         for k, this_closed_interval in enumerate(domain.domain_bounds):
@@ -174,14 +191,22 @@ def form_points_sampled(
         values=values,
         value_vars=np.full_like(values, noise_per_point),
         failures=failures,
-        task_costs=np.random.choice(task_options, size=failures.shape) if task_options.size else None,
+        task_costs=np.random.choice(task_options, size=failures.shape)
+        if task_options is not None and task_options.size > 0
+        else None,
     )
 
 
-def form_points_being_sampled(domain, num_points_being_sampled, task_options=None):
+def form_points_being_sampled(
+    domain: CategoricalDomain,
+    num_points_being_sampled: int,
+    task_options: NDArray[np.number] | None = None,
+) -> PointsContainer:
     return PointsContainer(
         points=domain.generate_quasi_random_points_in_domain(num_points_being_sampled),
-        task_costs=np.random.choice(task_options, size=num_points_being_sampled) if task_options.size else None,
+        task_costs=np.random.choice(task_options, size=num_points_being_sampled)
+        if task_options is not None and task_options.size > 0
+        else None,
     )
 
 
