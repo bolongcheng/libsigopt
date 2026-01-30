@@ -71,8 +71,7 @@ def filter_points_sampled(points_sampled, metrics_info):
     )
 
 
-def form_one_hot_points_with_tasks(domain, points, task_costs=None):
-    assert isinstance(domain, CategoricalDomain)
+def form_one_hot_points_with_tasks(domain: CategoricalDomain, points, task_costs=None):
     one_hot_points = np.array([domain.map_categorical_point_to_one_hot(p) for p in points])
     if task_costs is not None and one_hot_points.size:
         one_hot_points = np.concatenate((one_hot_points, task_costs[:, None]), axis=1)
@@ -313,8 +312,7 @@ class GPView(View):
             self.dim_with_task,
         )
 
-    def form_one_hot_covariance_base(self, domain, hyperparameter_dict):
-        assert isinstance(domain, CategoricalDomain)
+    def form_one_hot_covariance_base(self, domain: CategoricalDomain, hyperparameter_dict):
         length_scales = hyperparameter_dict["length_scales"]
 
         one_hot_length_scales = domain.map_categorical_length_scales_to_one_hot(length_scales)

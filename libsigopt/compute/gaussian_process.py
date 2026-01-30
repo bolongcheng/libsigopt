@@ -38,9 +38,13 @@ class GaussianProcess(Predictor):
 
     """
 
-    def __init__(self, covariance, historical_data, mean_poly_indices=None, tikhonov_param=None):
-        assert isinstance(covariance, CovarianceBase)
-        assert isinstance(historical_data, HistoricalData)
+    def __init__(
+        self,
+        covariance: CovarianceBase,
+        historical_data: HistoricalData,
+        mean_poly_indices=None,
+        tikhonov_param=None,
+    ):
         assert covariance.dim == historical_data.dim
         self.covariance = covariance
         self.historical_data = historical_data
@@ -105,8 +109,7 @@ class GaussianProcess(Predictor):
     def points_sampled_noise_variance(self):
         return self.historical_data.points_sampled_noise_variance
 
-    def update_historical_data(self, new_data):
-        assert isinstance(new_data, HistoricalData)
+    def update_historical_data(self, new_data: HistoricalData):
         assert new_data.dim == self.dim
         self.historical_data = new_data
         self._best_index = None

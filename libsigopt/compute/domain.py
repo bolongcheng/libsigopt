@@ -1037,8 +1037,7 @@ class CategoricalDomain:
 
 
 class FixedIndicesOnContinuousDomain:
-    def __init__(self, continuous_domain, fixed_indices):
-        assert isinstance(continuous_domain, ContinuousDomain)
+    def __init__(self, continuous_domain: ContinuousDomain, fixed_indices):
         assert isinstance(fixed_indices, dict)
         self.continuous_domain = continuous_domain
         self.fixed_indices = fixed_indices

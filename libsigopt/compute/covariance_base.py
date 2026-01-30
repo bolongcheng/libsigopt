@@ -39,13 +39,13 @@ class CovarianceBase:
         """Defines whether the covariance has the form K(x, z) = phi(x - z)"""
         return NotImplemented
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         raise NotImplementedError()
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         raise NotImplementedError()
-
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
 
     def _covariance(self, x, z):
         """
@@ -187,7 +187,7 @@ class RadialCovariance(CovarianceBase):
     _length_scales_cubed: np.ndarray
 
     def __init__(self, hyperparameters):
-        self.set_hyperparameters(hyperparameters)
+        self.hyperparameters = hyperparameters
 
     def __str__(self):
         return f"{self.__class__.__name__}_{self.dim}({self.hyperparameters})"
@@ -218,17 +218,17 @@ class RadialCovariance(CovarianceBase):
     def __repr__(self):
         return f"{self.covariance_type}({self._hyperparameters.tolist()})"
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         return np.copy(self._hyperparameters)
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         self._hyperparameters = self.check_hyperparameters_are_valid(hyperparameters)
         self.process_variance = self._hyperparameters[0]
         self._length_scales = np.copy(self._hyperparameters[1:])
         self._length_scales_squared = self._length_scales**2
         self._length_scales_cubed = self._length_scales**3
-
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
 
     def eval_radial_kernel(self, distance_matrix_squared):
         """Compute the covariance as a function of r^2."""

@@ -26,9 +26,7 @@ class FakePredictor(Predictor):
 
 
 class SearchAcquisitionFunction(AcquisitionFunction):
-    def __init__(self, domain, failure_model):
-        assert isinstance(domain, CategoricalDomain)
-        assert isinstance(failure_model, ProbabilisticFailuresBase)
+    def __init__(self, domain: CategoricalDomain, failure_model: ProbabilisticFailuresBase):
         # This dummy predictor allow us to use vectorized optimizers, needed due to
         # due to AcquisitionFunction(HasPredictor). This predcitor is never used
         super().__init__(FakePredictor())
@@ -108,15 +106,13 @@ def round_one_hot_points_categorical_values_to_target(domain, one_hot_points, ta
     return one_hot_points
 
 
-def map_non_categorical_points_to_unit_hypercube(one_hot_domain, one_hot_points):
-    assert isinstance(one_hot_domain, ContinuousDomain)
+def map_non_categorical_points_to_unit_hypercube(one_hot_domain: ContinuousDomain, one_hot_points):
     assert one_hot_domain.dim == one_hot_points.shape[1]
     lower, upper = one_hot_domain.get_lower_upper_bounds()
     return (one_hot_points - lower) / (upper - lower)
 
 
-def map_non_categorical_points_from_unit_hypercube(one_hot_domain, unit_search_points):
-    assert isinstance(one_hot_domain, ContinuousDomain)
+def map_non_categorical_points_from_unit_hypercube(one_hot_domain: ContinuousDomain, unit_search_points):
     assert one_hot_domain.dim == unit_search_points.shape[1]
     lower, upper = one_hot_domain.get_lower_upper_bounds()
     return (unit_search_points) * (upper - lower) + lower
@@ -126,8 +122,7 @@ def map_non_categorical_points_from_unit_hypercube(one_hot_domain, unit_search_p
 # The "search hypercube" has non categorical values normalized between [0, 1] and categorical
 # values ranging from [0, sqrt(d)], where d is one_hot_dim > number of non categorical values
 # The goal is to make points with different categories far from each other
-def convert_one_hot_to_search_hypercube_points(domain, one_hot_points):
-    assert isinstance(domain, CategoricalDomain)
+def convert_one_hot_to_search_hypercube_points(domain: CategoricalDomain, one_hot_points):
     unit_one_hot_points = map_non_categorical_points_to_unit_hypercube(domain.one_hot_domain, one_hot_points)
     largest_distance = np.sqrt(domain.one_hot_dim)
     return round_one_hot_points_categorical_values_to_target(domain, unit_one_hot_points, largest_distance)

@@ -87,14 +87,16 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
     def tikhonov_param(self):
         return self.gp.tikhonov_param
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         if self.use_auto_noise:
             hyperparameters = np.append(self.covariance.hyperparameters, self.tikhonov_param)
         else:
             hyperparameters = self.covariance.hyperparameters
         return np.log(hyperparameters) if self.log_domain else hyperparameters
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         if len(hyperparameters) != self.problem_size:
             extra_advice = " Remember to include 1 extra hyperparameter for auto_noise." if self.use_auto_noise else ""
             raise ValueError(
@@ -106,7 +108,6 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
         tikhonov_param = hp_linear_domain[-1] if self.use_auto_noise else None
         self.gp = GaussianProcess(self.covariance, self.historical_data, self.mean_poly_indices, tikhonov_param)
 
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
     current_point = hyperparameters
 
     def compute_log_likelihood(self):

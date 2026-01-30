@@ -18,12 +18,11 @@ class GaussianProcessSum(Predictor):
     Notice that GPs are passed by reference. You should not change or share the GPs' HistoricalData
     """
 
-    def __init__(self, gaussian_process_list, weights):
+    def __init__(self, gaussian_process_list: list[GaussianProcess], weights):
         assert len(gaussian_process_list) > 1, "We need more than one GP"
         assert len(gaussian_process_list) == len(weights), "Number of GPs and weights should match"
         first_gp = gaussian_process_list[0]
         for gp in gaussian_process_list:
-            assert isinstance(gp, GaussianProcess)
             assert first_gp.dim == gp.dim
             assert np.allclose(first_gp.points_sampled, gp.points_sampled)
         self.gaussian_process_list = gaussian_process_list

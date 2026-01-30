@@ -24,9 +24,7 @@ from libsigopt.compute.domain import (
 from testaux.utils import form_random_constrained_categorical_domain, form_random_unconstrained_categorical_domain
 
 
-def domains_approximately_equal(domain1, domain2, inequality_tolerance=1e-14):
-    assert isinstance(domain1, CategoricalDomain) and isinstance(domain2, CategoricalDomain)
-
+def domains_approximately_equal(domain1: CategoricalDomain, domain2: CategoricalDomain, inequality_tolerance=1e-14):
     # Content can go from being a list to numpy, so this can fail ... if it does, what happens below will work
     try:
         same = (
@@ -1690,10 +1688,6 @@ class TestFixedIndicesOnContinuousDomain:
             ]
         )
         cn_domain = cat_domain.one_hot_domain
-
-        fixed_indices = {1: 0.5}
-        with pytest.raises(AssertionError):
-            FixedIndicesOnContinuousDomain(cat_domain, fixed_indices)
 
         wrong_indices = {2: 0.5}
         with pytest.raises(AssertionError):

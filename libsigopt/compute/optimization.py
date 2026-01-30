@@ -22,13 +22,13 @@ class ScipyOptimizable:
     def differentiable(self):
         raise NotImplementedError()
 
-    def get_current_point(self):
+    @property
+    def current_point(self):
         raise NotImplementedError()
 
-    def set_current_point(self, current_point):
+    @current_point.setter
+    def current_point(self, current_point):
         raise NotImplementedError()
-
-    current_point = property(get_current_point, set_current_point)
 
     def compute_objective_function(self):
         raise NotImplementedError()
@@ -153,9 +153,8 @@ class _ScipyOptimizerWrapper(Optimizer):
     # Type of the optimizer_parameters object, specified in subclass
     optimizer_parameters_type: type
 
-    def __init__(self, domain, optimizable, optimizer_parameters):
+    def __init__(self, domain, optimizable: ScipyOptimizable, optimizer_parameters):
         self.domain = domain
-        assert isinstance(optimizable, ScipyOptimizable)
         self.objective_function = optimizable
         self.optimization_results = None
 

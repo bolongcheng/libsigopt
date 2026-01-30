@@ -41,9 +41,8 @@ def get_distance_parameter(dim):
 
 def search_strategy_optimization(
     acquisition_function: ProbabilityOfImprovementSearch,
-    num_to_sample,
+    num_to_sample: int,
 ):
-    assert isinstance(acquisition_function, ProbabilityOfImprovementSearch)
     domain = acquisition_function.domain
     initial_repulsor_points = np.copy(acquisition_function.repulsor_points)
     initial_distance_parameter = acquisition_function.distance_parameter

@@ -79,17 +79,16 @@ class SigOptParzenEstimator(ScipyOptimizable):
             f"greater_covariance={repr(self.greater_covariance)}\n"
         )
 
-    def get_current_point(self):
+    @property
+    def current_point(self):
         return self.point_to_sample
 
-    def set_current_point(self, current_point):
+    @current_point.setter
+    def current_point(self, current_point):
         self.point_to_sample = current_point
 
-    current_point = property(get_current_point, set_current_point)
-
-    def update_covariances(self, lower_covariance, greater_covariance):
+    def update_covariances(self, lower_covariance: RadialCovariance, greater_covariance: RadialCovariance):
         # NOTE: This radial check is not really necessary, but is beneficial at least for now
-        assert isinstance(lower_covariance, RadialCovariance) and isinstance(greater_covariance, RadialCovariance)
         assert greater_covariance.dim == lower_covariance.dim == self.dim
         self.lower_covariance = lower_covariance
         self.greater_covariance = greater_covariance

@@ -132,8 +132,7 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
 
 # TODO(RTL-33): Think on if possible to have a joint failures/augmented model, or how easily that can be done
 class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
-    def __init__(self, predictor, failure_model):
-        assert isinstance(failure_model, ProbabilisticFailuresBase)
+    def __init__(self, predictor, failure_model: ProbabilisticFailuresBase):
         super().__init__(predictor)
         self.failure_model = failure_model
         assert self.failure_model.dim == self.dim, (
@@ -342,11 +341,11 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
         self,
         predictor,
         num_points_to_sample,
-        failure_model,
+        failure_model: ProductOfListOfProbabilisticFailures,
         *,
         points_being_sampled=None,
-        num_mc_iterations=DEFAULT_MC_ITERATIONS_TOTAL_QEIWF,
-        num_mc_iterations_per_loop=DEFAULT_MC_ITERATIONS_PER_LOOP_QEIWF,
+        num_mc_iterations: int = DEFAULT_MC_ITERATIONS_TOTAL_QEIWF,
+        num_mc_iterations_per_loop: int = DEFAULT_MC_ITERATIONS_PER_LOOP_QEIWF,
     ):
         super().__init__(
             predictor,
@@ -355,7 +354,6 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
             num_mc_iterations=num_mc_iterations,
             num_mc_iterations_per_loop=num_mc_iterations_per_loop,
         )
-        assert isinstance(failure_model, ProductOfListOfProbabilisticFailures)
         self.failure_model = failure_model
         self.gaussian_process = self.predictor
 

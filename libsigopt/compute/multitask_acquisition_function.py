@@ -7,9 +7,8 @@ from libsigopt.compute.acquisition_function import AcquisitionFunction
 # The underlying AF will need to be in phys_dim + 1 dimensions, where the last column is the task column.
 # TODO - Convert this into an EI-penalty (which probably means a more general AF penalty)
 class MultitaskAcquisitionFunction(AcquisitionFunction):
-    def __init__(self, acquisition_function):
+    def __init__(self, acquisition_function: AcquisitionFunction):
         super().__init__(acquisition_function.predictor)
-        assert isinstance(acquisition_function, AcquisitionFunction)
         self.underlying = acquisition_function
 
     @property

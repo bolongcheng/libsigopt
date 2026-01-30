@@ -69,8 +69,7 @@ class Predictor:
 
 # TODO(RTL-44): Consider this definition of "best_value" or if something else is more appropriate
 class HasPredictor:
-    def __init__(self, predictor):
-        assert isinstance(predictor, Predictor)
+    def __init__(self, predictor: Predictor):
         self.predictor = predictor
         self.best_value = None
 

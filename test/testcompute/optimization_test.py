@@ -54,13 +54,13 @@ class QuadraticFunction(ScipyOptimizable):
     def differentiable(self):
         return True
 
-    def get_current_point(self):
+    @property
+    def current_point(self):
         return np.copy(self._current_point)
 
-    def set_current_point(self, current_point):
+    @current_point.setter
+    def current_point(self, current_point):
         self._current_point = np.copy(current_point)
-
-    current_point = property(get_current_point, set_current_point)
 
     def compute_objective_function(self):
         temp = self._current_point - self._maxima_point

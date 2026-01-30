@@ -19,13 +19,19 @@ class VectorizedOptimizer(Optimizer):
     optimizer_name: str
     optimizer_parameters_type: type
 
-    def __init__(self, domain, acquisition_function, num_multistarts, *, optimizer_parameters, maxiter):
+    def __init__(
+        self,
+        domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+        acquisition_function: AcquisitionFunction,
+        num_multistarts,
+        *,
+        optimizer_parameters,
+        maxiter,
+    ):
         """
         This is the base class for vectorized _maximization_.
         """
-        assert isinstance(domain, (ContinuousDomain, FixedIndicesOnContinuousDomain))
         self.domain = domain
-        assert isinstance(acquisition_function, AcquisitionFunction)
         assert self.dim == acquisition_function.dim * acquisition_function.num_points_to_sample
         self.af = acquisition_function
         assert not self.requires_gradients or self.af.differentiable

@@ -40,7 +40,7 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         self.physical_covariance_class = physical_covariance_class
         self.task_covariance_class = task_covariance_class
 
-        self.set_hyperparameters(hyperparameters)
+        self.hyperparameters = hyperparameters
 
     def __repr__(self):
         return (
@@ -70,7 +70,8 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
     def translation_invariant(self):
         return self.physical_covariance.translation_invariant and self.task_covariance.translation_invariant
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         physical_hyperparameters = self.physical_covariance.hyperparameters
         hyperparameters = np.empty(len(physical_hyperparameters) + 1)
         hyperparameters[0] = self.process_variance
@@ -78,7 +79,8 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
         hyperparameters[-1] = self.task_covariance.hyperparameters[-1]
         return hyperparameters
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         """We choose to deal with the process_variance as part of the full kernel, not the component kernels."""
         hyperparameters = np.copy(hyperparameters)
         assert len(hyperparameters.shape) == 1 and len(hyperparameters) >= 3
@@ -91,8 +93,6 @@ class MultitaskTensorCovariance(DifferentiableCovariance):
 
         task_hyperparameters = np.array([1.0, hyperparameters[-1]])
         self.task_covariance = self.task_covariance_class(task_hyperparameters)
-
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
 
     def _covariance(self, x, z):
         x_phys, x_task, z_phys, z_task = self.separate_physical_task_components(x, z)

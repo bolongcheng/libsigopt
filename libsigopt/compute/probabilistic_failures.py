@@ -109,12 +109,10 @@ class ProbabilisticFailures(HasPredictor, ProbabilisticFailuresBase):
         denominator = 1 + exponential
         return FailureComponents(exponential, denominator, core_components)
 
-    def _compute_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureComponents)
+    def _compute_probability_of_success(self, failure_components: FailureComponents):
         return 1 / failure_components.denominator
 
-    def _compute_grad_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureComponents)
+    def _compute_grad_probability_of_success(self, failure_components: FailureComponents):
         if failure_components.core_components.grad_mean is None:
             return None
         chain_rule = -self.kappa * failure_components.exponential / failure_components.denominator**2
@@ -151,22 +149,19 @@ class ProbabilisticFailuresCDF(HasPredictor, ProbabilisticFailuresBase):
         core_components = self.compute_core_components(points_to_evaluate, option)
         return FailureComponents(np.array(0), np.array(0), core_components)
 
-    def _compute_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureComponents)
+    def _compute_probability_of_success(self, failure_components: FailureComponents):
         return failure_components.core_components.cdf_z
 
-    def _compute_grad_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureComponents)
+    def _compute_grad_probability_of_success(self, failure_components: FailureComponents):
         cc = failure_components.core_components
         return -(cc.pdf_z / cc.sqrt_var)[:, None] * (cc.grad_mean + cc.z[:, None] * cc.grad_sqrt_var)
 
 
 class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
-    def __init__(self, list_of_probabilistic_failures):
+    def __init__(self, list_of_probabilistic_failures: list[ProbabilisticFailuresBase]):
         assert len(list_of_probabilistic_failures) >= 1
         dim = list_of_probabilistic_failures[0].dim
         for pf in list_of_probabilistic_failures:
-            assert isinstance(pf, ProbabilisticFailuresBase)
             assert pf.dim == dim
         self.list_of_probabilistic_failures = list_of_probabilistic_failures
         self.num_pfs = len(self.list_of_probabilistic_failures)
@@ -208,12 +203,10 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
             return FailureListProductComponents(poss, grad_poss)
         raise NotImplementedError(option)
 
-    def _compute_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureListProductComponents)
+    def _compute_probability_of_success(self, failure_components: FailureListProductComponents):
         return np.prod(failure_components.poss, axis=0)
 
-    def _compute_grad_probability_of_success(self, failure_components):
-        assert isinstance(failure_components, FailureListProductComponents)
+    def _compute_grad_probability_of_success(self, failure_components: FailureListProductComponents):
         poss = failure_components.poss
         assert failure_components.grad_poss is not None
         grad_poss = failure_components.grad_poss
