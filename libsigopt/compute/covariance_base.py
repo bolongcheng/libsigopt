@@ -261,7 +261,6 @@ class RadialCovariance(CovarianceBase):
         r = np.sqrt(np.sum(np.power(diff_vecs / self._length_scales, 2), axis=1))
         return r, diff_vecs
 
-    # customlint: disable=AccidentalFormatStringRule
     def _build_distance_matrix_squared(
         self,
         data,

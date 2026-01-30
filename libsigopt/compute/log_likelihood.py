@@ -13,7 +13,6 @@ DEFAULT_TIKHONOV_PARAMETER = 1.0e-10
 INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION = False
 
 
-# customlint: disable=AccidentalFormatStringRule
 class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
     r"""
 

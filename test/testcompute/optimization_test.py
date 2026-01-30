@@ -23,9 +23,6 @@ from testaux.numerical_test_case import (
 )
 
 
-# customlint: disable=AccidentalFormatStringRule
-
-
 class QuadraticFunction(ScipyOptimizable):
     r"""Class to evaluate the function f(x_1,...,x_{dim}) = -\sum_i (x_i - s_i)^2, i = 1..dim.
 
