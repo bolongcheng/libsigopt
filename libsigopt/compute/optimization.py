@@ -15,7 +15,7 @@ MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION = 0
 NUM_BACKUP_MULTISTARTS = 1000
 
 
-class ScipyOptimizable(object):
+class ScipyOptimizable:
     """Class that an object must fulfill to be optimized by a _ScipyOptimizerWrapper."""
 
     @property

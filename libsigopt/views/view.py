@@ -105,7 +105,7 @@ def get_relevant_expected_improvement(predictor):
         return ExpectedImprovement(predictor)
 
 
-class View(object):
+class View:
     view_name: str
     optimized_metrics_index: list | None
     optimized_metrics_objectives: list | None

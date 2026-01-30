@@ -20,7 +20,7 @@ class HyperparameterInvalidError(ValueError):
     """Raised when hyperparameters of a covariance class are not all positive."""
 
 
-class CovarianceBase(object):
+class CovarianceBase:
     r"""Base class for covariance kernels; the functions that all covariance kernels must have."""
 
     covariance_type: str

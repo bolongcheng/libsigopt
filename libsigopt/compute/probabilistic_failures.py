@@ -25,7 +25,7 @@ class FailureListProductComponents:
     grad_poss: np.ndarray | None
 
 
-class ProbabilisticFailuresBase(object):
+class ProbabilisticFailuresBase:
     @property
     def differentiable(self) -> bool:
         raise NotImplementedError()

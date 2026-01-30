@@ -99,7 +99,7 @@ def samples_satisfy_kolmogorov_smirnov_test(samples, domain_component, prior):
         return True
 
 
-class TestContinuousDomain(object):
+class TestContinuousDomain:
     def test_basics(self):
         domain = ContinuousDomain([[0, 1], [-2, 3]])
         assert all(m == 0.5 for m in domain.midpoint)
@@ -394,7 +394,7 @@ class TestContinuousDomain(object):
             assert all(sum(p) >= (1 - tolerance) for p in random_near_points)
 
 
-class TestCategoricalDomain(object):
+class TestCategoricalDomain:
     def test_basics(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -1391,7 +1391,7 @@ class TestCategoricalDomain(object):
         assert not domains_approximately_equal(domain_with_priors, domain_with_priors_changed)
 
 
-class TestPriorSamplers(object):
+class TestPriorSamplers:
     def test_fewer_priors_than_domain_components_raises_assertion_error(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (-4, 4)},
@@ -1504,7 +1504,7 @@ class TestPriorSamplers(object):
         assert samples_satisfy_kolmogorov_smirnov_test(samples[:, 0], domain_components[0], priors[0])
 
 
-class TestInferUnconstrainedIndicesHalfspace(object):
+class TestInferUnconstrainedIndicesHalfspace:
     domain_components: list[DomainComponent] = [
         {"var_type": "double", "elements": (-2, -1)},
         {"var_type": "double", "elements": (-1, 0)},
@@ -1620,7 +1620,7 @@ class TestInferUnconstrainedIndicesHalfspace(object):
         assert one_hot_indices == list(range(9))
 
 
-class TestHitandRunSampling(object):
+class TestHitandRunSampling:
     def test_all_constrained(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -1681,7 +1681,7 @@ class TestHitandRunSampling(object):
         assert all(domain.check_point_acceptable(point) for point in samples)
 
 
-class TestFixedIndicesOnContinuousDomain(object):
+class TestFixedIndicesOnContinuousDomain:
     def test_basics(self):
         cat_domain = CategoricalDomain(
             [

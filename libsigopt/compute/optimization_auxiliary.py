@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 import numpy as np
 
 
-class Optimizer(object):
+class Optimizer:
     optimizer_name: str
 
     def optimize(self, **kwargs):

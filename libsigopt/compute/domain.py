@@ -40,10 +40,7 @@ MAX_GRID_DIM = 13
 
 def form_constraint_fun_and_jac(one_hot_weights, rhs):
     def fun(one_hot_x):
-        return (
-            np.dot(one_hot_weights, one_hot_x.T)
-            - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * np.sign(rhs)) * rhs
-        )
+        return np.dot(one_hot_weights, one_hot_x.T) - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * np.sign(rhs)) * rhs
 
     def jac(one_hot_x):
         return one_hot_weights
@@ -72,7 +69,7 @@ class SamplerOpts(TypedDict):
     sampler: Literal["latin_hypercube", "halton", "sobol", "uniform", "skip", "seed"]
 
 
-class ContinuousDomain(object):
+class ContinuousDomain:
     def __init__(self, domain_bounds):
         """Construct a ContinuousDomain with the specified bounds."""
         bounds_shape = np.asarray(domain_bounds).shape
@@ -373,7 +370,7 @@ class BetaPrior(TypedDict):
 AnyPrior = NormalPrior | BetaPrior
 
 
-class CategoricalDomain(object):
+class CategoricalDomain:
     domain_components: list[DomainComponent]
     constraint_list: list[DomainConstraint]
     priors: list[AnyPrior]
@@ -674,9 +671,7 @@ class CategoricalDomain(object):
         ):
             return np.random.choice(domain_component["elements"], replace=True, size=num_points)
         elif domain_component["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
-            return np.random.randint(
-                domain_component["elements"][0], domain_component["elements"][1] + 1, num_points
-            )
+            return np.random.randint(domain_component["elements"][0], domain_component["elements"][1] + 1, num_points)
         else:
             return np.random.uniform(domain_component["elements"][0], domain_component["elements"][1], num_points)
 
@@ -952,9 +947,7 @@ class CategoricalDomain(object):
                     this_cat_point[this_cat_dim_map["output_ind"]] = round(one_hot_point[this_cat_dim_map["input_ind"]])
                 elif this_cat_dim_map["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
                     quantized_values = np.array(self.domain_components[this_cat_dim_map["output_ind"]]["elements"])
-                    nearest_idx = np.argmin(
-                        np.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values)
-                    )
+                    nearest_idx = np.argmin(np.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values))
                     this_cat_point[this_cat_dim_map["output_ind"]] = quantized_values[nearest_idx]
                 else:
                     one_hot_indexes, categories = zip(*this_cat_dim_map["input_ind_value_map"].items())
@@ -1044,7 +1037,7 @@ class CategoricalDomain(object):
         return one_hot_points_integer_feasible
 
 
-class FixedIndicesOnContinuousDomain(object):
+class FixedIndicesOnContinuousDomain:
     def __init__(self, continuous_domain, fixed_indices):
         assert isinstance(continuous_domain, ContinuousDomain)
         assert isinstance(fixed_indices, dict)

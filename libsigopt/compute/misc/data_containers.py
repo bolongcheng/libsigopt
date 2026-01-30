@@ -12,7 +12,7 @@ MIDPOINT_NORMALIZATION_SCALE_FACTOR = 0.1
 MINIMUM_METRIC_HALF_WIDTH = 1.0e-8
 
 
-class MetricMidpointInfo(object):
+class MetricMidpointInfo:
     midpoint: np.ndarray
     scale: np.ndarray
     negate: np.ndarray
@@ -145,7 +145,7 @@ class SingleMetricMidpointInfo(MetricMidpointInfo):
         assert lie_method in ConstantLiarType
 
 
-class HistoricalData(object):
+class HistoricalData:
     def __init__(self, dim):
         self.dim = dim
         self.points_sampled = np.empty((0, self.dim))

@@ -91,7 +91,7 @@ def form_metrics_info(
     )
 
 
-class ZigoptSimulator(object):
+class ZigoptSimulator:
     def __init__(
         self,
         dim,

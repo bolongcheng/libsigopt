@@ -21,7 +21,7 @@ class PredictorCoreComponents:
     grad_sqrt_var: np.ndarray
 
 
-class Predictor(object):
+class Predictor:
     """Interface for performing predictions"""
 
     @property
@@ -68,7 +68,7 @@ class Predictor(object):
 
 
 # TODO(RTL-44): Consider this definition of "best_value" or if something else is more appropriate
-class HasPredictor(object):
+class HasPredictor:
     def __init__(self, predictor):
         assert isinstance(predictor, Predictor)
         self.predictor = predictor

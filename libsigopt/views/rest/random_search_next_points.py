@@ -8,7 +8,7 @@ import numpy as np
 from libsigopt.compute.domain import CategoricalDomain
 
 
-class RandomSearchNextPoints(object):
+class RandomSearchNextPoints:
     view_name = "random_search_next_points"
 
     def __init__(self, params, logging_service=None):
