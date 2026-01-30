@@ -129,20 +129,21 @@ class SingleMetricMidpointInfo(MetricMidpointInfo):
             else:
                 self.scale = 2 * MIDPOINT_NORMALIZATION_SCALE_FACTOR / (self.max - self.min)
 
-    def compute_lie_value(self, lie_method):
+    def compute_lie_value(self, lie_method: ConstantLiarType):
         # TODO(RTL-56): Think about if, maybe, we should try/catch if this gets called with no non-failures
         if not len(self.non_fail_values):
             return DEFAULT_CONSTANT_LIAR_VALUE
 
         maximizing = bool(self.negate == -1)
-        if lie_method == ConstantLiarType.MIN:
-            return np.min(self.non_fail_values) if maximizing else np.max(self.non_fail_values)
-        elif lie_method == ConstantLiarType.MAX:
-            return np.max(self.non_fail_values) if maximizing else np.min(self.non_fail_values)
-        elif lie_method == ConstantLiarType.MEAN:
-            return np.mean(self.non_fail_values)
-
-        assert lie_method in ConstantLiarType
+        match lie_method:
+            case ConstantLiarType.MIN:
+                return np.min(self.non_fail_values) if maximizing else np.max(self.non_fail_values)
+            case ConstantLiarType.MAX:
+                return np.max(self.non_fail_values) if maximizing else np.min(self.non_fail_values)
+            case ConstantLiarType.MEAN:
+                return np.mean(self.non_fail_values)
+            case _:
+                raise ValueError(f"Unknown lie_method: {lie_method}")
 
 
 class HistoricalData:

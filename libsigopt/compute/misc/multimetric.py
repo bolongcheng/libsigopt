@@ -574,14 +574,15 @@ def filter_multimetric_points_sampled_spe(
         MultimetricMethod.EPSILON_CONSTRAINT,
         MultimetricMethod.OPTIMIZING_ONE_METRIC,
     ), f"{multimetric_info.method} method does not exist"
-    if multimetric_info.method == MultimetricMethod.CONVEX_COMBINATION:
-        filter_function = filter_convex_combination
-    elif multimetric_info.method == MultimetricMethod.EPSILON_CONSTRAINT:
-        filter_function = filter_epsilon_contraint
-    elif multimetric_info.method == MultimetricMethod.OPTIMIZING_ONE_METRIC:
-        filter_function = filter_optimizing_one_metric
-    else:
-        filter_function = filter_not_multimetric
+    match multimetric_info.method:
+        case MultimetricMethod.CONVEX_COMBINATION:
+            filter_function = filter_convex_combination
+        case MultimetricMethod.EPSILON_CONSTRAINT:
+            filter_function = filter_epsilon_contraint
+        case MultimetricMethod.OPTIMIZING_ONE_METRIC:
+            filter_function = filter_optimizing_one_metric
+        case _:
+            filter_function = filter_not_multimetric
     (
         modified_points_sampled_points,
         modified_points_sampled_values,

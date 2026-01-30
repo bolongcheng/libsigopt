@@ -206,9 +206,7 @@ class ContinuousDomain:
         else:
             domain_bounds = self.domain_bounds
 
-        if self._quasi_random_sampler_opts.get("sampler") is None:
-            raise AttributeError("You must call set_quasi_random_sampler_opts before generating quasi-random points.")
-        elif self.is_constrained:
+        if self.is_constrained:
             assert self._halfspaces is not None
             x0 = self._cheby_center
             A = self._halfspaces[:, :-1]
@@ -235,26 +233,29 @@ class ContinuousDomain:
                     x0,
                 )
                 self.force_hitandrun_sampling = not success
-        elif self._quasi_random_sampler_opts["sampler"] == "latin_hypercube":
-            points = generate_latin_hypercube_points(num_points, domain_bounds)
-        elif self._quasi_random_sampler_opts["sampler"] == "halton":
-            points = generate_halton_points(
-                num_points,
-                domain_bounds,
-                skip=self._quasi_random_sampler_opts.get("skip"),
-                seed=self._quasi_random_sampler_opts.get("seed"),
-            )
-        elif self._quasi_random_sampler_opts["sampler"] == "uniform":
-            points = generate_uniform_random_points(num_points, domain_bounds)
-        elif self._quasi_random_sampler_opts["sampler"] == "sobol":
-            points = generate_sobol_points(
-                num_points,
-                domain_bounds,
-                skip=self._quasi_random_sampler_opts.get("skip"),
-                seed=self._quasi_random_sampler_opts.get("seed"),
-            )
         else:
-            raise ValueError("Somehow the quasi random points you are asking for do not exist")
+            match self._quasi_random_sampler_opts.get("sampler"):
+                case "latin_hypercube":
+                    points = generate_latin_hypercube_points(num_points, domain_bounds)
+                case "halton":
+                    points = generate_halton_points(
+                        num_points,
+                        domain_bounds,
+                        skip=self._quasi_random_sampler_opts.get("skip"),
+                        seed=self._quasi_random_sampler_opts.get("seed"),
+                    )
+                case "sobol":
+                    points = generate_sobol_points(
+                        num_points,
+                        domain_bounds,
+                        skip=self._quasi_random_sampler_opts.get("skip"),
+                        seed=self._quasi_random_sampler_opts.get("seed"),
+                    )
+                case "uniform":
+                    points = generate_uniform_random_points(num_points, domain_bounds)
+                case _:
+                    raise ValueError(f"The sampler {self._quasi_random_sampler_opts['sampler']} does not exist")
+
         return np.exp(points) if log_sample else points
 
     def generate_grid_points_in_domain(self, points_per_dimension):
