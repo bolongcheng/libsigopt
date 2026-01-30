@@ -13,6 +13,7 @@ from libsigopt.compute.covariance_base import DifferentiableCovariance, Hyperpar
 from libsigopt.compute.misc.constant import TASK_LENGTH_LOWER_BOUND, CovarianceType
 from libsigopt.compute.multitask_covariance import MultitaskTensorCovariance
 
+
 from testaux.numerical_test_case import (
     assert_scalar_within_relative,
     assert_vector_within_relative,
