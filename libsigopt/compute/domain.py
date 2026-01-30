@@ -110,7 +110,13 @@ class ContinuousDomain:
     def one_hot_unconstrained_indices(self):
         return self._one_hot_unconstrained_indices
 
-    def set_quasi_random_sampler_opts(self, opts: SamplerOpts):
+    @property
+    def quasi_random_sampler_opts(self):
+        """Recover the dictionary of options for the quasi random sampler."""
+        return copy.deepcopy(self._quasi_random_sampler_opts)
+
+    @quasi_random_sampler_opts.setter
+    def quasi_random_sampler_opts(self, opts: SamplerOpts):
         """Input a dictionary of options for the quasi random sampler."""
         possible_quasi_random_samplers = ("latin_hypercube", "halton", "sobol", "uniform")
         if "sampler" not in opts:
@@ -119,12 +125,6 @@ class ContinuousDomain:
             raise ValueError(f"The sampler {opts['sampler']} does not exist")
         else:
             self._quasi_random_sampler_opts = opts
-
-    def get_quasi_random_sampler_opts(self):
-        """Recover the dictionary of options for the quasi random sampler."""
-        return copy.deepcopy(self._quasi_random_sampler_opts)
-
-    quasi_random_sampler_opts = property(get_quasi_random_sampler_opts, set_quasi_random_sampler_opts)
 
     def check_point_inside(self, point):
         return np.all((point >= self.domain_bounds[:, 0]) & (point <= self.domain_bounds[:, 1]))
@@ -142,7 +142,7 @@ class ContinuousDomain:
         assert self._halfspaces is not None
         A = self._halfspaces[:, :-1]
         b = -self._halfspaces[:, -1]
-        return all(list(np.dot(A, point) <= b))
+        return all(np.dot(A, point) <= b)
 
     def check_point_acceptable(self, point):
         assert len(point) == self.dim
@@ -988,7 +988,6 @@ class CategoricalDomain:
         if len(categorical_component_mappings) == 0:
             return one_hot_points
 
-        categorical_component_mappings = self.get_categorical_component_mappings()
         snapped_points = np.copy(one_hot_points)
         for categorical_component_mapping in categorical_component_mappings:
             cat_indices = list(categorical_component_mapping["input_ind_value_map"])
