@@ -199,7 +199,7 @@ class _ScipyOptimizerWrapper(Optimizer):
         self.objective_function.current_point = point
 
     def _optimize(self, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class LBFGSBOptimizer(_ScipyOptimizerWrapper):

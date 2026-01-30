@@ -38,15 +38,15 @@ class Predictor:
 
     @property
     def points_sampled(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def points_sampled_value(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def points_sampled_noise_variance(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def compute_mean_of_points(self, points_to_sample):
         raise NotImplementedError()

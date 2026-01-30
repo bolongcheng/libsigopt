@@ -51,7 +51,7 @@ class CovarianceBase:
         """
         This is the internal implementation, computing the vector of covariance values
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def covariance(self, x, z):
         """Compute the covariance K(x,z).
@@ -72,7 +72,7 @@ class CovarianceBase:
         """
         This is the internal implementation, computing the K matrix without the process variance or noise on diagonal.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def build_kernel_matrix(self, points_sampled, points_to_sample=None, noise_variance=None):
         """Compute the kernel matrix, K(x_i, z_j) for points_to_sample x_i and points_sampled z_j.
@@ -96,7 +96,7 @@ class DifferentiableCovariance(CovarianceBase):
     """Class for virtual definitions of kernel derivative functions."""
 
     def _grad_covariance(self, x, z):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def grad_covariance(self, x, z):
         """Compute the gradient of the covariance K(x,z) wrt the dimensions in x.
@@ -117,7 +117,7 @@ class DifferentiableCovariance(CovarianceBase):
 
     def _hyperparameter_grad_covariance_without_process_variance(self, x, z):
         """This function excludes the derivative wrt process_variance, which is dealt with in the function below."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def hyperparameter_grad_covariance(self, x, z):
         """Compute the gradient of the covariance K(x,z) wrt the hyperparameters.
