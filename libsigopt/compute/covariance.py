@@ -35,9 +35,6 @@ class SquareExponential(DifferentiableRadialCovariance):
 
     covariance_type = CovarianceType.SQUARE_EXPONENTIAL
 
-    def __init__(self, hyperparameters):
-        super().__init__(hyperparameters)
-
     def eval_radial_kernel(self, distance_matrix_squared):
         return np.exp(-0.5 * distance_matrix_squared)
 
@@ -88,9 +85,6 @@ class C0RadialMatern(RadialCovariance):
 
     covariance_type = CovarianceType.C0_RADIAL_MATERN
 
-    def __init__(self, hyperparameters):
-        super().__init__(hyperparameters)
-
     def eval_radial_kernel(self, distance_matrix_squared):
         r = np.sqrt(distance_matrix_squared)
         return np.exp(-r)
@@ -113,9 +107,6 @@ class C2RadialMatern(DifferentiableRadialCovariance):
     """
 
     covariance_type = CovarianceType.C2_RADIAL_MATERN
-
-    def __init__(self, hyperparameters):
-        super().__init__(hyperparameters)
 
     def eval_radial_kernel(self, distance_matrix_squared):
         r = np.sqrt(distance_matrix_squared)
@@ -157,9 +148,6 @@ class C4RadialMatern(DifferentiableRadialCovariance):
     """
 
     covariance_type = CovarianceType.C4_RADIAL_MATERN
-
-    def __init__(self, hyperparameters):
-        super().__init__(hyperparameters)
 
     def eval_radial_kernel(self, distance_matrix_squared):
         r = np.sqrt(distance_matrix_squared)
