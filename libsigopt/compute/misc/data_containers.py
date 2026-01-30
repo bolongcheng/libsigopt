@@ -27,10 +27,10 @@ class MetricMidpointInfo:
         return f"{self.__class__.__name__}(mid={self.midpoint}, scale={self.scale}, skip={self.skip})"
 
     @property
-    def skip(self):
+    def skip(self) -> bool:
         return self.force_skip or self.midpoint is None
 
-    def get_negate_from_objective(self, objective):
+    def get_negate_from_objective(self, objective) -> int:
         return 1 if objective == "minimize" else -1
 
     def compute_lie_value(self, lie_method):
@@ -147,7 +147,7 @@ class SingleMetricMidpointInfo(MetricMidpointInfo):
 
 
 class HistoricalData:
-    def __init__(self, dim):
+    def __init__(self, dim: int):
         self.dim = dim
         self.points_sampled = np.empty((0, self.dim))
         self.points_sampled_value = np.empty(0)
@@ -187,6 +187,6 @@ class HistoricalData:
         )
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         """Return the number of sampled points."""
         return self.points_sampled.shape[0]

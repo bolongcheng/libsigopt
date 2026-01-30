@@ -27,15 +27,15 @@ class CovarianceBase:
     process_variance: float
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         raise NotImplementedError()
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         raise NotImplementedError()
 
     @property
-    def translation_invariant(self):
+    def translation_invariant(self) -> bool:
         """Defines whether the covariance has the form K(x, z) = phi(x - z)"""
         return NotImplemented
 
@@ -204,15 +204,15 @@ class RadialCovariance(CovarianceBase):
         return new_hyperparameters
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         return self._hyperparameters.size
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return len(self._length_scales)
 
     @property
-    def translation_invariant(self):
+    def translation_invariant(self) -> bool:
         return True
 
     def __repr__(self):

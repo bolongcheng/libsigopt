@@ -3,11 +3,11 @@
 # SPDX-License-Identifier: Apache License 2.0
 import numpy as np
 
-from libsigopt.compute.predictor import HasPredictor
+from libsigopt.compute.predictor import HasPredictor, Predictor
 
 
 class AcquisitionFunction(HasPredictor):
-    def __init__(self, predictor):
+    def __init__(self, predictor: Predictor):
         super().__init__(predictor)
 
         self.best_value = predictor.best_observed_value
@@ -16,7 +16,7 @@ class AcquisitionFunction(HasPredictor):
         # This is the number of points to be simultaneously considered for selection (not outstanding points)
         self.num_points_to_sample = 1
 
-    def evaluate_at_point_list(self, points_to_evaluate, batch_size=None):
+    def evaluate_at_point_list(self, points_to_evaluate, batch_size: int | None = None):
         eval_shape = points_to_evaluate.shape
         assert len(eval_shape) == (2 if self.num_points_to_sample == 1 else 3)
         assert eval_shape[-1] == self.dim
@@ -36,7 +36,7 @@ class AcquisitionFunction(HasPredictor):
         raise NotImplementedError()
 
     # TODO(RTL-47): Actually implement the batch_size computation
-    def evaluate_grad_at_point_list(self, points_to_evaluate, batch_size=None):
+    def evaluate_grad_at_point_list(self, points_to_evaluate, batch_size: int | None = None):
         assert self.differentiable
 
         eval_shape = points_to_evaluate.shape
@@ -54,11 +54,11 @@ class AcquisitionFunction(HasPredictor):
     def joint_function_gradient_eval(self, points_to_evaluate):
         return self._evaluate_at_point_list(points_to_evaluate), self._evaluate_grad_at_point_list(points_to_evaluate)
 
-    def append_lie_locations(self, lie_locations):
+    def append_lie_locations(self, lie_locations) -> None:
         eval_shape = lie_locations.shape
         assert len(eval_shape) == 2
         assert eval_shape[-1] == self.dim
         self._append_lie_locations(lie_locations)
 
-    def _append_lie_locations(self, lie_locations):
+    def _append_lie_locations(self, lie_locations) -> None:
         raise NotImplementedError()
