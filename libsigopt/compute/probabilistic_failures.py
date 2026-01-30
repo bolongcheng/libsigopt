@@ -2,10 +2,11 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 
-from libsigopt.compute.predictor import HasPredictor, PredictorCoreComponents
+from libsigopt.compute.predictor import HasPredictor, Predictor, PredictorCoreComponents
 
 
 POSITIVE_EXPONENT_CAP = 40.0
@@ -31,7 +32,7 @@ class ProbabilisticFailuresBase:
         raise NotImplementedError()
 
     @property
-    def info_for_logs(self):
+    def info_for_logs(self) -> dict[str, Any]:
         raise NotImplementedError()
 
     def verify_points_to_evaluate(self, points_to_evaluate):
@@ -40,17 +41,19 @@ class ProbabilisticFailuresBase:
         assert eval_shape[1] == self.dim, f"dim of point: {eval_shape[1]} != dim of the model: {self.dim}"
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         raise NotImplementedError()
 
-    def __len__(self):
+    def __len__(self) -> int:
         raise NotImplementedError()
 
     @property
     def points_sampled(self):
         raise NotImplementedError()
 
-    def compute_failure_components(self, points_to_evaluate, option):
+    def compute_failure_components(
+        self, points_to_evaluate, option
+    ) -> FailureComponents | FailureListProductComponents:
         raise NotImplementedError()
 
     def compute_probability_of_success(self, points_to_evaluate):
@@ -64,7 +67,9 @@ class ProbabilisticFailuresBase:
         self.verify_points_to_evaluate(points_to_evaluate)
         return self._compute_grad_probability_of_success(self.compute_failure_components(points_to_evaluate, "grad"))
 
-    def _compute_grad_probability_of_success(self, failure_components):
+    def _compute_grad_probability_of_success(
+        self, failure_components: FailureComponents | FailureListProductComponents
+    ):
         raise NotImplementedError()
 
     def joint_function_gradient_eval(self, points_to_evaluate):
@@ -76,7 +81,7 @@ class ProbabilisticFailuresBase:
 
 
 class ProbabilisticFailures(HasPredictor, ProbabilisticFailuresBase):
-    def __init__(self, predictor, threshold):
+    def __init__(self, predictor: Predictor, threshold):
         super().__init__(predictor)
         assert threshold is not None
         assert not np.isnan(threshold)
@@ -130,14 +135,14 @@ class ProbabilisticFailuresCDF(HasPredictor, ProbabilisticFailuresBase):
         # of core_compoments in HasPredictor
         self.best_value = self.threshold
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"norm.cdf(({self.threshold} - mu(x)) / std(x))"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 1
 
     @property
-    def info_for_logs(self):
+    def info_for_logs(self) -> dict[str, Any]:
         return {
             "threshold": self.threshold,
             "num_points": self.predictor.num_sampled,
@@ -166,22 +171,22 @@ class ProductOfListOfProbabilisticFailures(ProbabilisticFailuresBase):
         self.list_of_probabilistic_failures = list_of_probabilistic_failures
         self.num_pfs = len(self.list_of_probabilistic_failures)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Product of {self.list_of_probabilistic_failures}"
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.list_of_probabilistic_failures)
 
     @property
-    def info_for_logs(self):
+    def info_for_logs(self) -> dict[str, Any]:
         return {f"failure_model_{i}: {pf.info_for_logs}" for i, pf in enumerate(self.list_of_probabilistic_failures)}
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.list_of_probabilistic_failures[0].dim
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return all(pf.differentiable for pf in self.list_of_probabilistic_failures)
 
     @property

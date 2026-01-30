@@ -18,7 +18,7 @@ def indices_represent_constant_mean(indices_list, dim):
     return np.array_equal(indices_list, np.zeros((1, dim)))
 
 
-def polynomial_index_point_check(indices_list, dim):
+def polynomial_index_point_check(indices_list, dim: int):
     r"""Confirm the user did not pass nonsensical polynomial power indices.
 
     This always checks to make sure that the indices are all the same dimension, and that they are all integers. Then it

@@ -36,12 +36,12 @@ class SigOptParzenEstimator(ScipyOptimizable):
     def __init__(
         self,
         *,
-        lower_covariance,
-        greater_covariance,
+        lower_covariance: RadialCovariance,
+        greater_covariance: RadialCovariance,
         points_sampled_points,
         points_sampled_values,
-        gamma,
-        forget_factor=0.0,
+        gamma: float,
+        forget_factor: float = 0.0,
     ):
         assert 0 < gamma < 1
         assert 0 <= forget_factor < 1
@@ -67,12 +67,12 @@ class SigOptParzenEstimator(ScipyOptimizable):
         )
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return isinstance(self.lower_covariance, DifferentiableCovariance) and isinstance(
             self.greater_covariance, DifferentiableCovariance
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"gamma={self.gamma}, |lower|={len(self.lower_points)}, |greater|={len(self.greater_points)}\n"
             f"lower_covariance={repr(self.lower_covariance)}\n"
@@ -87,13 +87,13 @@ class SigOptParzenEstimator(ScipyOptimizable):
     def current_point(self, current_point):
         self.point_to_sample = current_point
 
-    def update_covariances(self, lower_covariance: RadialCovariance, greater_covariance: RadialCovariance):
+    def update_covariances(self, lower_covariance: RadialCovariance, greater_covariance: RadialCovariance) -> None:
         # NOTE: This radial check is not really necessary, but is beneficial at least for now
         assert greater_covariance.dim == lower_covariance.dim == self.dim
         self.lower_covariance = lower_covariance
         self.greater_covariance = greater_covariance
 
-    def append_lies(self, list_of_lying_arrays, lower=False):
+    def append_lies(self, list_of_lying_arrays, lower=False) -> None:
         if list_of_lying_arrays:
             if lower:
                 self.lower_lies.extend(list_of_lying_arrays)
@@ -113,7 +113,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
     def stash_lies(self):
         return deepcopy(self.lower_lies), deepcopy(self.greater_lies)
 
-    def recover_lies(self, lie_info):
+    def recover_lies(self, lie_info) -> None:
         lower_lies, greater_lies = lie_info
         self.clear_lies()
         self.append_lies(lower_lies, lower=True)
@@ -124,7 +124,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
         self,
         points_sampled_points,
         points_sampled_values,
-    ):
+    ) -> None:
         num_points = len(points_sampled_points)
         num_points_forgotten = int(self.forget_factor * num_points)
         if num_points - num_points_forgotten < SPE_MINIMUM_UNFORGOTTEN_POINT_TOTAL:

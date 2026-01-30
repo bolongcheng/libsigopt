@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import asdict, dataclass
+from typing import Any
 
 import numpy as np
 
@@ -9,7 +10,7 @@ import numpy as np
 class Optimizer:
     optimizer_name: str
 
-    def optimize(self, **kwargs):
+    def optimize(self, **kwargs) -> None:
         raise NotImplementedError()
 
 
@@ -73,7 +74,7 @@ class SLSQPParameters:
     ftol: float = 1.0e-4  # relative error for function value for convergence
     eps: float = 1.0e-8  # finite difference parameter if approx_grad == True
 
-    def scipy_kwargs(self) -> dict:
+    def scipy_kwargs(self) -> dict[str, Any]:
         return asdict(self)
 
 

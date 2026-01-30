@@ -25,15 +25,15 @@ class Predictor:
     """Interface for performing predictions"""
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         raise NotImplementedError()
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         raise NotImplementedError()
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         raise NotImplementedError()
 
     @property
@@ -113,9 +113,9 @@ class HasPredictor:
         )
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.predictor.dim
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.predictor.differentiable
