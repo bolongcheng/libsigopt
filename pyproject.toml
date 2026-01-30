@@ -56,6 +56,7 @@ section-order = [
 ]
 
 [tool.ruff.lint.isort.sections]
-tests = ["testaux", "testcompute"]
+tests = ["testaux", "testcompute", "testviews"]
+
 [tool.ty.src]
 include = ["libsigopt/aux", "test/testaux"]

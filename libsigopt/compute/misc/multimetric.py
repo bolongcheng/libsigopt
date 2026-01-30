@@ -1,7 +1,7 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import secrets
+import random
 from dataclasses import dataclass
 from enum import StrEnum, auto
 from typing import Any
@@ -173,7 +173,7 @@ def form_multimetric_info_from_phase(phase: MultimetricOptPhase, phase_kwargs: d
     if phase == MultimetricOptPhase.NOT_MULTIMETRIC:
         multimetric_info = MULTIMETRIC_INFO_NOT_MULTIMETRIC
     elif phase == MultimetricOptPhase.INITIALIZATION:
-        initialization_phase = secrets.choice(
+        initialization_phase = random.choice(
             (MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0, MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1)
         )
         multimetric_info = form_multimetric_info_from_phase(initialization_phase, {})
@@ -206,7 +206,7 @@ def form_multimetric_info_from_phase(phase: MultimetricOptPhase, phase_kwargs: d
         multimetric_info = MultimetricInfo(method=MultimetricMethod.EPSILON_CONSTRAINT, params=params)
     else:
         assert phase == MultimetricOptPhase.COMPLETION
-        completion_phase = secrets.choice(
+        completion_phase = random.choice(
             (MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0, MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1)
         )
         phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
