@@ -19,13 +19,19 @@ class VectorizedOptimizer(Optimizer):
     optimizer_name: str
     optimizer_parameters_type: type
 
-    def __init__(self, domain, acquisition_function, num_multistarts, *, optimizer_parameters, maxiter):
+    def __init__(
+        self,
+        domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+        acquisition_function: AcquisitionFunction,
+        num_multistarts: int,
+        *,
+        optimizer_parameters,
+        maxiter: int | None = None,
+    ):
         """
         This is the base class for vectorized _maximization_.
         """
-        assert isinstance(domain, (ContinuousDomain, FixedIndicesOnContinuousDomain))
         self.domain = domain
-        assert isinstance(acquisition_function, AcquisitionFunction)
         assert self.dim == acquisition_function.dim * acquisition_function.num_points_to_sample
         self.af = acquisition_function
         assert not self.requires_gradients or self.af.differentiable
@@ -46,7 +52,7 @@ class VectorizedOptimizer(Optimizer):
         self._best_location = None
         self._best_value = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"{self.__class__.__name__}"
             f"(optimizer_parameters={self.optimizer_parameters}, "
@@ -63,11 +69,11 @@ class VectorizedOptimizer(Optimizer):
         return self._best_value
 
     @property
-    def requires_gradients(self):
+    def requires_gradients(self) -> bool:
         raise NotImplementedError()
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.domain.dim
 
     def restrict_points_to_domain(self, points, viable_point=None):
@@ -139,12 +145,12 @@ class DEOptimizer(VectorizedOptimizer):
 
     def __init__(
         self,
-        domain,
-        acquisition_function,
-        num_multistarts,
+        domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+        acquisition_function: AcquisitionFunction,
+        num_multistarts: int,
         *,
-        optimizer_parameters=None,
-        maxiter=None,
+        optimizer_parameters: DEParameters | None = None,
+        maxiter: int | None = None,
     ):
         super().__init__(
             domain,
@@ -221,12 +227,12 @@ class AdamOptimizer(VectorizedOptimizer):
 
     def __init__(
         self,
-        domain,
-        acquisition_function,
-        num_multistarts,
+        domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+        acquisition_function: AcquisitionFunction,
+        num_multistarts: int,
         *,
-        optimizer_parameters=None,
-        maxiter=None,
+        optimizer_parameters: AdamParameters | None = None,
+        maxiter: int | None = None,
     ):
         super().__init__(
             domain, acquisition_function, num_multistarts, optimizer_parameters=optimizer_parameters, maxiter=maxiter

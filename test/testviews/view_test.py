@@ -104,12 +104,6 @@ class TestView:
             task_options=np.random.random(2),
             failure_prob=0.5,
         )
-        with pytest.raises(AssertionError):
-            form_one_hot_points_with_tasks(
-                self.mixed_domain.one_hot_domain,
-                ps.points,
-                ps.task_costs,
-            )
 
         one_hot_points_with_no_task_costs = form_one_hot_points_with_tasks(
             self.mixed_domain,

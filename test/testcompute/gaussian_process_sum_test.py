@@ -342,30 +342,31 @@ def test_gp_sum_core_functionality(gp_sum_setup, idx):
 @pytest.fixture(scope="session")
 def build_acquisition_function():
     def _acquisition_function(acquisition_function_name, domain, predictor, points_being_sampled):
-        if acquisition_function_name == "ei":
-            return ExpectedImprovement(predictor)
-        elif acquisition_function_name == "aei":
-            return AugmentedExpectedImprovement(predictor)
-        elif acquisition_function_name == "eiwf":
-            threshold = np.random.random()
-            return ExpectedImprovementWithFailures(predictor, ProbabilisticFailures(predictor, threshold))
-        elif acquisition_function_name == "epi":
-            return ExpectedParallelImprovement(predictor, 1, points_being_sampled=points_being_sampled)
-        elif acquisition_function_name == "epiwf":
-            threshold = np.random.random()
-            list_of_pfs = []
-            for _ in range(2):
+        match acquisition_function_name:
+            case "ei":
+                return ExpectedImprovement(predictor)
+            case "aei":
+                return AugmentedExpectedImprovement(predictor)
+            case "eiwf":
                 threshold = np.random.random()
-                list_of_pfs.append(ProbabilisticFailures(predictor, threshold))
-            ppf = ProductOfListOfProbabilisticFailures(list_of_pfs)
-            return ExpectedParallelImprovementWithFailures(
-                predictor,
-                num_points_to_sample=1,
-                failure_model=ppf,
-                points_being_sampled=points_being_sampled,
-            )
-        else:
-            return None
+                return ExpectedImprovementWithFailures(predictor, ProbabilisticFailures(predictor, threshold))
+            case "epi":
+                return ExpectedParallelImprovement(predictor, 1, points_being_sampled=points_being_sampled)
+            case "epiwf":
+                threshold = np.random.random()
+                list_of_pfs = []
+                for _ in range(2):
+                    threshold = np.random.random()
+                    list_of_pfs.append(ProbabilisticFailures(predictor, threshold))
+                ppf = ProductOfListOfProbabilisticFailures(list_of_pfs)
+                return ExpectedParallelImprovementWithFailures(
+                    predictor,
+                    num_points_to_sample=1,
+                    failure_model=ppf,
+                    points_being_sampled=points_being_sampled,
+                )
+            case _:
+                return None
 
     return _acquisition_function
 

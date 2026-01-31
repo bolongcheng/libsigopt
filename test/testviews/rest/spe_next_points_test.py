@@ -36,7 +36,7 @@ PHASE_LIST = [
 ]
 
 
-class TestSPENextPointsViews(object):
+class TestSPENextPointsViews:
     def assert_call_successful(self, zigopt_simulator, domain=None):
         if domain:
             view_input = zigopt_simulator.form_spe_next_points_view_input_from_domain(domain)

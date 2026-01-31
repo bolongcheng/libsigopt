@@ -127,7 +127,7 @@ class TestSingleMetricMidpointInfo:
         values = np.arange(count)
         failures = np.full(count, False, dtype=bool)
         mmi = SingleMetricMidpointInfo(values=values, failures=failures)
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             mmi.compute_lie_value("fake_lie_method")
 
         mmi = SingleMetricMidpointInfo(values=np.array([]), failures=np.array([]))
@@ -261,7 +261,7 @@ class TestMultiMetricMidpointInfo:
 
     def test_lie_management(self):
         mmi = MultiMetricMidpointInfo(np.empty((10, 2)), np.full(10, False, dtype=bool))
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             mmi.compute_lie_value("fake_lie_method")
 
         mmi = MultiMetricMidpointInfo(values=np.array([[]]), failures=np.array([]))

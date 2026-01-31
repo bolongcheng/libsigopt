@@ -11,7 +11,7 @@ from libsigopt.compute.misc.constant import NonzeroMeanType
 from libsigopt.views.rest.search_next_points import SearchNextPoints
 
 
-class TestSearchNextPoints(object):
+class TestSearchNextPoints:
     def assert_call_successful(self, zigopt_simulator, parallelism_method, domain=None):
         if domain:
             view_input = zigopt_simulator.form_search_next_points_view_input_from_domain(domain, parallelism_method)

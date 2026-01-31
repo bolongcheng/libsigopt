@@ -1,9 +1,10 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
-import secrets
+import random
 from dataclasses import dataclass
 from enum import StrEnum, auto
+from typing import Any
 
 import numpy as np
 
@@ -76,12 +77,12 @@ class MultimetricOptPhase(StrEnum):
 # NOTE: There will be somewhat degenerate behavior in the event that a massive number of failures are present.
 #              I'm not sure how we would really want to deal with that circumstance.
 def identify_multimetric_phase(
-    has_optimized_metric_thresholds,
-    observation_budget,
-    observation_count,
-    failure_count,
-    num_open_suggestions,
-):
+    has_optimized_metric_thresholds: bool,
+    observation_budget: int,
+    observation_count: int,
+    failure_count: int,
+    num_open_suggestions: int,
+) -> tuple[MultimetricOptPhase, dict[str, Any]]:
     INITIALIZE_FRAC = 0.15
     OPTIMIZE_ONE_METRIC_FRAC = 0.3
     CONVEX_RANDOM_FRAC = 0.45
@@ -133,7 +134,10 @@ def identify_multimetric_phase(
 
 # The structure of this is intentionally imprecise to simplify the weight decision structure
 # We consider only 100 possible weights and choose from among them, rather than something budget-dependent
-def form_convex_combination_weights(phase, fraction_of_phase_completed):
+def form_convex_combination_weights(
+    phase: MultimetricOptPhase,
+    fraction_of_phase_completed: float,
+):
     if not (0 <= fraction_of_phase_completed <= 1):  # Shouldn't be an issue, but just in case
         fraction_of_phase_completed = np.random.random()
 
@@ -163,12 +167,12 @@ def form_epsilon_constraint_epsilon(fraction_of_phase_completed):
     return all_epsilons[epsilon_index]
 
 
-def form_multimetric_info_from_phase(phase, phase_kwargs):
+def form_multimetric_info_from_phase(phase: MultimetricOptPhase, phase_kwargs: dict[str, Any]) -> MultimetricInfo:
     params: AnyParams
     if phase == MultimetricOptPhase.NOT_MULTIMETRIC:
         multimetric_info = MULTIMETRIC_INFO_NOT_MULTIMETRIC
     elif phase == MultimetricOptPhase.INITIALIZATION:
-        initialization_phase = secrets.choice(
+        initialization_phase = random.choice(
             (MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0, MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1)
         )
         multimetric_info = form_multimetric_info_from_phase(initialization_phase, {})
@@ -201,7 +205,7 @@ def form_multimetric_info_from_phase(phase, phase_kwargs):
         multimetric_info = MultimetricInfo(method=MultimetricMethod.EPSILON_CONSTRAINT, params=params)
     else:
         assert phase == MultimetricOptPhase.COMPLETION
-        completion_phase = secrets.choice(
+        completion_phase = random.choice(
             (MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0, MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1)
         )
         phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
@@ -574,14 +578,15 @@ def filter_multimetric_points_sampled_spe(
         MultimetricMethod.EPSILON_CONSTRAINT,
         MultimetricMethod.OPTIMIZING_ONE_METRIC,
     ), f"{multimetric_info.method} method does not exist"
-    if multimetric_info.method == MultimetricMethod.CONVEX_COMBINATION:
-        filter_function = filter_convex_combination
-    elif multimetric_info.method == MultimetricMethod.EPSILON_CONSTRAINT:
-        filter_function = filter_epsilon_contraint
-    elif multimetric_info.method == MultimetricMethod.OPTIMIZING_ONE_METRIC:
-        filter_function = filter_optimizing_one_metric
-    else:
-        filter_function = filter_not_multimetric
+    match multimetric_info.method:
+        case MultimetricMethod.CONVEX_COMBINATION:
+            filter_function = filter_convex_combination
+        case MultimetricMethod.EPSILON_CONSTRAINT:
+            filter_function = filter_epsilon_contraint
+        case MultimetricMethod.OPTIMIZING_ONE_METRIC:
+            filter_function = filter_optimizing_one_metric
+        case _:
+            filter_function = filter_not_multimetric
     (
         modified_points_sampled_points,
         modified_points_sampled_values,

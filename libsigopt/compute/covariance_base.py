@@ -14,44 +14,45 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
+from libsigopt.compute.misc.constant import CovarianceType
 
 
 class HyperparameterInvalidError(ValueError):
     """Raised when hyperparameters of a covariance class are not all positive."""
 
 
-class CovarianceBase(object):
+class CovarianceBase:
     r"""Base class for covariance kernels; the functions that all covariance kernels must have."""
 
-    covariance_type: str
+    covariance_type: CovarianceType
     process_variance: float
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         raise NotImplementedError()
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         raise NotImplementedError()
 
     @property
-    def translation_invariant(self):
+    def translation_invariant(self) -> bool:
         """Defines whether the covariance has the form K(x, z) = phi(x - z)"""
-        return NotImplemented
-
-    def get_hyperparameters(self):
         raise NotImplementedError()
 
-    def set_hyperparameters(self, hyperparameters):
+    @property
+    def hyperparameters(self):
         raise NotImplementedError()
 
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters) -> None:
+        raise NotImplementedError()
 
     def _covariance(self, x, z):
         """
         This is the internal implementation, computing the vector of covariance values
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def covariance(self, x, z):
         """Compute the covariance K(x,z).
@@ -72,7 +73,7 @@ class CovarianceBase(object):
         """
         This is the internal implementation, computing the K matrix without the process variance or noise on diagonal.
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def build_kernel_matrix(self, points_sampled, points_to_sample=None, noise_variance=None):
         """Compute the kernel matrix, K(x_i, z_j) for points_to_sample x_i and points_sampled z_j.
@@ -96,7 +97,7 @@ class DifferentiableCovariance(CovarianceBase):
     """Class for virtual definitions of kernel derivative functions."""
 
     def _grad_covariance(self, x, z):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def grad_covariance(self, x, z):
         """Compute the gradient of the covariance K(x,z) wrt the dimensions in x.
@@ -117,7 +118,7 @@ class DifferentiableCovariance(CovarianceBase):
 
     def _hyperparameter_grad_covariance_without_process_variance(self, x, z):
         """This function excludes the derivative wrt process_variance, which is dealt with in the function below."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def hyperparameter_grad_covariance(self, x, z):
         """Compute the gradient of the covariance K(x,z) wrt the hyperparameters.
@@ -187,7 +188,7 @@ class RadialCovariance(CovarianceBase):
     _length_scales_cubed: np.ndarray
 
     def __init__(self, hyperparameters):
-        self.set_hyperparameters(hyperparameters)
+        self.hyperparameters = hyperparameters
 
     def __str__(self):
         return f"{self.__class__.__name__}_{self.dim}({self.hyperparameters})"
@@ -204,31 +205,31 @@ class RadialCovariance(CovarianceBase):
         return new_hyperparameters
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         return self._hyperparameters.size
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return len(self._length_scales)
 
     @property
-    def translation_invariant(self):
+    def translation_invariant(self) -> bool:
         return True
 
     def __repr__(self):
         return f"{self.covariance_type}({self._hyperparameters.tolist()})"
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         return np.copy(self._hyperparameters)
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         self._hyperparameters = self.check_hyperparameters_are_valid(hyperparameters)
         self.process_variance = self._hyperparameters[0]
         self._length_scales = np.copy(self._hyperparameters[1:])
         self._length_scales_squared = self._length_scales**2
         self._length_scales_cubed = self._length_scales**3
-
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
 
     def eval_radial_kernel(self, distance_matrix_squared):
         """Compute the covariance as a function of r^2."""
@@ -261,7 +262,6 @@ class RadialCovariance(CovarianceBase):
         r = np.sqrt(np.sum(np.power(diff_vecs / self._length_scales, 2), axis=1))
         return r, diff_vecs
 
-    # customlint: disable=AccidentalFormatStringRule
     def _build_distance_matrix_squared(
         self,
         data,

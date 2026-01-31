@@ -13,12 +13,12 @@ def indices_represent_zero_mean(indices_list):
     return indices_list is None or np.asarray(indices_list, dtype=int).size == 0
 
 
-def indices_represent_constant_mean(indices_list, dim):
+def indices_represent_constant_mean(indices_list, dim: int):
     """Tests possible inputs to see if they correspond to the constant mean case."""
     return np.array_equal(indices_list, np.zeros((1, dim)))
 
 
-def polynomial_index_point_check(indices_list, dim):
+def polynomial_index_point_check(indices_list, dim: int):
     r"""Confirm the user did not pass nonsensical polynomial power indices.
 
     This always checks to make sure that the indices are all the same dimension, and that they are all integers. Then it
@@ -41,7 +41,7 @@ def polynomial_index_point_check(indices_list, dim):
         return indices_list
 
 
-def validate_polynomial_indices(polynomial_indices, nonzero_mean_type, dim):
+def validate_polynomial_indices(polynomial_indices, nonzero_mean_type: NonzeroMeanType, dim: int):
     if nonzero_mean_type in (
         NonzeroMeanType.CONSTANT,
         NonzeroMeanType.LINEAR,

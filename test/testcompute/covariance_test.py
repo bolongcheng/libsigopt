@@ -227,8 +227,6 @@ MULTITASK_TASKS = [0.1, 0.3, 1.0]
 
 def test_multitask_covariance_creation():
     with pytest.raises(AssertionError):
-        MultitaskTensorCovariance([1.0, 1.2, 1.4], covariance.C0RadialMatern, covariance.C2RadialMatern)
-    with pytest.raises(AssertionError):
         MultitaskTensorCovariance([1.0, 1.2], covariance.C2RadialMatern, covariance.C2RadialMatern)
     with pytest.raises(HyperparameterInvalidError):
         MultitaskTensorCovariance([1.0, 1.2, -1.4], covariance.C2RadialMatern, covariance.C2RadialMatern)

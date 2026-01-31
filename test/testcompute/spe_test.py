@@ -31,33 +31,36 @@ gamma = 0.5
 @pytest.fixture(scope="module")
 def form_multimetric_info():
     def _form_multimetric_info(method_name):
-        if method_name == MultimetricMethod.CONVEX_COMBINATION:
-            phase = random.choice(
-                [
-                    MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD,
-                    MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL,
-                ]
-            )
-            phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
-        elif method_name == MultimetricMethod.EPSILON_CONSTRAINT:
-            phase = random.choice(
-                [
-                    MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0,
-                    MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1,
-                ]
-            )
-            phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
-        elif method_name == MultimetricMethod.OPTIMIZING_ONE_METRIC:
-            phase = random.choice(
-                [
-                    MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
-                    MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1,
-                ]
-            )
-            phase_kwargs = {}
-        else:
-            phase = MultimetricOptPhase.NOT_MULTIMETRIC
-            phase_kwargs = {}
+        match method_name:
+            case MultimetricMethod.CONVEX_COMBINATION:
+                phase = random.choice(
+                    [
+                        MultimetricOptPhase.CONVEX_COMBINATION_RANDOM_SPREAD,
+                        MultimetricOptPhase.CONVEX_COMBINATION_SEQUENTIAL,
+                    ]
+                )
+                phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
+            case MultimetricMethod.EPSILON_CONSTRAINT:
+                phase = random.choice(
+                    [
+                        MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_0,
+                        MultimetricOptPhase.EPSILON_CONSTRAINT_OPTIMIZE_1,
+                    ]
+                )
+                phase_kwargs = {"fraction_of_phase_completed": np.random.random()}
+            case MultimetricMethod.OPTIMIZING_ONE_METRIC:
+                phase = random.choice(
+                    [
+                        MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_0,
+                        MultimetricOptPhase.OPTIMIZING_ONE_METRIC_OPTIMIZE_1,
+                    ]
+                )
+                phase_kwargs = {}
+            case MultimetricOptPhase.NOT_MULTIMETRIC:
+                phase = MultimetricOptPhase.NOT_MULTIMETRIC
+                phase_kwargs = {}
+            case _:
+                raise ValueError(f"Invalid method name: {method_name}")
         return form_multimetric_info_from_phase(phase, phase_kwargs)
 
     return _form_multimetric_info

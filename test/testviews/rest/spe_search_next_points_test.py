@@ -7,7 +7,7 @@ import pytest
 from libsigopt.views.rest.spe_search_next_points import SPESearchNextPoints
 
 
-class TestSearchNextPoints(object):
+class TestSearchNextPoints:
     def assert_call_successful(self, zigopt_simulator, domain=None):
         if domain:
             view_input = zigopt_simulator.form_spe_search_next_points_input_from_domain(domain)

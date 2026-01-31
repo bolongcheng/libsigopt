@@ -5,6 +5,8 @@ import copy
 
 import numpy as np
 
+from libsigopt.compute.acquisition_function import AcquisitionFunction
+from libsigopt.compute.domain import ContinuousDomain, FixedIndicesOnContinuousDomain
 from libsigopt.compute.misc.constant import (
     AF_OPT_NEAR_BEST_STD_DEV,
     DEFAULT_MAX_SIMULTANEOUS_EI_POINTS,
@@ -61,7 +63,12 @@ Finally we also return the expected optimization time for this maxiter.
 """
 
 
-def find_optimizer_maxiter(domain, acquisition_function, num_multistarts, optimizer_name):
+def find_optimizer_maxiter(
+    domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+    acquisition_function: AcquisitionFunction,
+    num_multistarts: int,
+    optimizer_name: str,
+):
     num_points_sampled_interval = 40
     # TODO(RTL-27): Revisit these iterations tables to improve efficiency.
     es_iteration_table = [
@@ -132,8 +139,8 @@ def find_optimizer_maxiter(domain, acquisition_function, num_multistarts, optimi
 
 
 def qei_acquisition_function_optimization(
-    domain,
-    acquisition_function,
+    domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+    acquisition_function: AcquisitionFunction,
 ):
     qei_optimizer = VECTORIZED_NEXT_POINTS_QEI_OPTIMIZER(
         domain=domain,
@@ -149,9 +156,9 @@ def qei_acquisition_function_optimization(
 
 
 def constant_liar_acquisition_function_optimization(
-    domain,
-    acquisition_function,
-    num_to_sample,
+    domain: ContinuousDomain | FixedIndicesOnContinuousDomain,
+    acquisition_function: AcquisitionFunction,
+    num_to_sample: int,
 ):
     af = copy.deepcopy(acquisition_function)
     next_points = []

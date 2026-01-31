@@ -1,6 +1,8 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any
+
 import numpy as np
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
@@ -30,7 +32,7 @@ def k_center_clustering(points, first_center_index, k):
 class MultisolutionBestAssignments(View):
     view_name = "multisolution_best_assignments"
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         num_solutions = self.params["num_solutions"]
         assert num_solutions > 1
         assert not self.params["metrics_info"].requires_pareto_frontier_optimization

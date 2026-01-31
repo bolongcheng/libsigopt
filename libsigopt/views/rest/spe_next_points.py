@@ -3,13 +3,14 @@
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
 from enum import StrEnum, auto
+from typing import Any
 
 import numpy as np
 
 from libsigopt.aux.constant import CATEGORICAL_EXPERIMENT_PARAMETER_NAME
 from libsigopt.compute.covariance import C4RadialMatern
-from libsigopt.compute.covariance_base import HyperparameterInvalidError
-from libsigopt.compute.domain import SamplerOpts
+from libsigopt.compute.covariance_base import CovarianceBase, HyperparameterInvalidError
+from libsigopt.compute.domain import CategoricalDomain, SamplerOpts
 from libsigopt.compute.misc.constant import MULTIMETRIC_MIN_NUM_IN_BOUNDS_POINTS, MULTIMETRIC_MIN_NUM_SUCCESSFUL_POINTS
 from libsigopt.compute.misc.multimetric import filter_multimetric_points_sampled_spe
 from libsigopt.compute.optimization import LBFGSBOptimizer, MultistartOptimizer, SLSQPOptimizer
@@ -59,7 +60,7 @@ STD_EPSILON_HACK = 1.0e-8
 
 # TODO(RTL-119): Need to decide about success_progress being used here instead of total_progress
 #              Complicated perhaps because it is not strictly increasing
-def get_experiment_phase(budget, observation_count, failure_count):
+def get_experiment_phase(budget: int, observation_count: int, failure_count: int) -> tuple[SPEPhase, float]:
     success_progress = (observation_count - failure_count) / budget
     total_progress = observation_count / budget
     success_proportion = 1 - failure_count / (1 + observation_count)
@@ -74,7 +75,7 @@ def get_experiment_phase(budget, observation_count, failure_count):
     return phase, success_progress
 
 
-def get_solver_options(phase, progress):
+def get_solver_options(phase: SPEPhase, progress: float) -> tuple[float, float]:
     if phase == SPEPhase.SKO:
         progress_step = (progress - INITIALIZATION_PHASE_LIMIT) / (SKO_PHASE_LIMIT - INITIALIZATION_PHASE_LIMIT)
         gamma = TOP_GAMMA - progress_step * (TOP_GAMMA - BOTTOM_GAMMA)
@@ -95,7 +96,13 @@ class SPENextPoints(View):
         return x[:, :-1]
 
     @staticmethod
-    def form_one_hot_covariance(covariance_class, domain, one_hot_points, cat_length_scale, factor):
+    def form_one_hot_covariance(
+        covariance_class: type[CovarianceBase],
+        domain: CategoricalDomain,
+        one_hot_points,
+        cat_length_scale: float,
+        factor: float,
+    ) -> CovarianceBase:
         point_spread = np.std(one_hot_points, axis=0) + STD_EPSILON_HACK
         one_hot_bandwidths = factor * np.sqrt(point_spread / 2)
 
@@ -122,8 +129,8 @@ class SPENextPoints(View):
         self,
         one_hot_points_sampled_points,
         points_sampled_values,
-        gamma=TOP_GAMMA,
-    ):
+        gamma: float = TOP_GAMMA,
+    ) -> SigOptParzenEstimator:
         temp_covariance = C4RadialMatern([1.0] * (1 + self.domain.one_hot_dim))
         sigopt_parzen_estimator = SigOptParzenEstimator(
             lower_covariance=temp_covariance,
@@ -151,7 +158,12 @@ class SPENextPoints(View):
         return sigopt_parzen_estimator
 
     @staticmethod
-    def suggest_next_points_constant_liar(sigopt_parzen_estimator, num_to_sample, domain, num_multistarts):
+    def suggest_next_points_constant_liar(
+        sigopt_parzen_estimator: SigOptParzenEstimator,
+        num_to_sample: int,
+        domain: CategoricalDomain,
+        num_multistarts: int,
+    ):
         lie_data = sigopt_parzen_estimator.stash_lies()
 
         base_optimizer: Optimizer
@@ -193,15 +205,15 @@ class SPENextPoints(View):
     #       May want to change the uniform random sampling to account for those situations
     @staticmethod
     def draw_samples(
-        sigopt_parzen_estimator,
-        num_to_sample,
-        domain,
+        sigopt_parzen_estimator: SigOptParzenEstimator,
+        num_to_sample: int,
+        domain: CategoricalDomain,
         *,
-        num_multistarts=SPE_NUM_MULTISTARTS,
-        batch_size=SPE_BATCH_SIZE,
-        rejection_samples_limit=SPE_REJECTION_SAMPLES_LIMIT,
-        proposal_factor=SPE_PROPOSAL_FACTOR,
-        proposal_std=0.06,
+        num_multistarts: int = SPE_NUM_MULTISTARTS,
+        batch_size: int = SPE_BATCH_SIZE,
+        rejection_samples_limit: int = SPE_REJECTION_SAMPLES_LIMIT,
+        proposal_factor: float = SPE_PROPOSAL_FACTOR,
+        proposal_std: float = 0.06,
     ):
         max_location = SPENextPoints.suggest_next_points_constant_liar(
             sigopt_parzen_estimator,
@@ -212,7 +224,7 @@ class SPENextPoints(View):
         max_value = sigopt_parzen_estimator.evaluate_expected_improvement(np.atleast_2d(max_location))[2][0]
 
         uniform_domain = deepcopy(domain.one_hot_domain)
-        uniform_domain.set_quasi_random_sampler_opts(SamplerOpts(sampler="uniform"))
+        uniform_domain.quasi_random_sampler_opts = SamplerOpts(sampler="uniform")
 
         num_rejection_samples = 0
         samples = np.empty((0, domain.one_hot_dim))
@@ -275,7 +287,7 @@ class SPENextPoints(View):
 
         return either_failure
 
-    def create_random_suggestions(self, num_to_sample):
+    def create_random_suggestions(self, num_to_sample: int):
         if self.domain.priors and not self.domain.constraint_list:
             suggested_points = self.domain.generate_random_points_according_to_priors(num_to_sample)
         else:
@@ -283,7 +295,7 @@ class SPENextPoints(View):
 
         return self._return_results_to_zigopt(suggested_points)
 
-    def create_spe_suggestions(self, num_to_sample, phase, progress):
+    def create_spe_suggestions(self, num_to_sample: int, phase: SPEPhase, progress: float):
         # set params from phase
         gamma, proposal_factor = get_solver_options(phase, progress)
         assert 0 < gamma < 1
@@ -352,7 +364,7 @@ class SPENextPoints(View):
             ).tolist()
         return results
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         assert self.has_optimization_metrics, f"{self.view_name} must have optimization metrics"
         num_to_sample = self.params["num_to_sample"]
 

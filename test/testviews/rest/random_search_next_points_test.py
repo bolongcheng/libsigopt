@@ -10,7 +10,7 @@ from libsigopt.views.rest.random_search_next_points import RandomSearchNextPoint
 from testcompute.domain_test import samples_satisfy_kolmogorov_smirnov_test
 
 
-class TestRandomSearchNextPoints(object):
+class TestRandomSearchNextPoints:
     def assert_call_successful(self, zigopt_simulator, domain=None):
         if domain:
             view_input = zigopt_simulator.form_random_search_view_input_from_domain(domain)

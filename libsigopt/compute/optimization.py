@@ -1,13 +1,22 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from __future__ import annotations
+
 import warnings
 
 import numpy as np
 import scipy.optimize
 
+from libsigopt.compute.domain import ContinuousDomain
 from libsigopt.compute.misc.constant import L_BFGS_B_OPTIMIZER, SLSQP_OPTIMIZER
-from libsigopt.compute.optimization_auxiliary import LBFGSBParameters, OptimizationResults, Optimizer, SLSQPParameters
+from libsigopt.compute.optimization_auxiliary import (
+    LBFGSBParameters,
+    OptimizationResults,
+    Optimizer,
+    ScipyOptimizerParameters,
+    SLSQPParameters,
+)
 
 
 MINIMUM_SUCCESSFUL_MULTISTARTS_NUMBER = 0
@@ -15,20 +24,20 @@ MINIMUM_SUCCESSFUL_MULTISTARTS_FRACTION = 0
 NUM_BACKUP_MULTISTARTS = 1000
 
 
-class ScipyOptimizable(object):
+class ScipyOptimizable:
     """Class that an object must fulfill to be optimized by a _ScipyOptimizerWrapper."""
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         raise NotImplementedError()
 
-    def get_current_point(self):
+    @property
+    def current_point(self):
         raise NotImplementedError()
 
-    def set_current_point(self, current_point):
+    @current_point.setter
+    def current_point(self, current_point):
         raise NotImplementedError()
-
-    current_point = property(get_current_point, set_current_point)
 
     def compute_objective_function(self):
         raise NotImplementedError()
@@ -40,7 +49,7 @@ class ScipyOptimizable(object):
 class MultistartOptimizer(Optimizer):
     r"""A general class for multistarting another optimizer."""
 
-    def __init__(self, optimizer, num_multistarts=0, log_sample=False):
+    def __init__(self, optimizer: _ScipyOptimizerWrapper, num_multistarts: int = 0, log_sample: bool = False):
         """Construct a MultistartOptimizer for multistarting any implementation of Optimizer."""
         assert not isinstance(optimizer, MultistartOptimizer)
         self.optimizer = optimizer
@@ -151,11 +160,15 @@ class _ScipyOptimizerWrapper(Optimizer):
     """Wrapper class to construct an optimizer from scipy optimization methods."""
 
     # Type of the optimizer_parameters object, specified in subclass
-    optimizer_parameters_type: type
+    optimizer_parameters_type: type[ScipyOptimizerParameters]
 
-    def __init__(self, domain, optimizable, optimizer_parameters):
+    def __init__(
+        self,
+        domain: ContinuousDomain,
+        optimizable: ScipyOptimizable,
+        optimizer_parameters: ScipyOptimizerParameters | None = None,
+    ):
         self.domain = domain
-        assert isinstance(optimizable, ScipyOptimizable)
         self.objective_function = optimizable
         self.optimization_results = None
 
@@ -170,7 +183,7 @@ class _ScipyOptimizerWrapper(Optimizer):
         self.optimizer_parameters = optimizer_parameters
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.domain.dim
 
     def joint_function_gradient_eval(self, **kwargs):
@@ -194,21 +207,25 @@ class _ScipyOptimizerWrapper(Optimizer):
 
         return decorated
 
-    def optimize(self, **kwargs):
+    def optimize(self, **kwargs) -> None:
         self.optimization_results = self._optimize(**kwargs)
         point = self.optimization_results.x
         self.objective_function.current_point = point
 
     def _optimize(self, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class LBFGSBOptimizer(_ScipyOptimizerWrapper):
     optimizer_parameters_type = LBFGSBParameters
     optimizer_name = L_BFGS_B_OPTIMIZER
-    optimizer_parameters: LBFGSBParameters
 
-    def __init__(self, domain, optimizable, optimizer_parameters=None):
+    def __init__(
+        self,
+        domain: ContinuousDomain,
+        optimizable: ScipyOptimizable,
+        optimizer_parameters: LBFGSBParameters | None = None,
+    ):
         super().__init__(domain, optimizable, optimizer_parameters)
         if not (self.objective_function.differentiable or self.optimizer_parameters.approx_grad):
             raise AttributeError("For L-BFGS-B you must either provide the gradient, or request an approximation")
@@ -239,9 +256,13 @@ class LBFGSBOptimizer(_ScipyOptimizerWrapper):
 class SLSQPOptimizer(_ScipyOptimizerWrapper):
     optimizer_parameters_type = SLSQPParameters
     optimizer_name = SLSQP_OPTIMIZER
-    optimizer_parameters: SLSQPParameters
 
-    def __init__(self, domain, optimizable, optimizer_parameters=None):
+    def __init__(
+        self,
+        domain: ContinuousDomain,
+        optimizable: ScipyOptimizable,
+        optimizer_parameters: SLSQPParameters | None = None,
+    ):
         super().__init__(domain, optimizable, optimizer_parameters)
         if not (self.objective_function.differentiable or self.optimizer_parameters.approx_grad):
             raise AttributeError("For SLSQP you must either provide the gradient, or request an approximation")

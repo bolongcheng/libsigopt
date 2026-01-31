@@ -21,32 +21,32 @@ class PredictorCoreComponents:
     grad_sqrt_var: np.ndarray
 
 
-class Predictor(object):
+class Predictor:
     """Interface for performing predictions"""
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         raise NotImplementedError()
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         raise NotImplementedError()
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         raise NotImplementedError()
 
     @property
     def points_sampled(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def points_sampled_value(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def points_sampled_noise_variance(self):
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def compute_mean_of_points(self, points_to_sample):
         raise NotImplementedError()
@@ -68,9 +68,8 @@ class Predictor(object):
 
 
 # TODO(RTL-44): Consider this definition of "best_value" or if something else is more appropriate
-class HasPredictor(object):
-    def __init__(self, predictor):
-        assert isinstance(predictor, Predictor)
+class HasPredictor:
+    def __init__(self, predictor: Predictor):
         self.predictor = predictor
         self.best_value = None
 
@@ -114,9 +113,9 @@ class HasPredictor(object):
         )
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.predictor.dim
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.predictor.differentiable
