@@ -66,7 +66,9 @@ def find_indexes_of_unique_points(points, compare_points, scaling_vector, tolera
 
 
 class SamplerOpts(TypedDict):
-    sampler: Literal["latin_hypercube", "halton", "sobol", "uniform", "skip", "seed"]
+    sampler: Literal["latin_hypercube", "halton", "sobol", "uniform"]
+    skip: NotRequired[int]
+    seed: NotRequired[int]
 
 
 class ContinuousDomain:

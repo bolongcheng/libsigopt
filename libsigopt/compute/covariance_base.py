@@ -14,6 +14,7 @@ import numpy as np
 from scipy.spatial.distance import pdist, squareform
 
 from libsigopt.aux.geometry_utils import compute_distance_matrix_squared
+from libsigopt.compute.misc.constant import CovarianceType
 
 
 class HyperparameterInvalidError(ValueError):
@@ -23,7 +24,7 @@ class HyperparameterInvalidError(ValueError):
 class CovarianceBase:
     r"""Base class for covariance kernels; the functions that all covariance kernels must have."""
 
-    covariance_type: str
+    covariance_type: CovarianceType
     process_variance: float
 
     @property
@@ -37,14 +38,14 @@ class CovarianceBase:
     @property
     def translation_invariant(self) -> bool:
         """Defines whether the covariance has the form K(x, z) = phi(x - z)"""
-        return NotImplemented
+        raise NotImplementedError()
 
     @property
     def hyperparameters(self):
         raise NotImplementedError()
 
     @hyperparameters.setter
-    def hyperparameters(self, hyperparameters):
+    def hyperparameters(self, hyperparameters) -> None:
         raise NotImplementedError()
 
     def _covariance(self, x, z):
