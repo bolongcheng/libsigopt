@@ -3,10 +3,11 @@
 # SPDX-License-Identifier: Apache License 2.0
 import logging
 from dataclasses import asdict
+from typing import Any
 
 import numpy as np
 
-from libsigopt.aux.adapter_info_containers import GPModelInfo
+from libsigopt.aux.adapter_info_containers import GPModelInfo, MetricsInfo
 from libsigopt.aux.constant import PARALLEL_CONSTANT_LIAR
 from libsigopt.compute.covariance import COVARIANCE_TYPES_TO_CLASSES
 from libsigopt.compute.covariance_base import CovarianceBase
@@ -26,7 +27,12 @@ from libsigopt.compute.misc.constant import (
     DEFAULT_TASK_COVARIANCE_KERNEL,
     ConstantLiarType,
 )
-from libsigopt.compute.misc.data_containers import HistoricalData, MultiMetricMidpointInfo, SingleMetricMidpointInfo
+from libsigopt.compute.misc.data_containers import (
+    HistoricalData,
+    MetricMidpointInfo,
+    MultiMetricMidpointInfo,
+    SingleMetricMidpointInfo,
+)
 from libsigopt.compute.misc.multimetric import (
     MULTIMETRIC_INFO_NOT_MULTIMETRIC,
     ConvexCombinationParams,
@@ -40,6 +46,7 @@ from libsigopt.compute.misc.multimetric import (
     identify_multimetric_phase,
 )
 from libsigopt.compute.multitask_covariance import MultitaskTensorCovariance
+from libsigopt.compute.predictor import Predictor
 from libsigopt.compute.probabilistic_failures import (
     ProbabilisticFailures,
     ProbabilisticFailuresCDF,
@@ -52,7 +59,7 @@ from libsigopt.compute.python_utils import validate_polynomial_indices
 AUGMENTED_EI_THRESHOLD = 1e-7
 
 
-def filter_points_sampled(points_sampled, metrics_info):
+def filter_points_sampled(points_sampled, metrics_info: MetricsInfo):
     optimized_metrics_index = np.asarray(metrics_info.optimized_metrics_index)
     has_optimization_metrics = metrics_info.has_optimization_metrics
     has_constraint_metrics = metrics_info.has_constraint_metrics
@@ -78,8 +85,7 @@ def form_one_hot_points_with_tasks(domain: CategoricalDomain, points, task_costs
     return one_hot_points
 
 
-def form_metric_midpoint_info(points_sampled_values, points_sampled_failures, metric_objectives):
-    mmi: SingleMetricMidpointInfo | MultiMetricMidpointInfo
+def form_metric_midpoint_info(points_sampled_values, points_sampled_failures, metric_objectives) -> MetricMidpointInfo:
     if len(points_sampled_values.shape) == 1:
         mmi = SingleMetricMidpointInfo(points_sampled_values, points_sampled_failures, metric_objectives)
     else:
@@ -95,7 +101,7 @@ def identify_scaled_values_exceeding_scaled_upper_thresholds(scaled_values, scal
     return np.logical_not(within_bounds)
 
 
-def get_relevant_expected_improvement(predictor):
+def get_relevant_expected_improvement(predictor: Predictor) -> ExpectedImprovement | AugmentedExpectedImprovement:
     # If mean of sample variances is above threshold we use Augmented Expected Improvement
     noise_variance = np.mean(predictor.points_sampled_noise_variance)
     if noise_variance > AUGMENTED_EI_THRESHOLD:
@@ -111,7 +117,7 @@ class View:
     multimetric_info: MultimetricInfo
     constraint_thresholds: np.ndarray
 
-    def __init__(self, params, logging_service=None):
+    def __init__(self, params: dict[str, Any], logging_service=None):
         self.params = params
         self.log = (logging_service or logging).getLogger(__name__)
         self.tag = self.params["tag"]
@@ -174,7 +180,7 @@ class View:
         self.form_multimetric_info()
 
     # TODO: these two preprocess functions have a lot of overlap, consolidate this later.
-    def _preprocess_optimization_metrics(self):
+    def _preprocess_optimization_metrics(self) -> None:
         self.optimized_metrics_index = self.params["metrics_info"].optimized_metrics_index
         assert self.optimized_metrics_index is not None
         assert len(self.optimized_metrics_index) >= 1
@@ -272,10 +278,10 @@ class View:
         self.create_compute_log_line("return", response)
         return response
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         raise NotImplementedError()
 
-    def form_multimetric_info(self):
+    def form_multimetric_info(self) -> None:
         if not self.params["metrics_info"].requires_pareto_frontier_optimization:
             self.multimetric_info = MULTIMETRIC_INFO_NOT_MULTIMETRIC
             return
@@ -312,7 +318,7 @@ class GPView(View):
             self.dim_with_task,
         )
 
-    def form_one_hot_covariance_base(self, domain: CategoricalDomain, hyperparameter_dict):
+    def form_one_hot_covariance_base(self, domain: CategoricalDomain, hyperparameter_dict) -> CovarianceBase:
         length_scales = hyperparameter_dict["length_scales"]
 
         one_hot_length_scales = domain.map_categorical_length_scales_to_one_hot(length_scales)
@@ -340,7 +346,7 @@ class GPView(View):
         filtered_scaled_lie_value,
         *,
         hyperparameter_dict,
-    ):
+    ) -> GaussianProcess:
         one_hot_historical_data = HistoricalData(self.dim_with_task)
         one_hot_historical_data.append_historical_data(
             filtered_one_hot_points_sampled_points,
@@ -484,7 +490,7 @@ class GPView(View):
             return [pof_0]
         return [pof_0, pof_1]
 
-    def _form_list_of_probabilistic_failures_for_constraint_metrics(self):
+    def _form_list_of_probabilistic_failures_for_constraint_metrics(self) -> list[ProbabilisticFailures]:
         list_of_probabilistic_failures = []
 
         assert self.constraint_metrics_index is not None
@@ -496,7 +502,7 @@ class GPView(View):
 
         return list_of_probabilistic_failures
 
-    def form_probabilistic_failures_model(self):
+    def form_probabilistic_failures_model(self) -> ProductOfListOfProbabilisticFailures | None:
         if not (
             self.multimetric_info.method
             in (MultimetricMethod.PROBABILISTIC_FAILURES, MultimetricMethod.EPSILON_CONSTRAINT)
@@ -510,7 +516,9 @@ class GPView(View):
 
         return ProductOfListOfProbabilisticFailures(list_of_failures)
 
-    def _form_parallel_ei(self, gaussian_process, probabilistic_failures):
+    def _form_parallel_ei(
+        self, gaussian_process, probabilistic_failures
+    ) -> ExpectedParallelImprovement | ExpectedParallelImprovementWithFailures:
         num_to_sample = self.params.get("num_to_sample", 1)
         assert num_to_sample == 1, "Currently capping number of qEI suggestions to 1"
         if probabilistic_failures:

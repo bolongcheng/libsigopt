@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from typing import Any
 
 import numpy as np
 
@@ -37,13 +38,13 @@ DEFAULT_HYPER_OPT_OPTIMIZER_INFO = OptimizerInfo(
 # TODO(RTL-73): Consider alternate behavior for bounds, as these are simply our previous defaults
 # NOTE: In reality, this var quantity should probably even be much higher
 def form_one_hot_hyperparameter_domain(
-    categorical_domain,
-    historical_data,
-    use_auto_noise,
-    discrete_lower_limit,
-    task_cost_populated,
+    categorical_domain: CategoricalDomain,
+    historical_data: HistoricalData,
+    use_auto_noise: bool,
+    discrete_lower_limit: float,
+    task_cost_populated: bool,
     *,
-    select_hyper_opt_in_log_domain=SELECT_HYPER_OPT_IN_LOG_DOMAIN,
+    select_hyper_opt_in_log_domain: bool = SELECT_HYPER_OPT_IN_LOG_DOMAIN,
 ):
     ALPHA_LOWER_FACTOR = 0.001
     ALPHA_UPPER_FACTOR = 10
@@ -107,10 +108,10 @@ class GpHyperOptMultimetricView(GPView):
     def optimizer_info(self):
         return DEFAULT_HYPER_OPT_OPTIMIZER_INFO
 
-    def should_skip_hyperopt(self, points_sampled_values):
+    def should_skip_hyperopt(self, points_sampled_values) -> bool:
         return np.ptp(points_sampled_values) <= MINIMUM_VALUE_VAR
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         model_info = deepcopy(self.params["model_info"])
         hyperparameters = deepcopy(model_info.hyperparameters)
 

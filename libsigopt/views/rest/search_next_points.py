@@ -2,6 +2,8 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from enum import StrEnum, auto
+from typing import Any
 
 import numpy as np
 
@@ -14,9 +16,13 @@ from libsigopt.views.view import GPView
 
 
 RESOLVE_PHASE_PROB = 0.8
-SEARCH_INITIALIZATION_PHASE = "search_initialization_phase"
-SEARCH_EXPLOITATION_PHASE = "search_exploitation_phase"
-SEARCH_EXPLORE_RESOLVE_PHASE = "search_explore_resolve_phase"
+
+
+class SearchPhase(StrEnum):
+    INITIALIZATION = auto()
+    EXPLOITATION = auto()
+    EXPLORE_RESOLVE = auto()
+
 
 DEFAULT_SEARCH_OPTIMIZER_INFO = OptimizerInfo(
     optimizer=DEOptimizer,
@@ -31,7 +37,7 @@ DEFAULT_SEARCH_OPTIMIZER_INFO = OptimizerInfo(
 SEARCH_OPTIMIZER_MAXITER = 200
 
 
-def get_distance_parameter(dim):
+def get_distance_parameter(dim: int) -> float:
     # random scheduler for search distance parameter
     # values are based on the normalization of the points to a [0, 1]^d hypercube
     distances_squared = [0.04, 0.01, 0.0025, 0.0004]
@@ -78,11 +84,11 @@ def search_strategy_optimization(
 
 
 def identify_search_phase(
-    observation_budget,
-    observation_count,
-    num_open_suggestions,
-    failure_count,
-):
+    observation_budget: int,
+    observation_count: int,
+    num_open_suggestions: int,
+    failure_count: int,
+) -> SearchPhase:
     INITIALIZATION_FRACTION = 0.2
     EXPLOITATION_FRACTION = 0.4
     bounded_below_num_open_suggestions = max(num_open_suggestions, 1)
@@ -90,11 +96,11 @@ def identify_search_phase(
     fraction_served = (observation_count + num_open_suggestions) / adjusted_budget
 
     if fraction_served <= INITIALIZATION_FRACTION:
-        return SEARCH_INITIALIZATION_PHASE
+        return SearchPhase.INITIALIZATION
     elif fraction_served <= EXPLOITATION_FRACTION:
-        return SEARCH_EXPLOITATION_PHASE
+        return SearchPhase.EXPLOITATION
     else:
-        return SEARCH_EXPLORE_RESOLVE_PHASE
+        return SearchPhase.EXPLORE_RESOLVE
 
 
 class SearchNextPoints(GPView):
@@ -143,7 +149,7 @@ class SearchNextPoints(GPView):
         view_input["metrics_info"].constraint_metrics_index = []
         return GpNextPointsCategorical(view_input).view()
 
-    def get_search_phase(self):
+    def get_search_phase(self) -> SearchPhase:
         observation_budget = self.params["metrics_info"].observation_budget
         observation_count = len(self.params["points_sampled"].points)
         num_open_suggestions = len(self.one_hot_points_being_sampled_points)
@@ -155,7 +161,7 @@ class SearchNextPoints(GPView):
             failure_count,
         )
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         assert self.has_constraint_metrics, "Search must have constraint metrics"
         assert not self.has_optimization_metrics, "Search does not support optimization metrics"
 
@@ -164,12 +170,12 @@ class SearchNextPoints(GPView):
         search_phase = self.get_search_phase()
         self.tag.update({"search_phase": search_phase})
 
-        if search_phase == SEARCH_INITIALIZATION_PHASE:
+        if search_phase == SearchPhase.INITIALIZATION:
             return self.search_next_points_expected_improvement()
-        elif search_phase == SEARCH_EXPLOITATION_PHASE:
+        elif search_phase == SearchPhase.EXPLOITATION:
             return self.search_next_points_expected_improvement_with_failures()
         else:
-            assert search_phase == SEARCH_EXPLORE_RESOLVE_PHASE
+            assert search_phase == SearchPhase.EXPLORE_RESOLVE
             if np.random.random() < RESOLVE_PHASE_PROB:
                 proposed_next_points = self.next_points_probability_improvement()
             else:

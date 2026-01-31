@@ -2,6 +2,7 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from dataclasses import asdict
+from typing import Any
 
 import numpy as np
 
@@ -11,17 +12,17 @@ from libsigopt.compute.domain import CategoricalDomain
 class RandomSearchNextPoints:
     view_name = "random_search_next_points"
 
-    def __init__(self, params, logging_service=None):
+    def __init__(self, params: dict[str, Any], logging_service=None):
         self.params = params
         self.domain = CategoricalDomain(**asdict(self.params["domain_info"]))
         self.task_options = np.array(self.params["task_options"])
         self.tag = self.params["tag"]
 
-    def call(self):
+    def call(self) -> dict[str, Any]:
         response = self.view()
         return response
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         num_to_sample = self.params["num_to_sample"]
         if self.domain.priors and not self.domain.is_constrained:
             categorical_next_points = self.domain.generate_random_points_according_to_priors(num_to_sample)

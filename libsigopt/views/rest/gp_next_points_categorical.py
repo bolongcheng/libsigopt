@@ -2,15 +2,22 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from typing import Any
 
 import numpy as np
 
 from libsigopt.aux.constant import DOUBLE_EXPERIMENT_PARAMETER_NAME, PARALLEL_QEI, TASK_SELECTION_STRATEGY_A_PRIORI
+from libsigopt.compute.acquisition_function import AcquisitionFunction
 from libsigopt.compute.acquisition_function_optimization import (
     constant_liar_acquisition_function_optimization,
     qei_acquisition_function_optimization,
 )
-from libsigopt.compute.domain import CategoricalDomain, DomainConstraint, FixedIndicesOnContinuousDomain
+from libsigopt.compute.domain import (
+    CategoricalDomain,
+    ContinuousDomain,
+    DomainConstraint,
+    FixedIndicesOnContinuousDomain,
+)
 from libsigopt.compute.expected_improvement import ExpectedParallelImprovement
 from libsigopt.compute.misc.constant import CATEGORICAL_POINT_UNIQUENESS_TOLERANCE
 from libsigopt.compute.multitask_acquisition_function import MultitaskAcquisitionFunction
@@ -27,7 +34,7 @@ def select_random_task_by_softmax(task_options, size=None):
     return np.random.choice(task_options, p=relative_probabilities, size=size)
 
 
-def generate_neighboring_integer_points(one_hot_point, domain):
+def generate_neighboring_integer_points(one_hot_point, domain: CategoricalDomain):
     integer_component_mappings = domain.get_integer_component_mappings()
     neighboring_points = np.tile(one_hot_point, [2] * len(integer_component_mappings) + [1])
     for index_within_integers, integer_component_mapping in enumerate(integer_component_mappings):
@@ -40,7 +47,7 @@ def generate_neighboring_integer_points(one_hot_point, domain):
     return np.reshape(neighboring_points, (2 ** len(integer_component_mappings), len(one_hot_point)))
 
 
-def generate_neighboring_categorical_points(one_hot_points, domain):
+def generate_neighboring_categorical_points(one_hot_points, domain: CategoricalDomain):
     # enforcing 2d array so the following operations can be vectorized
     num_one_hot_points, one_hot_dim = one_hot_points.shape
     # assert len(one_hot_points_shape) == 2
@@ -84,7 +91,12 @@ def generate_neighboring_categorical_points(one_hot_points, domain):
     return np.reshape(neighboring_points, (num_one_hot_points * product_of_cats, one_hot_dim))
 
 
-def find_best_one_hot_neighbor_by_af(one_hot_points, domain, acquisition_function, option):
+def find_best_one_hot_neighbor_by_af(
+    one_hot_points,
+    domain: CategoricalDomain,
+    acquisition_function: AcquisitionFunction,
+    option,
+):
     if option == "none":
         return one_hot_points
 
@@ -121,7 +133,7 @@ def find_best_one_hot_neighbor_by_af(one_hot_points, domain, acquisition_functio
     return discrete_rounded_one_hot_points
 
 
-def get_discrete_conversion_option(domain):
+def get_discrete_conversion_option(domain: CategoricalDomain) -> str:
     number_of_integer_components = len(domain.get_integer_component_mappings())
     product_of_cats = domain.product_of_categories
     option = "none"
@@ -142,7 +154,12 @@ def get_discrete_conversion_option(domain):
 # TODO(RTL-76): Push this further into the optimization process to take advantage of the CL computations
 # TODO(RTL-77): Need to come up with strategy for dealing with a finite domain but having noise
 # TODO(RTL-78): Need to think about the implications for this in the QEI setting (or a workaround)
-def convert_from_one_hot(one_hot_points, domain, acquisition_function, temperature=None):
+def convert_from_one_hot(
+    one_hot_points,
+    domain: CategoricalDomain,
+    acquisition_function: AcquisitionFunction,
+    temperature: float | None = None,
+):
     option = get_discrete_conversion_option(domain)
     if isinstance(acquisition_function, ExpectedParallelImprovement) or domain.is_integer_constrained:
         option = "none"
@@ -161,8 +178,11 @@ def snap_continuous_tasks_to_discrete_options(task_costs, task_options):
     return task_options[np.argmin(distance_from_tasks, axis=1)]
 
 
-def _form_domain_with_task_dimension(domain, acquisition_function=None, task_options=None):
-    assert acquisition_function is None or isinstance(acquisition_function, MultitaskAcquisitionFunction)
+def _form_domain_with_task_dimension(
+    domain: CategoricalDomain,
+    acquisition_function: MultitaskAcquisitionFunction | None = None,
+    task_options=None,
+) -> CategoricalDomain:
     domain_components = deepcopy(domain.domain_components)
     constraint_list = deepcopy(domain.constraint_list)
     force_hitandrun_sampling = domain.force_hitandrun_sampling
@@ -178,9 +198,11 @@ def _form_domain_with_task_dimension(domain, acquisition_function=None, task_opt
     return CategoricalDomain(domain_components, constraint_list, force_hitandrun_sampling)
 
 
-def _form_domain_for_qei_parallelism(domain, acquisition_function):
+def _form_domain_for_qei_parallelism(
+    domain: CategoricalDomain,
+    acquisition_function: ExpectedParallelImprovement,
+) -> CategoricalDomain:
     assert acquisition_function.dim == domain.one_hot_dim
-    assert not isinstance(acquisition_function, MultitaskAcquisitionFunction)
     num_points_to_sample = acquisition_function.num_points_to_sample
     assert num_points_to_sample > 1
 
@@ -211,7 +233,12 @@ def _form_domain_for_qei_parallelism(domain, acquisition_function):
     return augmented_domain
 
 
-def form_augmented_domain(domain, acquisition_function=None, task_cost_populated=False, task_options=None):
+def form_augmented_domain(
+    domain: CategoricalDomain,
+    acquisition_function: AcquisitionFunction | None = None,
+    task_cost_populated: bool = False,
+    task_options=None,
+) -> CategoricalDomain:
     if task_cost_populated:
         return _form_domain_with_task_dimension(domain, acquisition_function, task_options)
 
@@ -226,7 +253,10 @@ def form_augmented_domain(domain, acquisition_function=None, task_cost_populated
 class GpNextPointsCategorical(GPView):
     view_name = "gp_next_points_categorical"
 
-    def form_af_optimization_domain(self, acquisition_function):
+    def form_af_optimization_domain(
+        self,
+        acquisition_function: AcquisitionFunction,
+    ) -> ContinuousDomain | FixedIndicesOnContinuousDomain:
         augmented_one_hot_domain = form_augmented_domain(
             domain=self.domain,
             acquisition_function=acquisition_function,
@@ -241,7 +271,11 @@ class GpNextPointsCategorical(GPView):
             augmented_one_hot_domain = FixedIndicesOnContinuousDomain(augmented_one_hot_domain, fixed_indices)
         return augmented_one_hot_domain
 
-    def _convert_one_hot_points_for_multitask(self, one_hot_next_points, acquisition_function):
+    def _convert_one_hot_points_for_multitask(
+        self,
+        one_hot_next_points,
+        acquisition_function: AcquisitionFunction,
+    ):
         domain_with_task = form_augmented_domain(
             self.domain,
             task_cost_populated=self.task_cost_populated,
@@ -263,7 +297,11 @@ class GpNextPointsCategorical(GPView):
         categorical_next_points = categorical_next_points[:, :-1]
         return categorical_next_points, next_points_task_costs
 
-    def convert_one_hot_points_to_distinct_categorical_points(self, one_hot_next_points, acquisition_function):
+    def convert_one_hot_points_to_distinct_categorical_points(
+        self,
+        one_hot_next_points,
+        acquisition_function: AcquisitionFunction,
+    ):
         if self.task_cost_populated:
             return self._convert_one_hot_points_for_multitask(one_hot_next_points, acquisition_function)
         proposed_next_points = convert_from_one_hot(one_hot_next_points, self.domain, acquisition_function)
@@ -275,7 +313,7 @@ class GpNextPointsCategorical(GPView):
         next_points_task_costs = None
         return categorical_next_points, next_points_task_costs
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         assert self.has_optimization_metrics, f"{self.view_name} must have optimization metrics"
         num_to_sample = self.params["num_to_sample"]
         parallelism = self.params["parallelism"]
