@@ -12,7 +12,7 @@ import numpy as np
 class Optimizer:
     optimizer_name: str
 
-    def optimize(self, **kwargs) -> None:
+    def optimize(self, **kwargs):
         raise NotImplementedError()
 
 

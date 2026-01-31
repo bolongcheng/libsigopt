@@ -26,7 +26,7 @@ class VectorizedOptimizer(Optimizer):
         num_multistarts: int,
         *,
         optimizer_parameters,
-        maxiter: int | None,
+        maxiter: int | None = None,
     ):
         """
         This is the base class for vectorized _maximization_.

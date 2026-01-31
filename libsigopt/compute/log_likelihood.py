@@ -86,7 +86,7 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
         return self.num_hyperparameters
 
     @property
-    def tikhonov_param(self):
+    def tikhonov_param(self) -> float | None:
         return self.gp.tikhonov_param
 
     @property

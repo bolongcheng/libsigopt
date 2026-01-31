@@ -9,7 +9,7 @@ from libsigopt.compute.acquisition_function import AcquisitionFunction
 class MultitaskAcquisitionFunction(AcquisitionFunction):
     def __init__(self, acquisition_function: AcquisitionFunction):
         super().__init__(acquisition_function.predictor)
-        self.underlying = acquisition_function
+        self.underlying: AcquisitionFunction = acquisition_function
 
     @property
     def dim(self) -> int:

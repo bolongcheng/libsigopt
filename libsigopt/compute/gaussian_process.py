@@ -43,7 +43,7 @@ class GaussianProcess(Predictor):
         covariance: CovarianceBase,
         historical_data: HistoricalData,
         mean_poly_indices=None,
-        tikhonov_param=None,
+        tikhonov_param: float | None = None,
     ):
         assert covariance.dim == historical_data.dim
         self.covariance = covariance
@@ -140,7 +140,7 @@ class GaussianProcess(Predictor):
             self.K_inv_y = cho_solve(self.K_chol, self.points_sampled_value)
         self.fit_nonzero_gp_mean_function()
 
-    def fit_nonzero_gp_mean_function(self):
+    def fit_nonzero_gp_mean_function(self) -> None:
         r"""Use generalized least squares to fit a nonzero mean function to the data.
 
         The simplest thing to start with is to just require the mean to be constant, but nonzero.
@@ -176,7 +176,7 @@ class GaussianProcess(Predictor):
             self.demeaned_y = self.points_sampled_value - nonzero_gp_mean
             self.K_inv_demeaned_y = self.K_inv_y - cho_solve(self.K_chol, nonzero_gp_mean)
 
-    def _compute_core_posterior_components(self, points_to_sample, option):
+    def _compute_core_posterior_components(self, points_to_sample, option) -> PosteriorCoreComponents:
         K_eval = grad_K_eval = cardinal_functions_at_points_to_sample = None
         if option in ("K_eval", "all"):
             K_eval = self.covariance.build_kernel_matrix(self.points_sampled, points_to_sample=points_to_sample)
@@ -316,7 +316,7 @@ class GaussianProcess(Predictor):
     def draw_posterior_samples(self, num_samples: int):
         return self.draw_posterior_samples_of_points(num_samples, self.points_sampled)
 
-    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN) -> None:
+    def append_lie_data(self, lie_locations, lie_method: ConstantLiarType = ConstantLiarType.MIN) -> None:
         assert lie_method in ConstantLiarType
         if lie_method == ConstantLiarType.MIN:
             lie_value = np.max(self.historical_data.points_sampled_value)

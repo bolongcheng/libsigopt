@@ -50,7 +50,7 @@ class SearchAcquisitionFunction(AcquisitionFunction):
     def _evaluate_at_point_list(self, points_to_evaluate):
         return self._evaluate_at_point_list_normalized(self.compute_core_components(points_to_evaluate, "func"))
 
-    def _evaluate_at_point_list_normalized(self, core_components):
+    def _evaluate_at_point_list_normalized(self, core_components: SearchCoreComponents):
         raise NotImplementedError()
 
     def add_normalized_repulsor_point(self, one_hot_points) -> None:
@@ -76,7 +76,7 @@ class ProbabilityOfImprovementSearch(SearchAcquisitionFunction):
         self,
         domain: CategoricalDomain,
         failure_model: ProbabilisticFailuresBase,
-        distance_parameter,
+        distance_parameter: float,
         repulsor_points=None,
     ):
         super().__init__(domain, failure_model)

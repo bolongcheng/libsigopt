@@ -92,7 +92,7 @@ class GaussianProcessSum(Predictor):
             points_sampled_noise_variance = points_sampled_noise_variance + (w**2) * gp.points_sampled_noise_variance
         return points_sampled_noise_variance
 
-    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN):
+    def append_lie_data(self, lie_locations, lie_method: ConstantLiarType = ConstantLiarType.MIN):
         for gp in self.gaussian_process_list:
             gp.append_lie_data(lie_locations, lie_method)
 
@@ -160,7 +160,7 @@ class GaussianProcessSum(Predictor):
             grad_var = grad_var + (w**2) * gp_grad_var
         return mean, var, grad_mean, grad_var
 
-    def draw_posterior_samples_of_points(self, num_samples, points_to_sample):
+    def draw_posterior_samples_of_points(self, num_samples: int, points_to_sample):
         num_points = points_to_sample.shape[0]
         samples = np.zeros((num_samples, num_points))
         for w, gp in zip(self.weights, self.gaussian_process_list):

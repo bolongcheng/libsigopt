@@ -52,13 +52,16 @@ class ExpectedImprovement(AcquisitionFunction):
             - core_components.grad_mean * core_components.cdf_z[:, None]
         )
 
-    def joint_function_gradient_eval(self, points_to_evaluate):
+    def joint_function_gradient_eval(
+        self,
+        points_to_evaluate,
+    ):
         core_components = self.compute_core_components(points_to_evaluate, "both")
         ei = self._evaluate_at_point_list_normalized(core_components)
         ei_grad = self._evaluate_grad_at_point_list_normalized(core_components)
         return ei, ei_grad
 
-    def _append_lie_locations(self, lie_locations):
+    def _append_lie_locations(self, lie_locations) -> None:
         self.predictor.append_lie_data(lie_locations)
 
 
@@ -97,7 +100,10 @@ class ExpectedImprovementWithPenalty(ExpectedImprovement):
         ei_grad = self._evaluate_grad_at_point_list_normalized(core_components)
         return ei_grad * penalty_components.penalty[:, None] + ei[:, None] * penalty_components.grad_penalty
 
-    def joint_function_gradient_eval(self, points_to_evaluate):
+    def joint_function_gradient_eval(
+        self,
+        points_to_evaluate,
+    ):
         core_components = self.compute_core_components(points_to_evaluate, "both")
         penalty_components = self._evaluate_penalty(core_components, "both")
         ei = self._evaluate_at_point_list_penalty(core_components, penalty_components)
@@ -129,7 +135,7 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
         # We decide to use mean of sample variances for global reported variance, it can be changed if there is better way
         self.noise_variance = np.mean(self.predictor.points_sampled_noise_variance)
 
-    def _evaluate_penalty(self, core_components: PredictorCoreComponents, option):
+    def _evaluate_penalty(self, core_components: PredictorCoreComponents, option) -> PenaltyComponents:
         grad_penalty = None
         adjusted_var = core_components.var + self.noise_variance
         sqrt_noise_to_signal_ratio = np.sqrt(self.noise_variance / adjusted_var)

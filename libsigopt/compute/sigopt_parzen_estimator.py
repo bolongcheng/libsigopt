@@ -93,7 +93,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
         self.lower_covariance = lower_covariance
         self.greater_covariance = greater_covariance
 
-    def append_lies(self, list_of_lying_arrays, lower=False) -> None:
+    def append_lies(self, list_of_lying_arrays, lower: bool = False) -> None:
         if list_of_lying_arrays:
             if lower:
                 self.lower_lies.extend(list_of_lying_arrays)
@@ -102,7 +102,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
                 self.greater_lies.extend(list_of_lying_arrays)
                 self.greater_points = np.concatenate((self.greater_points, np.atleast_2d(list_of_lying_arrays)))
 
-    def clear_lies(self):
+    def clear_lies(self) -> None:
         if self.lower_lies:
             self.lower_points = self.lower_points[: -len(self.lower_lies), :]
         if self.greater_lies:
@@ -162,7 +162,7 @@ class SigOptParzenEstimator(ScipyOptimizable):
         )
         return density
 
-    def _evaluate_base(self, points_to_sample, points_sampled, covariance, grad=False):
+    def _evaluate_base(self, points_to_sample, points_sampled, covariance, grad: bool = False):
         if grad:
             assert self.differentiable
             density = np.mean(covariance.build_kernel_grad_tensor(points_sampled, points_to_sample), axis=1)

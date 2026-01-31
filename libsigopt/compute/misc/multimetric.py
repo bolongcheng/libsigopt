@@ -7,7 +7,6 @@ from enum import StrEnum, auto
 from typing import Any
 
 import numpy as np
-from numpy.typing import NDArray
 
 from libsigopt.aux.multimetric import find_pareto_frontier_observations_for_maximization
 from libsigopt.aux.samplers import generate_grid_points, generate_halton_points
