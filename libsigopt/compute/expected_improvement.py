@@ -8,6 +8,7 @@ from scipy.stats import multivariate_normal, norm
 
 from libsigopt.compute.acquisition_function import AcquisitionFunction
 from libsigopt.compute.gaussian_process import GaussianProcess
+from libsigopt.compute.predictor import Predictor, PredictorCoreComponents
 from libsigopt.compute.probabilistic_failures import ProbabilisticFailuresBase, ProductOfListOfProbabilisticFailures
 from libsigopt.compute.python_utils import compute_cholesky_for_gp_sampling
 
@@ -36,7 +37,7 @@ class ExpectedImprovement(AcquisitionFunction):
     def _evaluate_at_point_list(self, points_to_evaluate):
         return self._evaluate_at_point_list_normalized(self.compute_core_components(points_to_evaluate, "func"))
 
-    def _evaluate_at_point_list_normalized(self, core_components):
+    def _evaluate_at_point_list_normalized(self, core_components: PredictorCoreComponents):
         return core_components.sqrt_var * np.fmax(
             0.0, core_components.z * core_components.cdf_z + core_components.pdf_z
         )
@@ -45,19 +46,22 @@ class ExpectedImprovement(AcquisitionFunction):
     def _evaluate_grad_at_point_list(self, points_to_evaluate):
         return self._evaluate_grad_at_point_list_normalized(self.compute_core_components(points_to_evaluate, "grad"))
 
-    def _evaluate_grad_at_point_list_normalized(self, core_components):
+    def _evaluate_grad_at_point_list_normalized(self, core_components: PredictorCoreComponents):
         return (
             core_components.grad_sqrt_var * core_components.pdf_z[:, None]
             - core_components.grad_mean * core_components.cdf_z[:, None]
         )
 
-    def joint_function_gradient_eval(self, points_to_evaluate):
+    def joint_function_gradient_eval(
+        self,
+        points_to_evaluate,
+    ):
         core_components = self.compute_core_components(points_to_evaluate, "both")
         ei = self._evaluate_at_point_list_normalized(core_components)
         ei_grad = self._evaluate_grad_at_point_list_normalized(core_components)
         return ei, ei_grad
 
-    def _append_lie_locations(self, lie_locations):
+    def _append_lie_locations(self, lie_locations) -> None:
         self.predictor.append_lie_data(lie_locations)
 
 
@@ -66,7 +70,7 @@ class ExpectedImprovementWithPenalty(ExpectedImprovement):
     This class allows for penalizing EI values multiplicatively, i.e., EIP(x) = EI(x) * penalty(x)
     """
 
-    def _evaluate_penalty(self, core_components, option):
+    def _evaluate_penalty(self, core_components: PredictorCoreComponents, option):
         raise NotImplementedError()
 
     def _evaluate_at_point_list(self, points_to_evaluate):
@@ -74,7 +78,11 @@ class ExpectedImprovementWithPenalty(ExpectedImprovement):
         penalty_components = self._evaluate_penalty(core_components, "func")
         return self._evaluate_at_point_list_penalty(core_components, penalty_components)
 
-    def _evaluate_at_point_list_penalty(self, core_components, penalty_components):
+    def _evaluate_at_point_list_penalty(
+        self,
+        core_components: PredictorCoreComponents,
+        penalty_components: PenaltyComponents,
+    ):
         ei = self._evaluate_at_point_list_normalized(core_components)
         return ei * penalty_components.penalty
 
@@ -83,12 +91,19 @@ class ExpectedImprovementWithPenalty(ExpectedImprovement):
         penalty_components = self._evaluate_penalty(core_components, "grad")
         return self._evaluate_grad_at_point_list_penalty(core_components, penalty_components)
 
-    def _evaluate_grad_at_point_list_penalty(self, core_components, penalty_components):
+    def _evaluate_grad_at_point_list_penalty(
+        self,
+        core_components: PredictorCoreComponents,
+        penalty_components: PenaltyComponents,
+    ):
         ei = self._evaluate_at_point_list_normalized(core_components)
         ei_grad = self._evaluate_grad_at_point_list_normalized(core_components)
         return ei_grad * penalty_components.penalty[:, None] + ei[:, None] * penalty_components.grad_penalty
 
-    def joint_function_gradient_eval(self, points_to_evaluate):
+    def joint_function_gradient_eval(
+        self,
+        points_to_evaluate,
+    ):
         core_components = self.compute_core_components(points_to_evaluate, "both")
         penalty_components = self._evaluate_penalty(core_components, "both")
         ei = self._evaluate_at_point_list_penalty(core_components, penalty_components)
@@ -108,7 +123,7 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
     TODO(RTL-32): Check if the +/- situation for quantiles matches up with the minimization
     """
 
-    def __init__(self, predictor):
+    def __init__(self, predictor: Predictor):
         super().__init__(predictor)
         mean, var = self.predictor.compute_mean_and_variance_of_points(self.predictor.points_sampled)
         quantiles_values = mean + norm.ppf(AUGMENTED_EI_QUANTILE) * np.sqrt(var)
@@ -120,7 +135,7 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
         # We decide to use mean of sample variances for global reported variance, it can be changed if there is better way
         self.noise_variance = np.mean(self.predictor.points_sampled_noise_variance)
 
-    def _evaluate_penalty(self, core_components, option):
+    def _evaluate_penalty(self, core_components: PredictorCoreComponents, option) -> PenaltyComponents:
         grad_penalty = None
         adjusted_var = core_components.var + self.noise_variance
         sqrt_noise_to_signal_ratio = np.sqrt(self.noise_variance / adjusted_var)
@@ -132,8 +147,7 @@ class AugmentedExpectedImprovement(ExpectedImprovementWithPenalty):
 
 # TODO(RTL-33): Think on if possible to have a joint failures/augmented model, or how easily that can be done
 class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
-    def __init__(self, predictor, failure_model):
-        assert isinstance(failure_model, ProbabilisticFailuresBase)
+    def __init__(self, predictor: Predictor, failure_model: ProbabilisticFailuresBase):
         super().__init__(predictor)
         self.failure_model = failure_model
         assert self.failure_model.dim == self.dim, (
@@ -143,7 +157,7 @@ class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
         self.best_location, self.best_value = self._get_best_location_value_not_failure()
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.gaussian_process.differentiable and self.failure_model.differentiable
 
     def _get_best_location_value_not_failure(self):
@@ -157,7 +171,7 @@ class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
         best_index = np.argmin(acceptable_values)
         return acceptable_points[best_index, :], acceptable_values[best_index]
 
-    def _evaluate_penalty(self, core_components, option):
+    def _evaluate_penalty(self, core_components: PredictorCoreComponents, option) -> PenaltyComponents:
         if option in ("grad", "both"):
             return PenaltyComponents(*self.failure_model.joint_function_gradient_eval(core_components.x))
         return PenaltyComponents(self.failure_model.compute_probability_of_success(core_components.x), None)
@@ -166,12 +180,12 @@ class ExpectedImprovementWithFailures(ExpectedImprovementWithPenalty):
 class ExpectedParallelImprovement(AcquisitionFunction):
     def __init__(
         self,
-        predictor,
-        num_points_to_sample,
+        predictor: Predictor,
+        num_points_to_sample: int,
         *,
         points_being_sampled=None,
-        num_mc_iterations=DEFAULT_MC_ITERATIONS_TOTAL_QEI,
-        num_mc_iterations_per_loop=DEFAULT_MC_ITERATIONS_PER_LOOP_QEI,
+        num_mc_iterations: int = DEFAULT_MC_ITERATIONS_TOTAL_QEI,
+        num_mc_iterations_per_loop: int = DEFAULT_MC_ITERATIONS_PER_LOOP_QEI,
     ):
         """Construct an ExpectedImprovement object that supports q,p-EI."""
         super().__init__(predictor)
@@ -195,11 +209,11 @@ class ExpectedParallelImprovement(AcquisitionFunction):
         assert points_being_sampled_shape[1] == self.dim, "Points must match the GP dimension"
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return False
 
     @property
-    def num_points_being_sampled(self):
+    def num_points_being_sampled(self) -> int:
         return len(self.points_being_sampled)
 
     # NOTE: Check if, under certain shapes, einsum is more efficient than tensordot
@@ -340,13 +354,13 @@ class ExpectedParallelImprovement(AcquisitionFunction):
 class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
     def __init__(
         self,
-        predictor,
-        num_points_to_sample,
-        failure_model,
+        predictor: Predictor,
+        num_points_to_sample: int,
+        failure_model: ProductOfListOfProbabilisticFailures,
         *,
         points_being_sampled=None,
-        num_mc_iterations=DEFAULT_MC_ITERATIONS_TOTAL_QEIWF,
-        num_mc_iterations_per_loop=DEFAULT_MC_ITERATIONS_PER_LOOP_QEIWF,
+        num_mc_iterations: int = DEFAULT_MC_ITERATIONS_TOTAL_QEIWF,
+        num_mc_iterations_per_loop: int = DEFAULT_MC_ITERATIONS_PER_LOOP_QEIWF,
     ):
         super().__init__(
             predictor,
@@ -355,7 +369,6 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
             num_mc_iterations=num_mc_iterations,
             num_mc_iterations_per_loop=num_mc_iterations_per_loop,
         )
-        assert isinstance(failure_model, ProductOfListOfProbabilisticFailures)
         self.failure_model = failure_model
         self.gaussian_process = self.predictor
 
@@ -373,7 +386,7 @@ class ExpectedParallelImprovementWithFailures(ExpectedParallelImprovement):
         return acceptable_points[best_index, :], acceptable_values[best_index]
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return False
 
     def _evaluate_at_point_list(self, points_to_evaluate):

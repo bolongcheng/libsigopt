@@ -428,7 +428,7 @@ class TestDiscreteNextPointsConversion:
 
     @pytest.mark.flaky(reruns=1)
     def test_convert_from_one_hot(self):
-        class dummy_acquisition_function(object):
+        class dummy_acquisition_function:
             def evaluate_at_point_list(self, x):
                 return np.arange(len(x))
 

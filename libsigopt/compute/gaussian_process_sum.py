@@ -18,12 +18,11 @@ class GaussianProcessSum(Predictor):
     Notice that GPs are passed by reference. You should not change or share the GPs' HistoricalData
     """
 
-    def __init__(self, gaussian_process_list, weights):
+    def __init__(self, gaussian_process_list: list[GaussianProcess], weights):
         assert len(gaussian_process_list) > 1, "We need more than one GP"
         assert len(gaussian_process_list) == len(weights), "Number of GPs and weights should match"
         first_gp = gaussian_process_list[0]
         for gp in gaussian_process_list:
-            assert isinstance(gp, GaussianProcess)
             assert first_gp.dim == gp.dim
             assert np.allclose(first_gp.points_sampled, gp.points_sampled)
         self.gaussian_process_list = gaussian_process_list
@@ -32,7 +31,7 @@ class GaussianProcessSum(Predictor):
         self._points_sampled_value_sum = None
         self._points_sampled_noise_variance_sum = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"<{self.__class__.__module__}.{self.__class__.__name__} {hex(id(self))}>\n"
             f" weights={self.weights}\n"
@@ -54,15 +53,15 @@ class GaussianProcessSum(Predictor):
         return self.points_sampled[self.best_index, :]
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return all(gp.differentiable for gp in self.gaussian_process_list)
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.gaussian_process_list[0].dim
 
     @property
-    def num_sampled(self):
+    def num_sampled(self) -> int:
         return self.gaussian_process_list[0].num_sampled
 
     @property
@@ -93,7 +92,7 @@ class GaussianProcessSum(Predictor):
             points_sampled_noise_variance = points_sampled_noise_variance + (w**2) * gp.points_sampled_noise_variance
         return points_sampled_noise_variance
 
-    def append_lie_data(self, lie_locations, lie_method=ConstantLiarType.MIN):
+    def append_lie_data(self, lie_locations, lie_method: ConstantLiarType = ConstantLiarType.MIN):
         for gp in self.gaussian_process_list:
             gp.append_lie_data(lie_locations, lie_method)
 
@@ -161,7 +160,7 @@ class GaussianProcessSum(Predictor):
             grad_var = grad_var + (w**2) * gp_grad_var
         return mean, var, grad_mean, grad_var
 
-    def draw_posterior_samples_of_points(self, num_samples, points_to_sample):
+    def draw_posterior_samples_of_points(self, num_samples: int, points_to_sample):
         num_points = points_to_sample.shape[0]
         samples = np.zeros((num_samples, num_points))
         for w, gp in zip(self.weights, self.gaussian_process_list):

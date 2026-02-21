@@ -24,9 +24,7 @@ from libsigopt.compute.domain import (
 from testaux.utils import form_random_constrained_categorical_domain, form_random_unconstrained_categorical_domain
 
 
-def domains_approximately_equal(domain1, domain2, inequality_tolerance=1e-14):
-    assert isinstance(domain1, CategoricalDomain) and isinstance(domain2, CategoricalDomain)
-
+def domains_approximately_equal(domain1: CategoricalDomain, domain2: CategoricalDomain, inequality_tolerance=1e-14):
     # Content can go from being a list to numpy, so this can fail ... if it does, what happens below will work
     try:
         same = (
@@ -99,7 +97,7 @@ def samples_satisfy_kolmogorov_smirnov_test(samples, domain_component, prior):
         return True
 
 
-class TestContinuousDomain(object):
+class TestContinuousDomain:
     def test_basics(self):
         domain = ContinuousDomain([[0, 1], [-2, 3]])
         assert all(m == 0.5 for m in domain.midpoint)
@@ -394,7 +392,7 @@ class TestContinuousDomain(object):
             assert all(sum(p) >= (1 - tolerance) for p in random_near_points)
 
 
-class TestCategoricalDomain(object):
+class TestCategoricalDomain:
     def test_basics(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -1391,7 +1389,7 @@ class TestCategoricalDomain(object):
         assert not domains_approximately_equal(domain_with_priors, domain_with_priors_changed)
 
 
-class TestPriorSamplers(object):
+class TestPriorSamplers:
     def test_fewer_priors_than_domain_components_raises_assertion_error(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (-4, 4)},
@@ -1504,7 +1502,7 @@ class TestPriorSamplers(object):
         assert samples_satisfy_kolmogorov_smirnov_test(samples[:, 0], domain_components[0], priors[0])
 
 
-class TestInferUnconstrainedIndicesHalfspace(object):
+class TestInferUnconstrainedIndicesHalfspace:
     domain_components: list[DomainComponent] = [
         {"var_type": "double", "elements": (-2, -1)},
         {"var_type": "double", "elements": (-1, 0)},
@@ -1620,7 +1618,7 @@ class TestInferUnconstrainedIndicesHalfspace(object):
         assert one_hot_indices == list(range(9))
 
 
-class TestHitandRunSampling(object):
+class TestHitandRunSampling:
     def test_all_constrained(self):
         domain_components: list[DomainComponent] = [
             {"var_type": "double", "elements": (0, 2)},
@@ -1681,7 +1679,7 @@ class TestHitandRunSampling(object):
         assert all(domain.check_point_acceptable(point) for point in samples)
 
 
-class TestFixedIndicesOnContinuousDomain(object):
+class TestFixedIndicesOnContinuousDomain:
     def test_basics(self):
         cat_domain = CategoricalDomain(
             [
@@ -1690,10 +1688,6 @@ class TestFixedIndicesOnContinuousDomain(object):
             ]
         )
         cn_domain = cat_domain.one_hot_domain
-
-        fixed_indices = {1: 0.5}
-        with pytest.raises(AssertionError):
-            FixedIndicesOnContinuousDomain(cat_domain, fixed_indices)
 
         wrong_indices = {2: 0.5}
         with pytest.raises(AssertionError):

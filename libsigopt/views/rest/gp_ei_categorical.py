@@ -1,6 +1,8 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from typing import Any
+
 from libsigopt.aux.constant import PARALLEL_QEI
 from libsigopt.compute.misc.constant import DEFAULT_MAX_SIMULTANEOUS_QEI_POINTS
 from libsigopt.compute.multitask_acquisition_function import MultitaskAcquisitionFunction
@@ -10,7 +12,7 @@ from libsigopt.views.view import GPView
 class GpEiCategoricalView(GPView):
     view_name = "gp_ei_categorical"
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         assert self.has_optimization_metrics, f"{self.view_name} must have optimization metrics"
         max_simultaneous_af_points = self.params["model_info"].max_simultaneous_af_points
         parallelism = self.params["parallelism"]

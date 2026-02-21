@@ -3,7 +3,6 @@
     "editor.insertSpaces": true,
     "files.trimTrailingWhitespace": true,
     "python.envFile": "${workspaceFolder}/.venv",
-    "mypy-type-checker.importStrategy": "fromEnvironment",
     "[python]": {
         "editor.formatOnSave": true,
         "editor.defaultFormatter": "charliermarsh.ruff",

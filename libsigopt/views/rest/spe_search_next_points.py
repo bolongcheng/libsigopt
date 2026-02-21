@@ -2,15 +2,14 @@
 #
 # SPDX-License-Identifier: Apache License 2.0
 from copy import deepcopy
+from typing import Any
 
 import numpy as np
 
 from libsigopt.compute.covariance import C4RadialMatern
 from libsigopt.compute.sigopt_parzen_estimator import SigOptParzenEstimator
 from libsigopt.views.rest.search_next_points import (
-    SEARCH_EXPLOITATION_PHASE,
-    SEARCH_EXPLORE_RESOLVE_PHASE,
-    SEARCH_INITIALIZATION_PHASE,
+    SearchPhase,
     identify_search_phase,
 )
 from libsigopt.views.rest.spe_next_points import SPE_CAT_LENGTH_SCALE, SPENextPoints
@@ -56,7 +55,7 @@ class SPESearchNextPoints(View):
         self,
         one_hot_points_sampled_points,
         points_sampled_values,
-    ):
+    ) -> SigOptParzenEstimator:
         lower_covariance_factor = 2.0
         greater_covariance_factor = 5.0
         gamma = 0.2
@@ -114,7 +113,7 @@ class SPESearchNextPoints(View):
         suggested_points = self.domain.map_one_hot_points_to_categorical(oh_suggested_points)
         return suggested_points
 
-    def get_search_phase(self):
+    def get_search_phase(self) -> SearchPhase:
         observation_budget = self.params["metrics_info"].observation_budget
         observation_count = len(self.params["points_sampled"].points)
         num_open_suggestions = len(self.one_hot_points_being_sampled_points)
@@ -126,17 +125,17 @@ class SPESearchNextPoints(View):
             failure_count,
         )
 
-    def view(self):
+    def view(self) -> dict[str, Any]:
         assert self.has_constraint_metrics
         assert not self.has_optimization_metrics
         search_phase = self.get_search_phase()
 
-        if search_phase is SEARCH_INITIALIZATION_PHASE:
+        if search_phase is SearchPhase.INITIALIZATION:
             return self.initilization_sequence()
-        elif search_phase is SEARCH_EXPLOITATION_PHASE:
+        elif search_phase is SearchPhase.EXPLOITATION:
             return self.metric_constraints_spe_next_points()
 
-        assert search_phase is SEARCH_EXPLORE_RESOLVE_PHASE
+        assert search_phase is SearchPhase.EXPLORE_RESOLVE
         proposed_next_points = self.spe_search_next_points()
 
         results = {

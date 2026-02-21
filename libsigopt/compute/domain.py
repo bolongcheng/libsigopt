@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
-from typing import Literal, NotRequired, Sequence, TypedDict
+from typing import Any, Literal, NotRequired, Sequence, TypedDict
 
 import numpy as np
 from scipy.spatial.distance import cdist
@@ -40,10 +40,7 @@ MAX_GRID_DIM = 13
 
 def form_constraint_fun_and_jac(one_hot_weights, rhs):
     def fun(one_hot_x):
-        return (
-            np.dot(one_hot_weights, one_hot_x.T)
-            - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * np.sign(rhs)) * rhs
-        )
+        return np.dot(one_hot_weights, one_hot_x.T) - (1 + DEFAULT_SAFETY_MARGIN_FOR_CONSTRAINTS * np.sign(rhs)) * rhs
 
     def jac(one_hot_x):
         return one_hot_weights
@@ -69,10 +66,12 @@ def find_indexes_of_unique_points(points, compare_points, scaling_vector, tolera
 
 
 class SamplerOpts(TypedDict):
-    sampler: Literal["latin_hypercube", "halton", "sobol", "uniform", "skip", "seed"]
+    sampler: Literal["latin_hypercube", "halton", "sobol", "uniform"]
+    skip: NotRequired[int]
+    seed: NotRequired[int]
 
 
-class ContinuousDomain(object):
+class ContinuousDomain:
     def __init__(self, domain_bounds):
         """Construct a ContinuousDomain with the specified bounds."""
         bounds_shape = np.asarray(domain_bounds).shape
@@ -93,7 +92,7 @@ class ContinuousDomain(object):
         return f"ContinuousDomain({self.domain_bounds})\nConstraints({self._halfspaces})"
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         """Return the number of spatial dimensions."""
         return len(self.domain_bounds)
 
@@ -106,14 +105,20 @@ class ContinuousDomain(object):
         return self._halfspaces
 
     @property
-    def is_constrained(self):
+    def is_constrained(self) -> bool:
         return bool(self._constraint_list)
 
     @property
     def one_hot_unconstrained_indices(self):
         return self._one_hot_unconstrained_indices
 
-    def set_quasi_random_sampler_opts(self, opts: SamplerOpts):
+    @property
+    def quasi_random_sampler_opts(self):
+        """Recover the dictionary of options for the quasi random sampler."""
+        return copy.deepcopy(self._quasi_random_sampler_opts)
+
+    @quasi_random_sampler_opts.setter
+    def quasi_random_sampler_opts(self, opts: SamplerOpts):
         """Input a dictionary of options for the quasi random sampler."""
         possible_quasi_random_samplers = ("latin_hypercube", "halton", "sobol", "uniform")
         if "sampler" not in opts:
@@ -123,35 +128,29 @@ class ContinuousDomain(object):
         else:
             self._quasi_random_sampler_opts = opts
 
-    def get_quasi_random_sampler_opts(self):
-        """Recover the dictionary of options for the quasi random sampler."""
-        return copy.deepcopy(self._quasi_random_sampler_opts)
-
-    quasi_random_sampler_opts = property(get_quasi_random_sampler_opts, set_quasi_random_sampler_opts)
-
-    def check_point_inside(self, point):
+    def check_point_inside(self, point) -> bool:
         return np.all((point >= self.domain_bounds[:, 0]) & (point <= self.domain_bounds[:, 1]))
 
-    def check_point_on_boundary(self, point, tol=0):
+    def check_point_on_boundary(self, point, tol=0) -> bool:
         if not self.is_constrained:
             return np.any(np.abs(point - self.domain_bounds.T) <= tol)
 
         assert self._halfspaces is not None
         return any(np.abs(np.dot(self._halfspaces[:, :-1], point) + self._halfspaces[:, -1]) <= tol)
 
-    def check_point_satisfies_constraints(self, point):
+    def check_point_satisfies_constraints(self, point) -> bool:
         if not self.is_constrained:
             return True
         assert self._halfspaces is not None
         A = self._halfspaces[:, :-1]
         b = -self._halfspaces[:, -1]
-        return all(list(np.dot(A, point) <= b))
+        return all(np.dot(A, point) <= b)
 
-    def check_point_acceptable(self, point):
+    def check_point_acceptable(self, point) -> bool:
         assert len(point) == self.dim
         return self.check_point_inside(point) and self.check_point_satisfies_constraints(point)
 
-    def set_constraint_list(self, constraint_list):
+    def set_constraint_list(self, constraint_list) -> None:
         """Set a the list of constraints (excluding bounds)."""
         if constraint_list:
             self._constraint_list = constraint_list
@@ -165,7 +164,7 @@ class ContinuousDomain(object):
             self._one_hot_unconstrained_indices = list(range(self.dim))
             self._cheby_center = None
 
-    def get_constraints_for_scipy(self):
+    def get_constraints_for_scipy(self) -> list[dict[str, Any]]:
         if not self.is_constrained:
             return []
 
@@ -202,16 +201,14 @@ class ContinuousDomain(object):
     def get_lower_upper_bounds(self):
         return self.domain_bounds.T
 
-    def generate_quasi_random_points_in_domain(self, num_points, log_sample=False):
+    def generate_quasi_random_points_in_domain(self, num_points: int, log_sample: bool = False):
         """Generate quasi-random points in the domain."""
         if log_sample:
             domain_bounds = np.log(self.domain_bounds)
         else:
             domain_bounds = self.domain_bounds
 
-        if self._quasi_random_sampler_opts.get("sampler") is None:
-            raise AttributeError("You must call set_quasi_random_sampler_opts before generating quasi-random points.")
-        elif self.is_constrained:
+        if self.is_constrained:
             assert self._halfspaces is not None
             x0 = self._cheby_center
             A = self._halfspaces[:, :-1]
@@ -238,26 +235,29 @@ class ContinuousDomain(object):
                     x0,
                 )
                 self.force_hitandrun_sampling = not success
-        elif self._quasi_random_sampler_opts["sampler"] == "latin_hypercube":
-            points = generate_latin_hypercube_points(num_points, domain_bounds)
-        elif self._quasi_random_sampler_opts["sampler"] == "halton":
-            points = generate_halton_points(
-                num_points,
-                domain_bounds,
-                skip=self._quasi_random_sampler_opts.get("skip"),
-                seed=self._quasi_random_sampler_opts.get("seed"),
-            )
-        elif self._quasi_random_sampler_opts["sampler"] == "uniform":
-            points = generate_uniform_random_points(num_points, domain_bounds)
-        elif self._quasi_random_sampler_opts["sampler"] == "sobol":
-            points = generate_sobol_points(
-                num_points,
-                domain_bounds,
-                skip=self._quasi_random_sampler_opts.get("skip"),
-                seed=self._quasi_random_sampler_opts.get("seed"),
-            )
         else:
-            raise ValueError("Somehow the quasi random points you are asking for do not exist")
+            match self._quasi_random_sampler_opts.get("sampler"):
+                case "latin_hypercube":
+                    points = generate_latin_hypercube_points(num_points, domain_bounds)
+                case "halton":
+                    points = generate_halton_points(
+                        num_points,
+                        domain_bounds,
+                        skip=self._quasi_random_sampler_opts.get("skip"),
+                        seed=self._quasi_random_sampler_opts.get("seed"),
+                    )
+                case "sobol":
+                    points = generate_sobol_points(
+                        num_points,
+                        domain_bounds,
+                        skip=self._quasi_random_sampler_opts.get("skip"),
+                        seed=self._quasi_random_sampler_opts.get("seed"),
+                    )
+                case "uniform":
+                    points = generate_uniform_random_points(num_points, domain_bounds)
+                case _:
+                    raise ValueError(f"The sampler {self._quasi_random_sampler_opts['sampler']} does not exist")
+
         return np.exp(points) if log_sample else points
 
     def generate_grid_points_in_domain(self, points_per_dimension):
@@ -373,7 +373,7 @@ class BetaPrior(TypedDict):
 AnyPrior = NormalPrior | BetaPrior
 
 
-class CategoricalDomain(object):
+class CategoricalDomain:
     domain_components: list[DomainComponent]
     constraint_list: list[DomainConstraint]
     priors: list[AnyPrior]
@@ -423,7 +423,11 @@ class CategoricalDomain(object):
         return iter(self.domain_components)
 
     @staticmethod
-    def _verify_domain_components(domain_components, constraint_list, priors):
+    def _verify_domain_components(
+        domain_components: Sequence[DomainComponent],
+        constraint_list: Sequence[DomainConstraint] | None,
+        priors: Sequence[AnyPrior] | None,
+    ):
         for component in domain_components:
             assert "var_type" in component and "elements" in component
             assert component["var_type"] in (
@@ -479,23 +483,23 @@ class CategoricalDomain(object):
                     assert component["var_type"] == DOUBLE_EXPERIMENT_PARAMETER_NAME
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return len(self.domain_components)
 
     @property
-    def is_continuous(self):
+    def is_continuous(self) -> bool:
         return all(c["var_type"] == DOUBLE_EXPERIMENT_PARAMETER_NAME for c in self)
 
     @property
-    def is_discrete(self):
+    def is_discrete(self) -> bool:
         return all(c["var_type"] != DOUBLE_EXPERIMENT_PARAMETER_NAME for c in self)
 
     @property
-    def is_constrained(self):
+    def is_constrained(self) -> bool:
         return bool(self.constraint_list)
 
     @property
-    def is_integer_constrained(self):
+    def is_integer_constrained(self) -> bool:
         if not self.is_constrained:
             return False
 
@@ -505,19 +509,19 @@ class CategoricalDomain(object):
         return False
 
     @property
-    def one_hot_dim(self):
+    def one_hot_dim(self) -> int:
         return self.one_hot_domain.dim
 
     @property
-    def force_hitandrun_sampling(self):
+    def force_hitandrun_sampling(self) -> bool:
         return self.one_hot_domain.force_hitandrun_sampling
 
     @property
-    def has_categoricals(self):
+    def has_categoricals(self) -> bool:
         return any(c["var_type"] == CATEGORICAL_EXPERIMENT_PARAMETER_NAME for c in self)
 
     @property
-    def has_quantized(self):
+    def has_quantized(self) -> bool:
         return any(c["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME for c in self)
 
     # TODO(RTL-151): Maybe consider combining all three methods below if we have iterate through many constraints
@@ -528,7 +532,7 @@ class CategoricalDomain(object):
             if constraint["var_type"] == INT_EXPERIMENT_PARAMETER_NAME
         ]
 
-    def _form_constrained_variable_indices(self):
+    def _form_constrained_variable_indices(self) -> tuple[list[int], list[int]]:
         constrained_integer_indices: list[int] = []
         constrained_double_indices: list[int] = []
         if self.constraint_list:
@@ -605,7 +609,7 @@ class CategoricalDomain(object):
         return points
 
     @staticmethod
-    def _check_1d_point_inside(point_1d, domain_component):
+    def _check_1d_point_inside(point_1d, domain_component: DomainComponent) -> bool:
         if domain_component["var_type"] in (
             CATEGORICAL_EXPERIMENT_PARAMETER_NAME,
             QUANTIZED_EXPERIMENT_PARAMETER_NAME,
@@ -638,16 +642,16 @@ class CategoricalDomain(object):
         unique_indexes = find_indexes_of_unique_points(points, compare_points, scaling_vector, tolerance)
         return test_points[unique_indexes, :]
 
-    def check_point_satisfies_constraints(self, point):
+    def check_point_satisfies_constraints(self, point) -> bool:
         if not self.is_constrained:
             return True
         enumerated_point = self.map_categorical_points_to_enumeration([point])[0]
         return all(self._check_enumerated_point_satisfies_constraint(enumerated_point, c) for c in self.constraint_list)
 
-    def check_point_inside(self, point):
+    def check_point_inside(self, point) -> bool:
         return all(self._check_1d_point_inside(p, c) for p, c in zip(point, self.domain_components))
 
-    def check_point_acceptable(self, point):
+    def check_point_acceptable(self, point) -> bool:
         assert len(point) == self.dim
         return self.check_point_inside(point) and self.check_point_satisfies_constraints(point)
 
@@ -667,20 +671,23 @@ class CategoricalDomain(object):
         cat_shape = [len(m["input_ind_value_map"]) for m in self.get_categorical_component_mappings()]
         return np.prod(cat_shape, dtype=int)
 
-    def _generate_quasi_random_1d_points_in_domain(self, num_points, domain_component):
+    def _generate_quasi_random_1d_points_in_domain(self, num_points: int, domain_component: DomainComponent):
         if domain_component["var_type"] in (
             CATEGORICAL_EXPERIMENT_PARAMETER_NAME,
             QUANTIZED_EXPERIMENT_PARAMETER_NAME,
         ):
             return np.random.choice(domain_component["elements"], replace=True, size=num_points)
         elif domain_component["var_type"] == INT_EXPERIMENT_PARAMETER_NAME:
-            return np.random.randint(
-                domain_component["elements"][0], domain_component["elements"][1] + 1, num_points
-            )
+            return np.random.randint(domain_component["elements"][0], domain_component["elements"][1] + 1, num_points)
         else:
             return np.random.uniform(domain_component["elements"][0], domain_component["elements"][1], num_points)
 
-    def _generate_random_1d_points_according_to_prior(self, num_points, component, prior):
+    def _generate_random_1d_points_according_to_prior(
+        self,
+        num_points: int,
+        component: DomainComponent,
+        prior: AnyPrior,
+    ):
         if not is_valid_prior(prior):
             return self._generate_quasi_random_1d_points_in_domain(num_points, component)
 
@@ -706,14 +713,14 @@ class CategoricalDomain(object):
             raise ValueError(f"Unknown prior name: {prior['name']}")
         return random_values
 
-    def generate_random_points_according_to_priors(self, num_points):
+    def generate_random_points_according_to_priors(self, num_points: int):
         assert self.priors, "There are no priors; must have priors to call this function"
         result = np.empty((num_points, self.dim))
         for d, (prior, component) in enumerate(zip(self.priors, self.domain_components)):
             result[:, d] = self._generate_random_1d_points_according_to_prior(num_points, component, prior)
         return result
 
-    def generate_quasi_random_points_in_domain(self, num_points):
+    def generate_quasi_random_points_in_domain(self, num_points: int):
         if self.constraint_list:
             # Note: due to integer constraints, we may return less than num_points samples.
             one_hot_constrained_points = self.one_hot_domain.generate_quasi_random_points_in_domain(num_points)
@@ -861,7 +868,7 @@ class CategoricalDomain(object):
         )
 
     @staticmethod
-    def form_one_hot_domain(domain_components):
+    def form_one_hot_domain(domain_components: Sequence[DomainComponent]):
         domain_bounds = []
         one_hot_to_categorical_mapping = []
         oh_num = 0
@@ -952,9 +959,7 @@ class CategoricalDomain(object):
                     this_cat_point[this_cat_dim_map["output_ind"]] = round(one_hot_point[this_cat_dim_map["input_ind"]])
                 elif this_cat_dim_map["var_type"] == QUANTIZED_EXPERIMENT_PARAMETER_NAME:
                     quantized_values = np.array(self.domain_components[this_cat_dim_map["output_ind"]]["elements"])
-                    nearest_idx = np.argmin(
-                        np.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values)
-                    )
+                    nearest_idx = np.argmin(np.abs(one_hot_point[this_cat_dim_map["input_ind"]] - quantized_values))
                     this_cat_point[this_cat_dim_map["output_ind"]] = quantized_values[nearest_idx]
                 else:
                     one_hot_indexes, categories = zip(*this_cat_dim_map["input_ind_value_map"].items())
@@ -995,7 +1000,6 @@ class CategoricalDomain(object):
         if len(categorical_component_mappings) == 0:
             return one_hot_points
 
-        categorical_component_mappings = self.get_categorical_component_mappings()
         snapped_points = np.copy(one_hot_points)
         for categorical_component_mapping in categorical_component_mappings:
             cat_indices = list(categorical_component_mapping["input_ind_value_map"])
@@ -1044,19 +1048,18 @@ class CategoricalDomain(object):
         return one_hot_points_integer_feasible
 
 
-class FixedIndicesOnContinuousDomain(object):
-    def __init__(self, continuous_domain, fixed_indices):
-        assert isinstance(continuous_domain, ContinuousDomain)
+class FixedIndicesOnContinuousDomain:
+    def __init__(self, continuous_domain: ContinuousDomain, fixed_indices):
         assert isinstance(fixed_indices, dict)
         self.continuous_domain = continuous_domain
         self.fixed_indices = fixed_indices
         self._verify_fixed_indices()
 
     @property
-    def dim(self):
+    def dim(self) -> int:
         return self.continuous_domain.dim
 
-    def _verify_fixed_indices(self):
+    def _verify_fixed_indices(self) -> None:
         assert all(isinstance(k, int) for k in self.fixed_indices.keys())
         assert min(self.fixed_indices.keys()) >= 0
         assert max(self.fixed_indices.keys()) < self.continuous_domain.dim
@@ -1071,11 +1074,11 @@ class FixedIndicesOnContinuousDomain(object):
             points[:, index] = value
         return points
 
-    def generate_quasi_random_points_in_domain(self, num_points, log_sample=False):
+    def generate_quasi_random_points_in_domain(self, num_points: int, log_sample: bool = False):
         unfixed_points = self.continuous_domain.generate_quasi_random_points_in_domain(num_points, log_sample)
         return self._fix_points_according_to_fixed_indices(unfixed_points)
 
-    def generate_random_points_near_point(self, num_points, point, std_dev, on_constraint=False):
+    def generate_random_points_near_point(self, num_points: int, point, std_dev, on_constraint=False):
         unfixed_points = self.continuous_domain.generate_random_points_near_point(
             num_points,
             point,
@@ -1084,6 +1087,6 @@ class FixedIndicesOnContinuousDomain(object):
         )
         return self._fix_points_according_to_fixed_indices(unfixed_points)
 
-    def restrict_points_to_domain(self, points, on_constraint=False, viable_point=None):
+    def restrict_points_to_domain(self, points, on_constraint: bool = False, viable_point=None):
         unfixed_points = self.continuous_domain.restrict_points_to_domain(points, on_constraint, viable_point)
         return self._fix_points_according_to_fixed_indices(unfixed_points)

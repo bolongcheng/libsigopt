@@ -4,7 +4,9 @@
 import numpy as np
 import scipy.linalg
 
+from libsigopt.compute.covariance_base import CovarianceBase
 from libsigopt.compute.gaussian_process import GaussianProcess
+from libsigopt.compute.misc.data_containers import HistoricalData
 from libsigopt.compute.optimization import ScipyOptimizable
 
 
@@ -13,7 +15,6 @@ DEFAULT_TIKHONOV_PARAMETER = 1.0e-10
 INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION = False
 
 
-# customlint: disable=AccidentalFormatStringRule
 class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
     r"""
 
@@ -27,13 +28,13 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
 
     def __init__(
         self,
-        covariance,
-        historical_data,
+        covariance: CovarianceBase,
+        historical_data: HistoricalData,
         mean_poly_indices=None,
         *,
-        use_auto_noise=False,
-        log_domain=False,
-        scaling_factor=DEFAULT_LOG_LIKELIHOOD_SCALING_FACTOR,
+        use_auto_noise: bool = False,
+        log_domain: bool = False,
+        scaling_factor: float = DEFAULT_LOG_LIKELIHOOD_SCALING_FACTOR,
     ):
         """Construct a LogLikelihood object for selecting hyperparameters.
 
@@ -73,29 +74,31 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
   """
 
     @property
-    def num_hyperparameters(self):
+    def num_hyperparameters(self) -> int:
         return self.covariance.num_hyperparameters + (1 if self.use_auto_noise else 0)
 
     @property
-    def differentiable(self):
+    def differentiable(self) -> bool:
         return self.gp.differentiable
 
     @property
-    def problem_size(self):
+    def problem_size(self) -> int:
         return self.num_hyperparameters
 
     @property
-    def tikhonov_param(self):
+    def tikhonov_param(self) -> float | None:
         return self.gp.tikhonov_param
 
-    def get_hyperparameters(self):
+    @property
+    def hyperparameters(self):
         if self.use_auto_noise:
             hyperparameters = np.append(self.covariance.hyperparameters, self.tikhonov_param)
         else:
             hyperparameters = self.covariance.hyperparameters
         return np.log(hyperparameters) if self.log_domain else hyperparameters
 
-    def set_hyperparameters(self, hyperparameters):
+    @hyperparameters.setter
+    def hyperparameters(self, hyperparameters):
         if len(hyperparameters) != self.problem_size:
             extra_advice = " Remember to include 1 extra hyperparameter for auto_noise." if self.use_auto_noise else ""
             raise ValueError(
@@ -107,7 +110,6 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
         tikhonov_param = hp_linear_domain[-1] if self.use_auto_noise else None
         self.gp = GaussianProcess(self.covariance, self.historical_data, self.mean_poly_indices, tikhonov_param)
 
-    hyperparameters = property(get_hyperparameters, set_hyperparameters)
     current_point = hyperparameters
 
     def compute_log_likelihood(self):
@@ -130,7 +132,7 @@ class GaussianProcessLogMarginalLikelihood(ScipyOptimizable):
 
     compute_objective_function = compute_log_likelihood
 
-    def compute_grad_log_likelihood(self, include_nonzero_correction=INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION):
+    def compute_grad_log_likelihood(self, include_nonzero_correction: bool = INCLUDE_NONZERO_MEAN_GRADIENT_CORRECTION):
         r"""
         Compute the gradient (wrt hyperparameters) of the _log_likelihood_type measure at the specified hyperparameters.
 

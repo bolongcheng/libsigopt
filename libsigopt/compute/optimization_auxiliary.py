@@ -1,12 +1,15 @@
 # Copyright © 2022 Intel Corporation
 #
 # SPDX-License-Identifier: Apache License 2.0
+from __future__ import annotations
+
 from dataclasses import asdict, dataclass
+from typing import Any
 
 import numpy as np
 
 
-class Optimizer(object):
+class Optimizer:
     optimizer_name: str
 
     def optimize(self, **kwargs):
@@ -16,7 +19,7 @@ class Optimizer(object):
 @dataclass(frozen=True, slots=True)
 class OptimizerInfo:
     optimizer: type[Optimizer]
-    parameters: object
+    parameters: VectorizedOptimizerParameters | ScipyOptimizerParameters
     num_multistarts: int
     num_random_samples: int
 
@@ -31,10 +34,13 @@ class OptimizationResults:
 ####
 #  VECTORIZED OPTIMIZATION PARAMETER OBJECTS
 ####
+@dataclass(frozen=True, slots=True)
+class VectorizedOptimizerParameters:
+    pass
 
 
 @dataclass(frozen=True, slots=True)
-class AdamParameters:
+class AdamParameters(VectorizedOptimizerParameters):
     beta_1: float = 0.9
     beta_2: float = 0.9
     epsilon: float = 1e-8
@@ -42,7 +48,7 @@ class AdamParameters:
 
 
 @dataclass(frozen=True, slots=True)
-class DEParameters:
+class DEParameters(VectorizedOptimizerParameters):
     crossover_probability: float = 0.7
     mutation: float = 0.8
     strategy: str = "best1bin"
@@ -51,10 +57,16 @@ class DEParameters:
 ####
 #  SCIPY OPTIMIZATION PARAMETER OBJECTS
 ####
+@dataclass(frozen=True, slots=True)
+class ScipyOptimizerParameters:
+    pass
+
+    def scipy_kwargs(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass(frozen=True, slots=True)
-class LBFGSBParameters:
+class LBFGSBParameters(ScipyOptimizerParameters):
     approx_grad: bool = False  # if true, BFGS will approximate the gradient
     maxfun: int = 15000  # maximum number of objective function calls to make
     maxcor: int = 10  # maximum number of variable metric corrections
@@ -62,19 +74,13 @@ class LBFGSBParameters:
     gtol: float = 1.0e-4  # cutoff for highest component of gradient to be a critical point
     eps: float = 1.0e-8  # step size for approximating the gradient
 
-    def scipy_kwargs(self) -> dict:
-        return asdict(self)
-
 
 @dataclass(frozen=True, slots=True)
-class SLSQPParameters:
+class SLSQPParameters(ScipyOptimizerParameters):
     approx_grad: bool = False  # use a finite difference gradient approximation
     maxiter: int = 150  # maximum number of SLSQP iterations to take
     ftol: float = 1.0e-4  # relative error for function value for convergence
     eps: float = 1.0e-8  # finite difference parameter if approx_grad == True
-
-    def scipy_kwargs(self) -> dict:
-        return asdict(self)
 
 
 DEFAULT_VECOPT_MAXITER = 100

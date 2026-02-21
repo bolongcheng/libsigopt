@@ -12,7 +12,7 @@ from libsigopt.views.rest.multisolution_best_assignments import k_center_cluster
 from testaux.utils import form_random_unconstrained_categorical_domain
 
 
-class TestMultisolutionBestAssignments(object):
+class TestMultisolutionBestAssignments:
     def test_k_center_clustering_invalid_input_points(self):
         points = np.random.randn(20)
         with pytest.raises(AssertionError):

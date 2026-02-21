@@ -9,7 +9,11 @@ description = "SigOpt computation libraries"
 readme = "README.md"
 requires-python = ">=3.13"
 license = { text = "Apache-2.0" }
-authors = [{ name = "SigOpt", email = "support@sigopt.com" }]
+authors = [
+  { name = "SigOpt", email = "support@sigopt.com" },
+  { name = "Harvey Cheng" },
+]
+maintainers = [{ name = "Harvey Cheng" }]
 classifiers = ["Development Status :: 5 - Production/Stable"]
 dependencies = ["numpy>=2.1", "scipy>=1.14"]
 
@@ -26,9 +30,6 @@ exclude = ["test*"]
 [tool.setuptools.package-data]
 libsigopt = ["py.typed"]
 
-[tool.mypy]
-check_untyped_defs = true
-follow_imports = "silent"
 
 [tool.ruff]
 line-length = 120
@@ -56,6 +57,7 @@ section-order = [
 ]
 
 [tool.ruff.lint.isort.sections]
-tests = ["testaux", "testcompute"]
+tests = ["testaux", "testcompute", "testviews"]
+
 [tool.ty.src]
 include = ["libsigopt/aux", "test/testaux"]
