@@ -21,7 +21,7 @@ dependencies = ["numpy>=2.1", "scipy>=1.14"]
 Homepage = "https://sigopt.org"
 
 [dependency-groups]
-dev = ["pre-commit==3.2.1", "pytest", "pytest-rerunfailures", "ruff", "ty"]
+dev = ["pytest", "pytest-rerunfailures", "ruff", "ty"]
 
 [tool.setuptools.packages.find]
 include = ["libsigopt*"]
